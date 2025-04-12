@@ -2,6 +2,8 @@
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 
 /*
@@ -33,3 +35,7 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 });
+
+Artisan::call('storage:link');
+// Route::get('/linkstorage', function () {
+// });
