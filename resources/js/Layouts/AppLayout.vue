@@ -8,7 +8,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 
-defineProps({
+const props = defineProps({
     title: String,
 });
 
@@ -70,7 +70,7 @@ const logout = () => {
                                         </span>
                                     </template>
 
-                                    <template #content>
+                                    <template #content hidden>
                                         <div class="w-60">
                                             <!-- Team Management -->
                                             <div class="block px-4 py-2 text-xs text-gray-400">
