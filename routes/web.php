@@ -41,14 +41,13 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-    // commented for now to be used in controller
-    // Route::get('/farmers', function () {
-    //     return Inertia::render('Farmers/Index');
-    // })->name('farmers');
+    Route::get('/farmers', function () {
+        return Inertia::render('Farmers/Index');
+    })->name('farmers');
     
-    // Route::get('/users', function () {
-    //     return Inertia::render('Users/Index');
-    // })->name('users');
+    Route::get('/users', function () {
+        return Inertia::render('Users/Index');
+    })->name('users');
 });
 
 Artisan::call('storage:link');
