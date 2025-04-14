@@ -18,9 +18,15 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
+    /** commented out to be used later */
+    // return Inertia::render('Welcome', [
+    //     'canLogin' => Route::has('login'),
+    //     'canRegister' => Route::has('register'),
+    //     'laravelVersion' => Application::VERSION,
+    //     'phpVersion' => PHP_VERSION,
+    // ]);
+    return Inertia::render('Auth/Login', [
+        'canResetPassword' => Route::has('password.request'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
@@ -37,5 +43,3 @@ Route::middleware([
 });
 
 Artisan::call('storage:link');
-// Route::get('/linkstorage', function () {
-// });
