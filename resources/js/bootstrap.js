@@ -3,11 +3,17 @@
  * to our Laravel back-end. This library automatically handles sending the
  * CSRF token as a header based on the value of the "XSRF" token cookie.
  */
+import $ from 'jquery';
+import select2 from 'select2';
+
+window.jQuery = window.$ = $;
+window.select2 = select2;
 
 import axios from 'axios';
 window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+select2();
 
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
