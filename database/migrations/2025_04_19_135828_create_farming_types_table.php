@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('farming_types', function (Blueprint $table) {
             $table->id();
-            $table->string('firstname');
-            $table->string('lastname');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
-            $table->foreignId('current_team_id')->nullable();
-            $table->string('profile_photo_path', 2048)->nullable();
+            $table->integer('type')->default(0)->comment('0 = Crops; 1 = Livestocks; 2 = Poultry');
+            $table->string('name')->nullable()->comment('Name of the crops, livestock or poultry');
+            $table->integer('created_by')->default(0);
+            $table->integer('updated_by')->default(0);
             $table->integer('is_archived')->default(0);
             $table->integer('archived_by')->default(0);
             $table->string('archived_at')->nullable();
@@ -34,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('farming_types');
     }
 };

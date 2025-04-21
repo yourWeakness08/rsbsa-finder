@@ -5,3 +5,28 @@
 [x-cloak] {
     display: none;
 }
+
+/*** select2 css ***/
+span#select2--container {
+    line-height: 1.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow { 
+    top: 0.5rem !important; 
+    right: 0.5rem !important;
+}
+span.select2-selection.select2-selection--single { height: auto; }
+span.select2-selection__placeholder { font-size: 1rem; }
+/*** select2 css ***/
+
+#vtd .vtd-datepicker.static{
+    position: fixed;
+    width: auto;
+}
+
+.required {
+    color: #ff0000;
+}

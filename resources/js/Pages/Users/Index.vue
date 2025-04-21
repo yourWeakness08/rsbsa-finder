@@ -33,10 +33,34 @@
     const searchValue = ref(null);
 
     const pages = ref([ 25, 50, 100, 200, 'All']);
+
+    const submitFilter = () => {
+        const { value } = pageValue;
+        let formData = {};
+        if(value){ formData.paginate = value; }
+        if(searchValue.value){ formData.search = searchValue.value; }
+        
+        if(Object.keys(formData).length > 0){
+            router.visit('/users', {
+                method: 'get',
+                data: formData,
+                only: ['users', 'filter']
+            });
+        }
+    }
+
+    const resetFilter = () => {
+        let formData = {};
+        router.visit('/users', {
+            method: 'get',
+            data: formData,
+            only: ['users']
+        });
+    }
 </script>
 
 <template>
-    <AppLayout title="Dashboard">
+    <AppLayout title="Users">
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Users
@@ -55,7 +79,8 @@
                                 <TextInput v-model="searchValue" type="text" class="block w-full uppercase" placeholder="Search" autocomplete="off" />
                             </div>
                             <div class="ms-2 basis-auto text-right">
-                                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white px-2 py-3" @click="submitFilter">Apply Filter</PrimaryButton>
+                                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white px-2 py-3 mr-3" @click="submitFilter">Apply Filter</PrimaryButton>
+                                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white px-2 py-3" @click="resetFilter">Reset Filter</PrimaryButton>
                             </div>
                         </div>
 
@@ -64,6 +89,7 @@
                                 <thead
                                     class="text-xs text-gray-700 uppercase">
                                     <tr>
+                                        <th scope="col" class="px-6 py-3 w-12"></th>
                                         <th scope="col" class="px-6 py-3">Name</th>
                                         <th scope="col" class="px-6 py-3">Email</th>
                                         <th scope="col" class="px-6 py-3">Role</th>
@@ -71,22 +97,51 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- <template v-if="users.total > 0">
-                                        <tr>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
+                                    <template v-if="users.total > 0">
+                                        <tr class="bg-white border-b" v-for="users in users.data" :key="users.id">
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <div class="border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300">
+                                                    <img :src="users.profile_photo_url" :alt="users.name" class="h-12 w-12 rounded-full object-cover">
+                                                </div>
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ users.name }}
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ users.email }}
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 uppercase">
+                                                Administrator
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 uppercase">
+                                                
+                                            </td>
                                         </tr>
                                     </template>
                                     <template v-else-if="filter.paginate == 'All' && users.length > 0">
-
+                                        <tr class="bg-white border-b" v-for="users in users.data" :key="users.id">
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <img :src="users.profile_photo_url" :alt="users.name">
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ users.name }}
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ users.email }}
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 uppercase">
+                                                Administrator
+                                            </td>
+                                            <td scope="row" class="px-6 py-4 font-medium text-gray-900 uppercase">
+                                                
+                                            </td>
+                                        </tr>
                                     </template>
                                     <template v-else>
                                         <tr class="bg-white border-b">
                                             <th colspan="5" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No Data Found!</th>
                                         </tr>
-                                    </template> -->
+                                    </template>
                                 </tbody>
                             </table>
                             <div class="mt-6">
