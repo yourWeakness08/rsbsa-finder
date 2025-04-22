@@ -1,5 +1,5 @@
-    <script setup>
-    import { ref, reactive, computed } from 'vue';
+<script setup>
+    import { ref, reactive, computed, getCurrentInstance, watch } from 'vue';
     import AppLayout from '@/Layouts/AppLayout.vue';
     import DialogModal from '@/Components/DialogModal.vue';
 
@@ -22,6 +22,8 @@
     import Swal from 'sweetalert2';
     
     import $ from 'jquery';
+
+    const { proxy } = getCurrentInstance()
     
     const props = defineProps({
         farming_type: {
@@ -37,6 +39,7 @@
 
     const pageValue = ref(null);
     const searchValue = ref(null);
+    const debouncedSearch = ref('');
 
     const pages = ref([ 25, 50, 100, 200, 'All']);
 
@@ -53,15 +56,6 @@
                 only: ['farming_type', 'filter']
             });
         }
-    }
-
-    const resetFilter = () => {
-        let formData = {};
-        router.visit('/types', {
-            method: 'get',
-            data: formData,
-            only: ['farming_type']
-        });
     }
 
     const createTypeDialog = ref(false);
@@ -230,6 +224,41 @@
             }
         });
     }
+
+    const handleSearch = proxy.$debounce((val) => {
+        const { value } = pageValue;
+
+        debouncedSearch.value = val;
+        let formData = {};
+        if (value) { formData.paginate = value };
+        formData.search = debouncedSearch.value ? val : '';
+        
+        router.visit('/types', {
+            method: 'get',
+            data: formData,
+            preserveState: true,
+            only: ['farming_type', 'filter']
+        });
+    }, 1000);
+
+    watch(searchValue, (val) => {
+        handleSearch(val)
+    });
+
+    const tableShow = () => {
+        const { value } = pageValue;
+
+        let formData = {};
+        if (value) { formData.paginate = value };
+        if (searchValue.value) { formData.search = searchValue.value; }
+
+        router.visit('/types', {
+            method: 'get',
+            data: formData,
+            preserveState: true,
+            only: ['farming_type', 'filter']
+        });
+    }
 </script>
 
 <template>
@@ -369,7 +398,7 @@
                             <div class="mt-6">
                                 <div class="flex flex-row justify-between items-center">
                                     <div class="md:w-1/12">
-                                        <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" />
+                                        <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                     </div>
                                     <div class="md:w-11/12">
                                         <ul class="flex items-center justify-end -space-x-px h-8 text-sm">
