@@ -17,7 +17,8 @@ class UsersController extends Controller
         $paginate = $request->paginate ? intval($request->paginate): 25;
         $users = User::where(function($query) use($request){
             if($request->search){
-                $query->where('users.name', 'like', '%'.$request->search.'%')
+                $query->where('users.firstname', 'like', '%'.$request->search.'%')
+                ->orWhere('users.lastname', 'like', '%'.$request->search.'%')
                 ->orWhere('users.email', 'like', '%'.$request->search.'%');
             }
         })->paginate($paginate);
@@ -26,8 +27,9 @@ class UsersController extends Controller
         if($request->paginate == 'All'){ 
             $users = User::where(function($query) use($request){
                 if($request->search){
-                    $query->where('users.name', 'like', '%'.$request->search.'%')
-                    ->orWhere('users.email', 'like', '%'.$request->search.'%');
+                    $query->where('users.firstname', 'like', '%'.$request->search.'%')
+                ->orWhere('users.lastname', 'like', '%'.$request->search.'%')
+                ->orWhere('users.email', 'like', '%'.$request->search.'%');
                 }
             })->get();
             $users->all();

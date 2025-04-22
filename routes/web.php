@@ -58,6 +58,7 @@ Route::middleware([
     ])->parameters([ 'types'=>'id' ]);
 
     Route::put('/types/archive_type/{id}', [FarmingTypeController::class, 'archive_type'])->name('types.archive_type');
+    Route::get('/farmers/get_select2_farmers', [FarmersController::class, 'get_select2_farmers'])->name('farmers.get_select2_farmers');
 });
 
 Artisan::call('storage:link');
