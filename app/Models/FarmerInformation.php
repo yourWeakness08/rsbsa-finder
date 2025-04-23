@@ -5,9 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Farmers extends Model
+class FarmerInformation extends Model
 {
     use HasFactory;
-
-    protected $fillable = ['firstname', 'lastname'];
 }

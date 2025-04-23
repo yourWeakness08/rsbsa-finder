@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
+use App\Http\Controllers\UsersController;
+use App\Http\Controllers\FarmersController;
+use App\Http\Controllers\FarmingTypeController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -20,12 +24,7 @@ use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     /** commented out to be used later */
-    // return Inertia::render('Welcome', [
-    //     'canLogin' => Route::has('login'),
-    //     'canRegister' => Route::has('register'),
-    //     'laravelVersion' => Application::VERSION,
-    //     'phpVersion' => PHP_VERSION,
-    // ]);
+
     if (Auth::check()) {
         return redirect()->route('dashboard');
     } else {
@@ -46,13 +45,20 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-    Route::get('/farmers', function () {
-        return Inertia::render('Farmers/Index');
-    })->name('farmers');
+    Route::resource('/users', UsersController::class)->only([
+        'index', 'create', 'store', 'update', 'destroy'
+    ])->parameters([ 'users'=>'id' ]);
+
+    Route::resource('/farmers', FarmersController::class)->only([
+        'index', 'create', 'store', 'update', 'destroy'
+    ])->parameters([ 'farmers'=>'id' ]);
     
-    Route::get('/users', function () {
-        return Inertia::render('Users/Index');
-    })->name('users');
+    Route::resource('/types', FarmingTypeController::class)->only([
+        'index', 'create', 'store', 'update', 'destroy'
+    ])->parameters([ 'types'=>'id' ]);
+
+    Route::put('/types/archive_type/{id}', [FarmingTypeController::class, 'archive_type'])->name('types.archive_type');
+    Route::put('/users/archive_user/{id}', [UsersController::class, 'archive_user'])->name('users.archive_user');
 });
 
 Artisan::call('storage:link');

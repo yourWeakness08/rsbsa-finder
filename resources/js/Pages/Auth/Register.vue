@@ -9,7 +9,8 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 const form = useForm({
-    name: '',
+    firstname: '',
+    lastname: '',
     email: '',
     password: '',
     password_confirmation: '',
@@ -23,6 +24,12 @@ const submit = () => {
 };
 </script>
 
+<style>
+    #basic-info .col-md-6{
+        flex: 0 0 49% !important;
+    }
+</style>
+
 <template>
     <Head title="Register" />
 
@@ -32,18 +39,17 @@ const submit = () => {
         </template>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="name" value="Name" />
-                <TextInput
-                    id="name"
-                    v-model="form.name"
-                    type="text"
-                    class="mt-1 block w-full"
-                    required
-                    autofocus
-                    autocomplete="name"
-                />
-                <InputError class="mt-2" :message="form.errors.name" />
+            <div id="basic-info" class="flex flex-wrap justify-between">
+                <div class="col-md-6">
+                    <InputLabel for="firstname" value="Firstname" />
+                    <TextInput id="firstname" v-model="form.firstname" type="text" class="mt-1 block w-full" required autofocus autocomplete="firstname" />
+                    <InputError class="mt-2" :message="form.errors.firstname" />
+                </div>
+                <div class="col-md-6">
+                    <InputLabel for="lastname" value="Lastname" />
+                    <TextInput id="lastname" v-model="form.lastname" type="text" class="mt-1 block w-full" required autofocus autocomplete="lastname" />
+                    <InputError class="mt-2" :message="form.errors.lastname" />
+                </div>
             </div>
 
             <div class="mt-4">

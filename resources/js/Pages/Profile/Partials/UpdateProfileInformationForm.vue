@@ -15,7 +15,8 @@ const props = defineProps({
 
 const form = useForm({
     _method: 'PUT',
-    name: props.user.name,
+    firstname: props.user.firstname,
+    lastname: props.user.lastname,
     email: props.user.email,
     photo: null,
 });
@@ -73,6 +74,18 @@ const clearPhotoFileInput = () => {
         photoInput.value.value = null;
     }
 };
+
+const formatProfile = (user) => {
+    let _path;
+    
+    if (user.profile_photo_path) {
+        _path = $page.props.auth.user.profile_photo_url;
+    } else {
+        _path = `https://ui-avatars.com/api/?name=${user.firstname}&color=7F9CF5&background=EBF4FF`;
+    }
+
+    return _path;
+}
 </script>
 
 <template>
@@ -101,7 +114,7 @@ const clearPhotoFileInput = () => {
 
                 <!-- Current Profile Photo -->
                 <div v-show="! photoPreview" class="mt-2">
-                    <img :src="user.profile_photo_url" :alt="user.name" class="rounded-full h-20 w-20 object-cover">
+                    <img :src="formatProfile(user)" :alt="user.firstname" class="rounded-full h-20 w-20 object-cover">
                 </div>
 
                 <!-- New Profile Photo Preview -->
@@ -129,21 +142,34 @@ const clearPhotoFileInput = () => {
             </div>
 
             <!-- Name -->
-            <div class="col-span-6 sm:col-span-4">
-                <InputLabel for="name" value="Name" />
+            <div class="col-span-6 sm:col-span-3">
+                <InputLabel for="name" value="Firstname" />
                 <TextInput
                     id="name"
-                    v-model="form.name"
+                    v-model="form.firstname"
                     type="text"
-                    class="mt-1 block w-full"
+                    class="mt-1 block w-full uppercase"
                     required
-                    autocomplete="name"
+                    autocomplete="firstname"
                 />
-                <InputError :message="form.errors.name" class="mt-2" />
+                <InputError :message="form.errors.firstname" class="mt-2" />
+            </div>
+            
+            <div class="col-span-6 sm:col-span-3">
+                <InputLabel for="lastname" value="Lastname" />
+                <TextInput
+                    id="lastname"
+                    v-model="form.lastname"
+                    type="text"
+                    class="mt-1 block w-full uppercase"
+                    required
+                    autocomplete="lastname"
+                />
+                <InputError :message="form.errors.lastname" class="mt-2" />
             </div>
 
             <!-- Email -->
-            <div class="col-span-6 sm:col-span-4">
+            <div class="col-span-6 sm:col-span-3">
                 <InputLabel for="email" value="Email" />
                 <TextInput
                     id="email"
