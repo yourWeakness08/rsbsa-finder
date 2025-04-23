@@ -16,7 +16,7 @@
 
     import Select2 from 'vue3-select2-component';
 
-    import { Link, router, useForm } from '@inertiajs/vue3';
+    import { Link, router, useForm, usePage } from '@inertiajs/vue3';
     import axios from 'axios';
     import moment from 'moment';
     import Swal from 'sweetalert2';
@@ -34,6 +34,10 @@
         auth: {
             type: Object,
             default: () => ({}),
+        },
+        farmers: {
+            type: Array,
+            default: () => ({})
         },
     });
 
@@ -90,67 +94,185 @@
         return _path;
     }
 
-    const createUserDialog = ref(false);
-    const editUserDialog = ref(false);
+    let createUserDialog = ref(false);
+    let editUserDialog = ref(false);
 
     const addform = useForm({
+        farmer_id: 0,
         firstname: '',
         lastname: '',
         email: '',
         password: '',
-        password_confirmation: '',
-        role: ''
+        role: '',
+        user_id: 0
     });
 
     const closeModal = () => {
-        addForm.reset();
+        addform.reset();
+
+        isMember.value = false;
+        createUserDialog.value = false;
     }
 
     const role = ref([
+        { id: 1, text: 'ADMINISTRATOR' },
         { id: 0, text: 'MEMBER' },
-        { id: 1, text: 'ADMINISTRATOR' }
     ])
 
     let isMember = ref(false);
-    const farmersOptions = ref([]);
     const farmersLoaded = ref(false)
-    const farmerSelect = ref(null)
 
     const handleSelect = (event) => {
         const selectedValue = event.id;
 
-        isMember = selectedValue != 1;
+        isMember.value = selectedValue != 1;
+
+        addform.firstname = '';
+        addform.lastname = '';
+        addform.farmer_id = 0;
     }
 
-    const fetchFarmers = async () => {
-        try {
-            const response = await axios.get('/farmers/get_select2_farmers'); // or route from Laravel controller
-            console.log(response);
-        } catch (error) {
-            console.error(error);
-        }
+    const handleName = (event) => {
+        const selectedValue = event;
+
+        addform.firstname = selectedValue.firstname;
+        addform.lastname = selectedValue.lastname;
     }
 
-    onMounted(() => {
-        nextTick(() => {
-            const interval = setInterval(() => {
-                const $select = $('#farmerSelect')
+    let recentlySuccessful = ref(false);
+    let recentlyFailed = ref(false);
+    let processing = ref(false);
 
-                if ($select.data('select2')) {
-                    $select.on('select2:opening', () => {
-                        fetchFarmers()
-                    })
+    const submitNewUser = () => {
+        const { id } = props.auth.user;
 
-                    clearInterval(interval) // prevent running again
+        addform.user_id = id;
+
+        addform.post(route('users.store'), {
+            onProgress: () => processing.value = true,
+            onSuccess: () => {
+                const page = usePage();
+                const response = page.props.flash?.response;
+
+                if (response.state) {
+                    recentlySuccessful.value = true;
+                    processing.value = false;
+
+                    setTimeout(() => { closeModal(); }, 800);
+                    setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                    addform.reset();
+                } else {
+                    recentlyFailed.value = true;
+                    processing.value = false;
+
+                    setTimeout(() => { recentlyFailed.value = false; }, 1500);
                 }
-            }, 100) // retry every 100ms until Select2 is ready
-        })
-    })
+            }
+        });
+    }
+
+    const editform = useForm({
+        id: 0,
+        farmer_id: 0,
+        firstname: '',
+        lastname: '',
+        email: '',
+        password: '',
+        role: '',
+        user_id: 0
+    });
+
+    const setFormUserData = ( user => {
+        editUserDialog.value = true;
+
+        editform.id = user.id;
+        editform.farmer_id = user.farmer_id;
+        editform.firstname = user.firstname;
+        editform.lastname = user.lastname;
+        editform.email = user.email;
+        editform.role = user.role;
+
+        console.log(user.role);
+
+        isMember.value = user.role != 1;
+    });
+
+    const closeEditModal = () => {
+        editform.reset();
+
+        isMember.value = false;
+        editUserDialog.value = false;
+    }
+
+    const submitEditUser = () => {
+        const { id } = props.auth.user;
+
+        editform.user_id = id;
+
+        editform.put(route('users.update', editform.id), {
+            onProgress: () => processing.value = true,
+            onSuccess: () => {
+                const page = usePage();
+                const response = page.props.flash?.response;
+
+                if (response.state) {
+                    recentlySuccessful.value = true;
+                    processing.value = false;
+
+                    setTimeout(() => { closeEditModal(); }, 800);
+                    setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                    editform.reset();
+                } else {
+                    recentlyFailed.value = true;
+                    processing.value = false;
+
+                    setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                }
+            }
+        });
+    }
+
+    const archiveUser = (_id) => {
+        const { id } = props.auth.user;
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will be permanently deleted. You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                axios.put(route('users.archive_user', _id), { id: id }, {
+                    headers: { 'Accept' : 'application/json' }
+                }).then(async (response) => {
+                    const result = response.data;
+
+                    Swal.fire({
+                        icon: result.state ? 'success' : 'error',
+                        text: result.message
+                    });
+
+                    if (result.state) {
+                        router.reload({ only: ['users'] });
+                    }
+                });
+            }
+        });
+    }
 </script>
 
 <style>
-    #newUserType .col-md-6{
+    #newUserType .col-md-6, #editUserType .col-md-6{
         flex: 0 0 49% !important;
+    }
+
+    #farmerSelect ~ .select2-container .select2-selection--single .select2-selection__rendered {
+        padding-top: 7px !important;
+        padding-bottom: 5px !important;
     }
 </style>
 
@@ -200,7 +322,7 @@
                                         <tr class="bg-white border-b" v-for="users in users.data" :key="users.id">
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-1/12">
                                                 <div class="border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300">
-                                                    <img :src="formatProfile(users)" :alt="users.firstname" class="h-16 w-16 rounded-full object-cover ml-auto mr-auto">
+                                                    <img :src="formatProfile(users)" :alt="users.firstname" class="h-12 w-12 rounded-full object-cover ml-auto mr-auto">
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
@@ -213,7 +335,7 @@
                                                 {{ (users.role == 1) ? 'Administrator' : 'Member' }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(types)">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)">
                                                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -230,7 +352,7 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(types.id)">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveUser(users.id)">
                                                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -246,7 +368,7 @@
                                         <tr class="bg-white border-b" v-for="users in users.data" :key="users.id">
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-1/12">
                                                 <div class="border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300">
-                                                    <img :src="formatProfile(users)" :alt="users.name" class="h-16 w-16 rounded-full object-cover ml-auto mr-auto">
+                                                    <img :src="formatProfile(users)" :alt="users.name" class="h-12 w-12 rounded-full object-cover ml-auto mr-auto">
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
@@ -259,7 +381,7 @@
                                                 {{ (users.role == 1) ? 'Administrator' : 'Member' }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(types)">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)">
                                                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -276,7 +398,7 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(types.id)">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveUser(users.id)">
                                                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -342,33 +464,104 @@
                             <div class="mb-4">
                                 <InputLabel for="farmer" value="Farmer" :required="true" />
                                 <div class="rounded-md block w-full">
-                                    <Select2 class="h-10 uppercase" id="farmerSelect" ref="farmerSelect" :options="farmersOptions" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#newUserType') }" />
+                                    <Select2 class="h-10 uppercase" id="farmerSelect" v-model="addform.farmer_id" :options="farmers" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#newUserType') }" @select="handleName" />
                                 </div>
+                                <InputError class="mt-2" :message="addform.errors.farmer_id" />
                             </div>
                         </template>
 
                         <div class="flex flex-wrap justify-between mb-4">
                             <div class="col-md-6">
                                 <InputLabel for="firstname" value="Firstname" :required="true" />
-                                <TextInput v-model="addform.firstname" type="text" class="mt-1 block w-full uppercase" placeholder="Enter Firstname" autocomplete="off" :disabled="isMember ? true : false" />
-                                <InputError class="mt-2" :message="addform.errors.lastname" />
+                                <TextInput v-model="addform.firstname" type="text" class="mt-1 block w-full uppercase" autocomplete="off" :disabled="isMember ? true : false" />
+                                <InputError class="mt-2" :message="addform.errors.firstname" />
                             </div>
                             <div class="col-md-6">
                                 <InputLabel for="lastname" value="Lastname" :required="true" />
-                                <TextInput v-model="addform.lastname" type="text" class="mt-1 block w-full uppercase" placeholder="Enter Lastname" autocomplete="off" :disabled="isMember ? true : false"  />
-                                <InputError class="mt-2" :message="addform.errors.firstname" />
+                                <TextInput v-model="addform.lastname" type="text" class="mt-1 block w-full uppercase" autocomplete="off" :disabled="isMember ? true : false"  />
+                                <InputError class="mt-2" :message="addform.errors.lastname" />
                             </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <InputLabel for="email" value="Email" :required="true" />
+                            <TextInput id="email" v-model="addform.email" type="email" class="mt-1 block w-full" autocomplete="off" />
+                            <InputError class="mt-2" :message="addform.errors.email" />
+                        </div>
+
+                        <div class="mt-4">
+                            <InputLabel for="password" value="Password" :required="true" />
+                            <TextInput id="password" v-model="addform.password" type="password" class="mt-1 block w-full" required autocomplete="off" />
+                            <InputError class="mt-2" :message="addform.errors.password" />
                         </div>
                     </div>
                 </div>
             </template>
             <template #footer>
-                <!-- <ActionMessage :on="form.recentlySuccessful" class="me-3">
+                <ActionMessage :on="recentlySuccessful" class="me-3">
                     User successfully added.
                 </ActionMessage>
-                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': form.processing }" 
-                    :disabled="form.processing" @click="submitNewUser">Save</PrimaryButton>
-                <SecondaryButton @click="closeModal">Close</SecondaryButton> -->
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to add new user.
+                </ActionMessage>
+                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
+                    :disabled="processing" @click="submitNewUser">Save</PrimaryButton>
+                <SecondaryButton @click="closeModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+        
+        <DialogModal id="editUserType" :show="editUserDialog" :max-width="'lg'" @close="closeEditModal">
+            <template #title>
+                Edit User
+            </template>
+            <template #content>
+                <div>
+                    <div class="py-3 lg:py-3 bg-white">
+                        <div class="mb-4">
+                            <InputLabel for="role" value="Role" :required="true" />
+                            <div class="rounded-md block w-full">
+                                <Select2 class="h-10 uppercase" v-model="editform.role" :options="role" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#editUserType') }" />
+                            </div>
+                            <InputError class="mt-2" :message="editform.errors.role" />
+                        </div>
+                        
+                        <div class="flex flex-wrap justify-between mb-4">
+                            <div class="col-md-6">
+                                <InputLabel for="firstname" value="Firstname" :required="true" />
+                                <TextInput v-model="editform.firstname" type="text" class="mt-1 block w-full uppercase" autocomplete="off" :disabled="isMember ? true : false" />
+                                <InputError class="mt-2" :message="editform.errors.firstname" />
+                            </div>
+                            <div class="col-md-6">
+                                <InputLabel for="lastname" value="Lastname" :required="true" />
+                                <TextInput v-model="editform.lastname" type="text" class="mt-1 block w-full uppercase" autocomplete="off" :disabled="isMember ? true : false"  />
+                                <InputError class="mt-2" :message="editform.errors.lastname" />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <InputLabel for="email" value="Email" :required="true" />
+                            <TextInput id="email" v-model="editform.email" type="email" class="mt-1 block w-full" autocomplete="off" />
+                            <InputError class="mt-2" :message="editform.errors.email" />
+                        </div>
+
+                        <div class="mt-4">
+                            <InputLabel for="password" value="Password" :required="true" />
+                            <TextInput id="password" v-model="editform.password" type="password" class="mt-1 block w-full" required autocomplete="off" />
+                            <InputError class="mt-2" :message="addform.errors.password" />
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <ActionMessage :on="recentlySuccessful" class="me-3">
+                    User successfully updated.
+                </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to add update user.
+                </ActionMessage>
+                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
+                    :disabled="processing" @click="submitEditUser">Save</PrimaryButton>
+                <SecondaryButton @click="closeEditModal">Close</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>

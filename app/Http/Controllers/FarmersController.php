@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Farmers;
 use App\Models\FarmerInformation;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -69,18 +70,5 @@ class FarmersController extends Controller
     public function destroy(Farmers $farmers)
     {
         //
-    }
-
-    public function get_select2_farmers(Request $request, Farmers $farmers){
-        $result = array();
-
-        $_farmers = FarmerInformation::select(DB::raw('id, CONCAT(farmer_information.firstname, " ", farmer_information.lastname) as text, farmer_information.firstname, farmer_information.lastname'))
-            ->where('farmer_information.is_archived', 0)->get();
-        
-        if ($_farmers->count() > 0){
-            $result = $_farmers->all();
-        }
-
-        return response()->json($result);
     }
 }

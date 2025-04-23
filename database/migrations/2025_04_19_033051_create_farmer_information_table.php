@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('farmer_information', function (Blueprint $table) {
             $table->id();
             $table->string('ref_no')->nullable();
-            $table->text("file_path")->nullable();
+            $table->text("farmer_image")->nullable();
             $table->string('firstname');
             $table->string('lastname');
             $table->string('middlename')->nullable();

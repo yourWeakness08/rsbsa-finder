@@ -118,33 +118,13 @@ class FarmingTypeController extends Controller
             $resultset["message"] = "This is a required field.";
         }
         
-        return $resultset;
+        return response()->json($resultset);
     }
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(Request $request, $id, FarmingType $farmingType) {
-        $resultset = array();
-
-        if ($id) {
-            $toArchive = $farmingType::find($id);
-            $toArchive->is_archived = 1;
-            $toArchive->archived_by = $request->user_id;
-            $toArchive->archived_at = date('Y-m-d H:i:s');
-            $toArchive->save();
-
-            $farming_type = FarmingType::paginate(25);
-            $resultset["state"] = true;
-            $resultset["updated"] = $toArchive;
-            $resultset["farming_type"] = $farming_type;
-            $resultset['message'] = 'Farming type successfully deleted!';
-        } else {
-            $resultset["state"] = false;
-            $resultset['message'] = 'Failed to delete farming type';
-        }
-
-        return $resultset;
     }
     
     public function archive_type(Request $request, $id, FarmingType $farmingType) {
@@ -167,6 +147,6 @@ class FarmingTypeController extends Controller
             $resultset['message'] = 'Failed to delete farming type';
         }
 
-        return $resultset;
+        return response()->json($resultset);
     }
 }

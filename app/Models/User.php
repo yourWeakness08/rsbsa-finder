@@ -24,10 +24,13 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'farmer_id',
         'firstname',
         'lastname',
         'email',
         'password',
+        'role',
+        'profile_photo_path',
         'is_archived',
         'archived_by',
         'archived_at',
