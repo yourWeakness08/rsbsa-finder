@@ -125,9 +125,11 @@ const formatProfile = (user) => {
                     />
                 </div>
 
-                <SecondaryButton class="mt-2 me-2" type="button" @click.prevent="selectNewPhoto">
-                    Select A New Photo
-                </SecondaryButton>
+                <template v-if="$page.props.auth.user.role == 1 && $page.props.auth.user.farmer_id == 0">
+                    <SecondaryButton class="mt-2 me-2" type="button" @click.prevent="selectNewPhoto">
+                        Select A New Photo
+                    </SecondaryButton>
+                </template>
 
                 <SecondaryButton
                     v-if="user.profile_photo_path"
@@ -143,7 +145,7 @@ const formatProfile = (user) => {
 
             <!-- Name -->
             <div class="col-span-6 sm:col-span-3">
-                <InputLabel for="name" value="Firstname" />
+                <InputLabel for="name" value="Firstname" :required="true" />
                 <TextInput
                     id="name"
                     v-model="form.firstname"
@@ -151,12 +153,13 @@ const formatProfile = (user) => {
                     class="mt-1 block w-full uppercase"
                     required
                     autocomplete="firstname"
+                    :isReadonly="$page.props.auth.user.role == 1 && $page.props.auth.user.farmer_id == 0 ? false : true"
                 />
                 <InputError :message="form.errors.firstname" class="mt-2" />
             </div>
             
             <div class="col-span-6 sm:col-span-3">
-                <InputLabel for="lastname" value="Lastname" />
+                <InputLabel for="lastname" value="Lastname" :required="true" />
                 <TextInput
                     id="lastname"
                     v-model="form.lastname"
@@ -164,6 +167,7 @@ const formatProfile = (user) => {
                     class="mt-1 block w-full uppercase"
                     required
                     autocomplete="lastname"
+                    :isReadonly="$page.props.auth.user.role == 1 && $page.props.auth.user.farmer_id == 0 ? false : true"
                 />
                 <InputError :message="form.errors.lastname" class="mt-2" />
             </div>
