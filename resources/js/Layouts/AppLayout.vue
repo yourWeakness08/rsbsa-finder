@@ -33,7 +33,7 @@
 </script>
 
 <template>
-    <div style="position: fixed; max-width: 100% !important; width: 100%;">
+    <div class="fixed w-full">
         <Head :title="title" />
 
         <Banner />
