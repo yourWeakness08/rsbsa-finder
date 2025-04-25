@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('others_farmer_information', function (Blueprint $table) {
             $table->id();
             $table->integer('farmer_id')->default(0);
+            $table->integer('mothers_maiden_name')->nullable();
             $table->integer('is_household_head')->default(1)->comment('0 = No; 1 = Yes');
             $table->text('name_if_not_head')->nullable();
             $table->string('is_not_head_relationship')->nullable();

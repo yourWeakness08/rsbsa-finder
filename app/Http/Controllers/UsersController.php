@@ -22,7 +22,7 @@ class UsersController extends Controller
     public function index(Request $request) {
         DB::enableQueryLog();
 
-        $paginate = $request->paginate ? intval($request->paginate): 25;
+        $paginate = $request->paginate ? intval($request->paginate): 10;
         $users = User::where(function($query) use($request){
             if($request->search){
                 $query->where('users.firstname', 'like', '%'.$request->search.'%')

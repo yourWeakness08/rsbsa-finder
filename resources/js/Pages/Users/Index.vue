@@ -45,7 +45,7 @@
     const searchValue = ref(null);
     const debouncedSearch = ref('');
 
-    const pages = ref([ 25, 50, 100, 200, 'All']);
+    const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
     const handleSearch = proxy.$debounce((val) => {
         const { value } = pageValue;
@@ -279,7 +279,7 @@
 <template>
     <AppLayout title="Users">
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-md text-gray-800 leading-tight">
                 USERS
             </h2>
         </template>

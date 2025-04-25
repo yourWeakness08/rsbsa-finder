@@ -29,7 +29,7 @@
 
               DASHBOARD
             </NavLink>
-            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :href="route('farmers.index')" :active="route().current('farmers.index')" style="border-bottom: 0 !important">
+            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :href="route('farmers.index')" :active="route().current('farmers.index') || route().current('farmers.create')" style="border-bottom: 0 !important">
               <svg fill="#000000" class="w-5 h-5" viewBox="0 0 14 14" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>

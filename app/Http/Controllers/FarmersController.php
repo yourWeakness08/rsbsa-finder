@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Farmers;
 use App\Models\FarmerInformation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,10 +16,33 @@ class FarmersController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request) {
-        $users = array();
+        $paginate = $request->paginate ? intval($request->paginate): 10;
+        $farmer = FarmerInformation::where(function($query) use($request){
+            if($request->search){
+                $query->where('farmer_information.firstname', 'like', '%'.$request->search.'%')
+                ->orWhere('farmer_information.lastname', 'like', '%'.$request->search.'%')
+                ->orWhere('farmer_information.middlename', 'like', '%'.$request->search.'%');
+            }
+        })
+        ->where('is_archived', 0)
+        ->paginate($paginate);
+        $farmer->appends(['paginate' => $paginate]);
+        
+        if($request->paginate == 'All'){ 
+            $farmer = FarmerInformation::where(function($query) use($request){
+                if($request->search){
+                    $query->where('farmer_information.firstname', 'like', '%'.$request->search.'%')
+                ->orWhere('farmer_information.lastname', 'like', '%'.$request->search.'%')
+                ->orWhere('farmer_information.middlename', 'like', '%'.$request->search.'%');
+                }
+            })
+            ->where('is_archived', 0)
+            ->get();
+            $farmer->all();
+        }
 
         return Inertia::render(
-            'Farmers/Index', [ 'users' => $users, 'filter' => $request ]
+            'Farmers/Index', [ 'farmer' => $farmer, 'filter' => $request ]
         );
     }
 
@@ -29,7 +51,9 @@ class FarmersController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render(
+            'Farmers/Create'
+        );
     }
 
     /**

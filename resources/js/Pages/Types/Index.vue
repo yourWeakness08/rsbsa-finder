@@ -41,7 +41,7 @@
     const searchValue = ref(null);
     const debouncedSearch = ref('');
 
-    const pages = ref([ 25, 50, 100, 200, 'All']);
+    const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
     const submitFilter = () => {
         const { value } = pageValue;
@@ -264,7 +264,7 @@
 <template>
     <AppLayout title="Farming types">
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-md text-gray-800 leading-tight">
                 FARMING TYPES
             </h2>
         </template>
@@ -390,7 +390,7 @@
                                     </template>
                                     <template v-else>
                                         <tr class="bg-white border-b">
-                                            <th colspan="5" id="no-data-found" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No Data Found!</th>
+                                            <th colspan="4" id="no-data-found" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No Data Found!</th>
                                         </tr>
                                     </template>
                                 </tbody>
