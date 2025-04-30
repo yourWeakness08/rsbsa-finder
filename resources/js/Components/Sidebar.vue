@@ -7,11 +7,11 @@
 <template>
     <div class="flex">
       <!-- Backdrop -->
-      <div
+      <!-- <div
         :class="isOpen ? 'block' : 'hidden'"
         @click="isOpen = false"
         class="fixed inset-0 z-20 transition-opacity bg-black opacity-50 lg:hidden"
-      ></div>
+      ></div> -->
       <!-- End Backdrop -->
   
       <div class="-translate-x-full ease-in fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-white lg:translate-x-0 lg:static lg:inset-0">

@@ -8,24 +8,35 @@
         currentImageUrl: String,
     })
 
-    const emit = defineEmits(['uploaded'])
+    const emit = defineEmits(['fileSelected'])
 
     const dropzoneRef = ref(null)
     const uploadedImage = ref(props.currentImageUrl || null)
+    const selectedFile = ref(null)
 
     onMounted(() => {
         nextTick(() => {
             if (dropzoneRef.value) {
                 const dz = new Dropzone(dropzoneRef.value, {
                     url: props.uploadUrl,
+                    autoProcessQueue: false,
                     maxFiles: 1,
                     acceptedFiles: 'image/*',
                     clickable: '.upload-trigger', // trigger hidden input via overlay icon
                     previewsContainer: false, // disables default preview
-                    success: (file, response) => {
-                        uploadedImage.value = response.fileUrl // Adjust as per your API
-                        emit('uploaded', response)
-                    },
+                    autoQueue: false,
+                })
+
+                dz.on("addedfile", file => {
+                    
+                    selectedFile.value = file
+                    emit('fileSelected', file)
+                    
+                    const reader = new FileReader()
+                    reader.onload = e => {
+                        uploadedImage.value = e.target.result
+                    }
+                    reader.readAsDataURL(file)
                 })
             }
         })
@@ -34,9 +45,9 @@
 
 
 <template>
-    <div class="relative w-40 h-40 rounded-md border border-gray-300">
+    <div class="relative md:w-35 md:h-35 2xl:w-40 2xl:h-40 rounded-md border border-gray-300">
         <!-- Circular Image -->
-        <img :src="uploadedImage || '/storage/images/no-user-image.png'" alt="Profile" class="w-full h-full object-contain " style="scale: 0.9;" />
+        <img :src="uploadedImage" alt="Profile" class="w-full h-full object-contain " style="scale: 0.9;" />
 
         <!-- Upload Overlay -->
         <div class="absolute rounded-md inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer upload-trigger">

@@ -1,5 +1,8 @@
 <script setup>
-    import { ref, reactive, computed, getCurrentInstance, watch, onMounted } from 'vue';
+    import useValidationHelpers from '@/composables/useValidationHelpers'
+    import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick } from 'vue';
+    import useVuelidate from '@vuelidate/core';
+    import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
     import AppLayout from '@/Layouts/AppLayout.vue';
     import DialogModal from '@/Components/DialogModal.vue';
 
@@ -19,13 +22,15 @@
 
     import Select2 from 'vue3-select2-component';
 
-    import { Link, router, useForm, usePage } from '@inertiajs/vue3';
+    import { Link, router, usePage, useForm } from '@inertiajs/vue3';
     import axios from 'axios';
-    import moment from 'moment';
+    import daterangepicker from 'daterangepicker';
+
     import Swal from 'sweetalert2';
+    import Inputmask from 'inputmask';
     
     import $ from 'jquery';
-
+    
     const routeName = 'create-farmer' // Optional: could be dynamic
     const STORAGE_KEY = `form-data-${routeName}`;
 
@@ -46,32 +51,49 @@
     const pageValue = ref(null);
     const searchValue = ref(null);
     const debouncedSearch = ref('');
+    const submitted = ref(false);
+    let is_not_head = ref('');
+    let gov_id = ref('');
+    let is_mem = ref('');
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
     const form = useForm({
-        surname: '', 
+        image: [],
+        ref_no: '',
+        lastname: '', 
         firstname: '', 
         middlename: '', 
         suffix: '', 
-        sex: '',
+        gender: '',
+        lot: '',
+        street: '',
+        brgy: '',
+        muni_city: '',
+        province: '',
+        region: '',
+        contact: '',
         birth: '', 
         birthplace: '', 
         religion: '',
-        contact: '',
         civil_status: '', 
         spouse: '',
         mother_maiden_name: '',
         is_household_head: '',
         household_head_name: '',
         head_relationship: '',
+        members_no: '',
         no_of_male: '',
         no_of_female: '',
         education: '',
         is_pwd: '',
         is_4ps: '',
         has_gov_id: '',
+        gov_id_no: '',
         is_farmer_member: '',
+        asocc_name: '',
+        person_emergency: '',
+        contact_emergency: '',
         main_livelihood: [],
         farmer: [],
         farm_worker: [],
@@ -103,11 +125,94 @@
         ]
     });
 
+    watch(() => form.is_household_head, (val) => {
+        is_not_head.value = val == 0 ? true : false;
+        
+        v$.value.household_head_name.$reset()
+        v$.value.head_relationship.$reset()
+        form.household_head_name = ''
+        form.head_relationship = ''
+    })
+    
+    watch(() => form.has_gov_id, (val) => {
+        gov_id.value = val == 1 ? true : false;
+        
+        v$.value.gov_id_no.$reset()
+        form.gov_id_no = ''
+    })
+    
+    watch(() => form.is_farmer_member, (val) => {
+        is_mem.value = val == 1 ? true : false;
+        
+        v$.value.asocc_name.$reset()
+        form.asocc_name = ''
+    })
+
+    const phoneFormat = helpers.regex(/^\(09\) \d{4}-\d{5}$/)
+    const refNoFormat = helpers.regex(/^\d{2}-\d{2}-\d{2}-\d{3}-\d{3}$/)
+    const personalInfo = {
+        image: { required },
+        ref_no: { required, exactLength: minLength(12), refNoFormat },
+        lastname: { required },
+        firstname: { required },
+        middlename: {},
+        suffix: {},
+        gender: { required },
+        lot: {},
+        street: {},
+        brgy: { required },
+        muni_city: { required },
+        province: { required },
+        region: { required },
+        contact: { required, exactLength: minLength(11), phoneFormat },
+        birth: { required },
+        birthplace: { required },
+        religion: {},
+        civil_status: { required },
+        spouse: {
+            required: requiredIf(() =>
+                ['Married', 'Widowed'].includes(form.civil_status)
+            )
+        },
+        mother_maiden_name: { required },
+        is_household_head: { required },
+        household_head_name: {
+            required: requiredIf(is_not_head)
+        },
+        head_relationship: {
+            required: requiredIf(is_not_head)
+        },
+        members_no: { required },
+        no_of_male: { required },
+        no_of_female: { required },
+        education: { required },
+        is_pwd: { required },
+        is_4ps: { required },
+        has_gov_id: { required },
+        gov_id_no: {
+            required: requiredIf(gov_id)
+        },
+        is_farmer_member: { required },
+        asocc_name: {
+            required: requiredIf(is_mem)
+        },
+        person_emergency: { required },
+        contact_emergency: { required, exactLength: minLength(11), phoneFormat },
+    }
+
     const dateFormat = (date) => {
         return moment(date).format('MMM. DD, YYYY hh:mm A');
     }
 
-    const step = ref(1);
+    const step = ref(0);
+
+    const rules = computed(() => {
+        if (step.value == 0) return personalInfo
+        return {}
+    });
+
+    const v$ = useVuelidate(rules, form)
+
     const stepLabels = ['PERSONAL INFORMATION', 'FARM DETAILS', 'VIEW DETAILS'];
 
     const setStep = (index) => {
@@ -115,12 +220,13 @@
     }
 
     const goToNext = () => {
+        v$.value.$touch();
         if (step.value < stepLabels.length - 1) {
-            step.value++
+            if (!v$.value.$invalid) {
+                step.value++
+            }
 
             // localStorage.setItem(STORAGE_KEY, JSON.stringify(form.data()))
-
-            console.log(form);
         }
     }
 
@@ -143,6 +249,9 @@
         const selectedValue = event.id;
 
         isMarried.value = (selectedValue == 'Married' || selectedValue == 'Widowed') ? true : false;
+
+        v$.value.spouse.$reset();
+        form.spouse = ''
     }
 
     const education = ref([
@@ -170,6 +279,38 @@
                 console.error('Error restoring form:', e)
             }
         }
+
+        const ref_no = new Inputmask({
+            mask: "99-99-99-999-999",
+	        alias: 'reference_no'
+        })
+        ref_no.mask($("#ref_no"));
+
+        const contact = new Inputmask({
+            mask: "(0\\9) 9999-99999",
+	        alias: 'phonenumber'
+        })
+        contact.mask($("#contact"));
+
+        const emergency = new Inputmask({
+            mask: "(0\\9) 9999-99999",
+	        alias: 'phonenumber'
+        })
+        emergency.mask($("#contact-emergency"));
+
+        $('#birth').daterangepicker({
+            opens: 'left',
+            locale: {
+                format: 'YYYY-MM-DD',
+            },
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: false,
+        }).on('apply.daterangepicker', function(ev, picker){
+            $(this).val(picker.startDate.format('YYYY-MM-DD'))
+
+            form.birth = moment(picker.startDate.format('YYYY-MM-DD')).format('YYYY-MM-DD');
+        });
     });
 
     const main_livelihood = ref([
@@ -285,7 +426,23 @@
     const removeFarmParcel = (index) => {
         form.farm_parcel.splice(index, 1);
     }
+
+    function handleImageSelected(file) {
+        form.image = file // attach file to form
+    }
+
+    const { hasError, inputBorderClass } = useValidationHelpers(v$, form, { autoTouch: true })
 </script>
+
+<style>
+    .valid {
+        border-color: green;
+    }
+
+    .invalid {
+        border-color: red;
+    }
+</style>
 
 <template>
     <AppLayout title="Create Farmer">
@@ -307,51 +464,84 @@
                             <Stepper :currentStep="step" :steps="stepLabels" @step-selected="setStep" />
                         </div>
 
-                        <div class="sm:w-full sm:w-full md:w-5/6 lg:w-[85%] mx-auto px-2">
+                        <div class="sm:w-full md:w-12/12 lg:w-[95%] xl:w-[90%] 2xl:w-[85%] mx-auto px-2">
                             <!-- Form logic here -->
                             <div v-if="step === 0">
+                            
+                                <div class="flex flex-wrap">
+                                    <div class="w-6/12">
+                                        <div class="flex flex-wrap items-center gap-6 mt-3">
+                                            <InputLabel for="ref_no" value="Reference / Control No." :required="true" class="sm:w-full md:w-[18%]  md:w-[16%] lg:w-[18%] 2xl:w-[26%] mb-0" />
+                                            <TextInput type="text" class="mt-1 block w-full uppercase sm:w-full md:w-[18%]  md:w-[16%] lg:w-[18%] 2xl:w-[40%]" id="ref_no" v-model="form.ref_no" autocomplete="off" 
+                                                @blur="v$.ref_no.$touch()"
+                                                :class="inputBorderClass('ref_no')"
+                                            />
+                                        </div>
+                                        <p v-if="hasError('ref_no')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.ref_no.required?.$invalid">Reference no is required.</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <hr class="my-6 border-t border-gray-500" />
+
                                 <div class="flex flex-wrap items-center">
-                                    <div class="md:w-[18%] mx-auto">
+                                    <div class="sm:w-full md:w-[18%]  md:w-[16%] lg:w-[18%] 2xl:w-[18%] mx-auto">
                                         <InputLabel for="profile" value="Farmer Image" :required="true" />
                                         <DropzoneInput
                                             label="Profile Photo"
-                                            upload-url="/upload/photo"
-                                            @uploaded="(res) => console.log('File path:', res.path)"
+                                            upload-url="/"
+                                            :current-image-url="'/storage/images/no-user-image.png'"
+                                            @fileSelected="handleImageSelected"
                                         />
+                                        <span class="text-red-500 text-sm" v-if="v$.image.$error">Image is required.</span>
                                     </div>
-                                    <div class="md:w-[79%] sm:w-full">
+                                    <div class="sm:w-full md:w-[76%] lg:w-[76%] xl:w-[76%] 2xl:w-[79%]">
                                         <div class="flex flex-wrap justify-between mb-4">
                                             <div class="sm:w-full md:w-[49%]">
                                                 <InputLabel for="firstname" value="First name" :required="true" />
-                                                <TextInput type="text" name="firstname" v-model="form.firstname" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                                <TextInput type="text" name="firstname" v-model="form.firstname" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    @blur="v$.firstname.$touch()"
+                                                    :class="inputBorderClass('firstname')"
+                                                />
+                                                <p v-if="hasError('firstname')" class="text-red-500 text-sm">
+                                                    <span class="text-red-500 text-sm" v-if="v$.firstname.required?.$invalid">First name is required.</span>
+                                                </p>
                                             </div>
                                             <div class="sm:w-full md:w-[49%]">
                                                 <InputLabel for="lastname" value="Last name" :required="true" />
-                                                <TextInput type="text" name="lastname" v-model="form.lastname" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                                <TextInput type="text" name="lastname" v-model="form.lastname" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    @blur="v$.lastname.$touch()"
+                                                    :class="inputBorderClass('lastname')"
+                                                />
+                                                <p v-if="hasError('lastname')" class="text-red-500 text-sm">
+                                                    <span class="text-red-500 text-sm" v-if="v$.firstname.required?.$invalid">Last name is required.</span>
+                                                </p>
                                             </div>
                                         </div>
                                         <div class="flex flex-wrap justify-between">
                                             <div class="sm:w-full md:w-[49%]">
-                                                <InputLabel for="middlename" value="Middle name" :required="true" />
+                                                <InputLabel for="middlename" value="Middle name" />
                                                 <TextInput type="text" name="middlename" v-model="form.middlename" class="mt-1 block w-full uppercase" autocomplete="off" />
                                             </div>
                                             <div class="sm:w-full md:w-2/12">
-                                                <InputLabel for="extension" value="Extension" :required="true" />
+                                                <InputLabel for="extension" value="Extension" />
                                                 <TextInput type="text" name="suffix" v-model="form.suffix" class="mt-1 block w-full uppercase" autocomplete="off" />
                                             </div>
                                             <div class="sm:w-full md:w-[30%] md:p-x-2">
                                                 <InputLabel for="gender" value="Gender" :required="true" />
                                                 <div class="flex flex-wrap items-center mt-3">
-                                                    <label class="md:w-[28%] flex items-center space-x-2 cursor-pointer">
+                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2 cursor-pointer">
                                                         <input type="radio" name="gender" v-model="form.gender" value="male" class="accent-blue-600" />
                                                         <span class="text-gray-700">Male</span>
                                                     </label>
 
-                                                    <label class="md:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
                                                         <input type="radio" name="gender" v-model="form.gender" value="female" class="accent-blue-600" />
                                                         <span class="text-gray-700">Female</span>
                                                     </label>
                                                 </div>
+                                                <span class="text-red-500 text-sm" v-if="v$.gender.$error">Gender is required.</span>
                                             </div>
                                         </div>
                                     </div>
@@ -365,220 +555,340 @@
                                     </div>
                                 </div>
 
-                                <div class="flex flex-wrap items-center justify-between mb-4">
+                                <div class="flex flex-wrap items-start justify-between mb-4">
                                     <div class="md:w-[32.10%] sm:w-full">
-                                        <InputLabel for="house" value="House / Lot / Bldg. No." :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <InputLabel for="house" value="House / Lot / Bldg. No." />
+                                        <TextInput type="text" v-model="form.lot" class="mt-1 block w-full uppercase" autocomplete="off" />
                                     </div>
                                     <div class="md:w-[32.10%] sm:w-full">
-                                        <InputLabel for="street" value="Street / Sitio / Subdv." :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <InputLabel for="street" value="Street / Sitio / Subdv." />
+                                        <TextInput type="text" v-model="form.street" class="mt-1 block w-full uppercase" autocomplete="off" />
                                     </div>
                                     <div class="md:w-[32.10%] sm:w-full">
                                         <InputLabel for="barangay" value="Barangay" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" v-model="form.brgy" class="mt-1 block w-full uppercase" autocomplete="off"
+                                            @blur="v$.brgy.$touch()"
+                                            :class="inputBorderClass('brgy')"
+                                        />
+                                        <p v-if="hasError('brgy')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.brgy.required?.$invalid">Barangay is required is required.</span>
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div class="flex flex-wrap items-center justify-between">
+                                <div class="flex flex-wrap items-start justify-between">
                                     <div class="md:w-[39.10%] sm:w-full">
                                         <InputLabel for="municipality" value="Municipality / City" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" v-model="form.muni_city" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                            @blur="v$.muni_city.$touch()"
+                                            :class="inputBorderClass('muni_city')"
+                                        />
+                                        <p v-if="hasError('muni_city')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.muni_city.required?.$invalid">Municipality / City is required.</span>
+                                        </p>
                                     </div>
                                     <div class="md:w-[39.10%] sm:w-full">
                                         <InputLabel for="province" value="Province" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" v-model="form.province" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                            @blur="v$.province.$touch()"
+                                            :class="inputBorderClass('province')"
+                                        />
+                                        <p v-if="hasError('province')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.province.required?.$invalid">Province is required.</span>
+                                        </p>
                                     </div>
                                     <div class="md:w-[18%] sm:w-full">
                                         <InputLabel for="region" value="Region" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" v-model="form.region" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                            @blur="v$.region.$touch()"
+                                            :class="inputBorderClass('region')"
+                                        />
+                                        <p v-if="hasError('region')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.region.required?.$invalid">Region is required.</span>
+                                        </p>
                                     </div>
                                 </div>
 
                                 <hr class="my-6 border-t border-gray-500" />
 
-                                <div class="flex flex-wrap items-center justify-between mb-4">
+                                <div class="flex flex-wrap items-start justify-between mb-4">
                                     <div class="md:w-[24%] sm:w-full">
                                         <InputLabel for="contact" value="Contact No." :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" class="mt-1 block w-full uppercase" id="contact" v-model="form.contact" autocomplete="off" 
+                                            @blur="v$.contact.$touch()"
+                                            :class="inputBorderClass('contact')"
+                                        />
+                                        <p v-if="hasError('contact')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.contact.required?.$invalid">Contact No. is required.</span>
+                                        </p>
                                     </div>
                                     <div class="md:w-[24%] sm:w-full">
                                         <InputLabel for="birth" value="Date of Birth" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" class="mt-1 block w-full uppercase" id="birth" v-model="form.birth" autocomplete="off" 
+                                            @blur="v$.birth.$touch()"
+                                            :class="inputBorderClass('birth')"
+                                        />
+                                        <p v-if="hasError('birth')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.birth.required?.$invalid">Date of Birth is required.</span>
+                                        </p>
                                     </div>
                                     <div class="md:w-[24%] sm:w-full">
                                         <InputLabel for="birth-place" value="Place of Birth" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" class="mt-1 block w-full uppercase" v-model="form.birthplace" autocomplete="off"
+                                            @blur="v$.birthplace.$touch()"
+                                            :class="inputBorderClass('birthplace')"
+                                        />
+                                        <p v-if="hasError('birthplace')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.birthplace.required?.$invalid">Place of Birth is required.</span>
+                                        </p>
                                     </div>
                                     <div class="md:w-[24%] sm:w-full">
-                                        <InputLabel for="religon" value="Religon" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <InputLabel for="religon" value="Religon" />
+                                        <TextInput type="text" class="mt-1 block w-full uppercase" v-model="form.religion" autocomplete="off" />
                                     </div>
                                 </div>
 
-                                <div class="flex flex-wrap gap-x-4 align-start justify-center mb-4">
+                                <div class="flex flex-wrap gap-x-4 items-start justify-center mb-4">
                                     <div class="md:w-[32%] sm:w-full">
                                         <InputLabel for="civil-status" value="Civil Status" :required="true" />
                                         <div class="rounded-md block w-full mt-1">
-                                            <Select2 class="h-10 uppercase" :options="civil_status" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="civilType" />
+                                            <Select2 class="h-10 uppercase" v-model="form.civil_status" :options="civil_status" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="civilType" />
+                                            <span class="text-red-500 text-sm" v-if="v$.civil_status.$error">Civil Status is required.</span>
                                         </div>
-
                                         <div class="mt-4" v-if="isMarried">
                                             <InputLabel for="spouse-name" value="Name of Spouse" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="text" v-model="form.spouse" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                                @blur="v$.spouse.$touch()"
+                                                :class="inputBorderClass('spouse')"
+                                            />
+                                            <p v-if="hasError('spouse')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.spouse.required?.$invalid">Name of Spouse is required.</span>
+                                            </p>
                                         </div>
                                     </div>
                                     <div class="md:w-[32%] sm:w-full">
                                         <InputLabel for="mother-name" value="Mothers' Maiden Name" :required="true" />
-                                        <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                        <TextInput type="text" class="mt-1 block w-full uppercase" v-model="form.mother_maiden_name" autocomplete="off" 
+                                            @blur="v$.mother_maiden_name.$touch()"
+                                            :class="inputBorderClass('mother_maiden_name')"
+                                        />
+                                        <p v-if="hasError('mother_maiden_name')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.mother_maiden_name.required?.$invalid">Mothers' Maiden Name is required.</span>
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div class="flex flex-wrap gap-x-4 align-start justify-center mb-4">
+                                <div class="flex flex-wrap gap-x-4 items-start justify-center mb-4">
                                     <div class="w-full">
                                         <div class="flex items-center gap-6 mt-3">
-                                            <!-- Label -->
                                             <InputLabel for="household-head" value="Household Head?" :required="true" class="mb-0" />
 
-                                            <!-- Radio buttons -->
                                             <div class="flex items-center gap-4">
                                                 <label class="flex items-center space-x-2 cursor-pointer">
-                                                    <TextInput type="radio" value="1" class="accent-blue-600" name="is_household_head" v-model="form.is_household_head" />
+                                                    <TextInput type="radio" :value="1" class="accent-blue-600" name="is_household_head" v-model="form.is_household_head" />
                                                     <span class="text-gray-700">Yes</span>
                                                 </label>
 
                                                 <label class="flex items-center space-x-2 cursor-pointer">
-                                                    <TextInput type="radio" value="0" class="accent-blue-600" name="is_household_head" v-model="form.is_household_head" />
+                                                    <TextInput type="radio" :value="0" class="accent-blue-600" name="is_household_head" v-model="form.is_household_head" />
                                                     <span class="text-gray-700">No</span>
                                                 </label>
                                             </div>
                                         </div>
+                                        <p v-if="hasError('is_household_head')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.is_household_head.required?.$invalid">Household head is required.</span>
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div class="md:w-6/12 mx-auto sm:w-full mb-4" v-if="form.is_household_head == 0 && form.is_household_head != ''">
+                                <div class="sm:w-full md:w-10/12 lg:w-8/12 xl:w-6/12 2xl:w-6/12 mx-auto mb-4" v-if="form.is_household_head == 0 && form.is_household_head != ''">
                                     <div class="flex flex-wrap align-start justify-between">
                                         <div class="sm:w-full md:w-[49%]">
                                             <InputLabel for="household-head" value="Name of Household Head" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" v-model="form.household_head_name"
+                                                @blur="v$.household_head_name.$touch()"
+                                                :class="inputBorderClass('household_head_name')"
+                                            />
+                                            <p v-if="hasError('household_head_name')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.household_head_name.required?.$invalid">Name of Household head is required.</span>
+                                            </p>
                                         </div>
                                         <div class="sm:w-full md:w-[49%]">
                                             <InputLabel for="relationship" value="Relationship" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" v-model="form.head_relationship" 
+                                                @blur="v$.head_relationship.$touch()"
+                                                :class="inputBorderClass('head_relationship')"
+                                            />
+                                            <p v-if="hasError('head_relationship')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.head_relationship.required?.$invalid">Relationship is required.</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="md:w-8/12 mx-auto sm:w-full mb-4">
-                                    <div class="flex flex-wrap align-start justify-between">
+                                <div class="sm:w-full md:w-full lg:w-12/12 xl:w-11/12 2xl:w-8/12 mx-auto mb-4">
+                                    <div class="flex flex-wrap items-start justify-between">
                                         <div class="sm:w-full md:w-[32%]">
                                             <InputLabel for="living-household-members" value="No. of living household members" :required="true" />
-                                            <TextInput type="number" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="number" v-model="form.members_no" min="0" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                @blur="v$.members_no.$touch()"
+                                                :class="inputBorderClass('members_no')"
+                                            />
+                                            <p v-if="hasError('members_no')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.members_no.required?.$invalid">No. of members is required.</span>
+                                            </p>
                                         </div>
                                         <div class="sm:w-full md:w-[32%]">
                                             <InputLabel for="no-of-male" value="No. of Male" :required="true" />
-                                            <TextInput type="number" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="number" v-model="form.no_of_male" min="0" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                @blur="v$.no_of_male.$touch()"
+                                                :class="inputBorderClass('no_of_male')"
+                                            />
+                                            <p v-if="hasError('no_of_male')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.no_of_male.required?.$invalid">No. of Male is required.</span>
+                                            </p>
                                         </div>
                                         <div class="sm:w-full md:w-[32%]">
                                             <InputLabel for="no-of-female" value="No. of Female" :required="true" />
-                                            <TextInput type="number" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="number" v-model="form.no_of_female" min="0" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                @blur="v$.no_of_female.$touch()"
+                                                :class="inputBorderClass('no_of_female')"
+                                            />
+                                            <p v-if="hasError('no_of_female')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.no_of_female.required?.$invalid">No. of Female is required.</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <hr class="my-6 border-t border-gray-500" />
 
-                                <div class="flex flex-wrap gap-x-5 align-start justify-center mb-4">
-                                    <div class="md:w-[32%] sm:w-full md:mb-4">
+                                <div class="flex flex-wrap sm:gap-x-0 md:gap-x-2 lg:gap-x-3 xl:gap-x-4 2xl:gap-x-5 items-start justify-center mb-4">
+                                    <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                         <InputLabel for="education" value="Highest Formal Education" :required="true" />
                                         <div class="rounded-md block w-full mt-1">
-                                            <Select2 class="h-10 uppercase" :options="education" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="civilType" />
-                                        </div>
-
-                                        <div class="mt-4" v-if="isMarried">
-                                            <InputLabel for="spouse-name" value="Name of Spouse" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <Select2 class="h-10 uppercase" v-model="form.education" :options="education" :settings="{ placeholder: 'Select An Option', width: '100%' }" />
+                                            <p v-if="hasError('education')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.education.required?.$invalid">Education is required.</span>
+                                            </p>
                                         </div>
                                     </div>
-                                    <div class="md:w-[32%] sm:w-full md:mb-4">
+                                    <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                         <InputLabel for="pwd" value="Person with Disability (PWD)" :required="true" />
                                         <div class="flex flex-wrap items-center mt-3">
-                                            <label class="md:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="1" name="is_pwd" v-model="form.is_pwd" class="accent-blue-600" />
                                                 <span class="text-gray-700">Yes</span>
                                             </label>
 
-                                            <label class="md:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="0" name="is_pwd" v-model="form.is_pwd" class="accent-blue-600" />
                                                 <span class="text-gray-700">No</span>
                                             </label>
                                         </div>
+                                        <p v-if="hasError('is_pwd')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.is_pwd.required?.$invalid">PWD is required.</span>
+                                        </p>
                                     </div>
-                                    <div class="md:w-[32%] sm:w-full md:mb-4">
+                                    <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                         <InputLabel for="4ps" value="4P's Beneficiary?" :required="true" />
                                         <div class="flex flex-wrap items-center mt-3">
-                                            <label class="md:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="1" name="is_4ps" v-model="form.is_4ps" class="accent-blue-600" />
                                                 <span class="text-gray-700">Yes</span>
                                             </label>
 
-                                            <label class="md:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="0" name="is_4ps" v-model="form.is_4ps" class="accent-blue-600" />
                                                 <span class="text-gray-700">No</span>
                                             </label>
                                         </div>
+                                        <p v-if="hasError('is_4ps')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.is_4ps.required?.$invalid">4P's Beneficiary is required.</span>
+                                        </p>
                                     </div>
-                                    <div class="md:w-[32%] sm:w-full md:mb-4">
+                                    <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                         <InputLabel for="gov-id" value="With Government ID?" :required="true" />
                                         <div class="flex flex-wrap items-center mt-3">
-                                            <label class="md:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="1" class="accent-blue-600" name="has_gov_id" v-model="form.has_gov_id" />
                                                 <span class="text-gray-700">Yes</span>
                                             </label>
 
-                                            <label class="md:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="0" class="accent-blue-600" name="has_gov_id" v-model="form.has_gov_id" />
                                                 <span class="text-gray-700">No</span>
                                             </label>
                                         </div>
+                                        <p v-if="hasError('has_gov_id')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.has_gov_id.required?.$invalid">Government ID is required.</span>
+                                        </p>
 
                                         <div class="mt-4" v-if="form.has_gov_id == 1">
                                             <InputLabel for="specify_id" value="Specify ID number" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" v-model="form.gov_id_no" autocomplete="off" 
+                                                @blur="v$.gov_id_no.$touch()"
+                                                :class="inputBorderClass('gov_id_no')"
+                                            />
+                                            <p v-if="hasError('gov_id_no')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.gov_id_no.required?.$invalid">Government ID is required.</span>
+                                            </p>
                                         </div>
                                     </div>
-                                    <div class="md:w-[32%] sm:w-full md:mb-4">
+                                    <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                         <InputLabel for="gov-id" value="Member of any Farmers Association / Cooperative?" :required="true" />
                                         <div class="flex flex-wrap items-center mt-3">
-                                            <label class="md:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="1" class="accent-blue-600" name="is_farmer_member" v-model="form.is_farmer_member" />
                                                 <span class="text-gray-700">Yes</span>
                                             </label>
 
-                                            <label class="md:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                            <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
                                                 <TextInput type="radio" value="0" class="accent-blue-600"  name="is_farmer_member" v-model="form.is_farmer_member" />
                                                 <span class="text-gray-700">No</span>
                                             </label>
                                         </div>
+                                        <p v-if="hasError('gov_id_no')" class="text-red-500 text-sm">
+                                            <span class="text-red-500 text-sm" v-if="v$.is_farmer_member.required?.$invalid">Farmers Association is required.</span>
+                                        </p>
 
                                         <div class="mt-4" v-if="form.is_farmer_member == 1">
                                             <InputLabel for="specify_farmer_asso" value="Specify" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" v-model="form.asocc_name" autocomplete="off" 
+                                                @blur="v$.asocc_name.$touch()"
+                                                :class="inputBorderClass('asocc_name')"
+                                            />
+                                            <p v-if="hasError('asocc_name')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.asocc_name.required?.$invalid">Specify Farmers Association is required.</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <hr class="my-6 border-t border-gray-500" />
 
-                                <div class="md:w-6/12 mx-auto sm:w-full mb-4">
-                                    <div class="flex flex-wrap align-start justify-between">
+                                <div class="sm:w-full md:w-10/12 lg:w-10/12 xl:w-8/12 2xl:w-6/12 mx-auto mb-4">
+                                    <div class="flex flex-wrap items-start justify-between">
                                         <div class="sm:w-full md:w-[49%]">
                                             <InputLabel for="person-emergency" value="Person to notify in case of Emergency" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" v-model="form.person_emergency"
+                                                @blur="v$.person_emergency.$touch()"
+                                                :class="inputBorderClass('person_emergency')"
+                                            />
+                                            <p v-if="hasError('person_emergency')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.person_emergency.required?.$invalid">Emergency Person is required.</span>
+                                            </p>
                                         </div>
                                         <div class="sm:w-full md:w-[49%]">
                                             <InputLabel for="contact-emergency-no" value="Contact No." :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" id="contact-emergency" v-model="form.contact_emergency" autocomplete="off" 
+                                                v-mask="'(09) ####-#####'"
+                                                @blur="v$.contact_emergency.$touch()"
+                                                :class="inputBorderClass('contact_emergency')"
+                                            />
+                                            <p v-if="hasError('contact_emergency')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.contact_emergency.required?.$invalid">Emergency Contact No. is required.</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -591,8 +901,8 @@
                                         </div>
                                     </div>
                                     <div class="flex flex-wrap mb-4 justify-center">
-                                        <div class="md:w-9/12">
-                                            <div class="flex flex-wrap items-center justify-center md:gap-x-32">
+                                        <div class="sm:w-full md:w-11/12 lg:w-11/12 xl:w-10/12 2xl:w-9/12">
+                                            <div class="flex flex-wrap items-center justify-center sm:gap-x-6 md:gap-x-7 lg:gap-x-10 xl:gap-x-15 2xl:gap-x-32">
                                                 <div v-for="option in main_livelihood" :key="option.value" class="inline-flex items-center space-x-2" >
                                                     <TextInput type="checkbox" :id="option.value" :value="option.value" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 cursor-pointer" @click="handleLivelihood" :checked="form.main_livelihood.includes(option.value)" />
                                                     <InputLabel :for="option.value" :value="option.label" class="text-sm text-gray-700 cursor-pointer" />
@@ -600,12 +910,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex flex-wrap justify-center items-stretch gap-x-3">
-                                        <div class="bg-white shadow-xl sm:w-full rounded-md" v-if="form.main_livelihood.includes('farmer')"
+                                    <div class="flex flex-wrap lg:justify-start xl:justify-center 2xl:justify-center items-stretch gap-x-3">
+                                        <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="form.main_livelihood.includes('farmer')"
                                             :class="{
-                                                'md:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
-                                                'md:w-[32%]' : form.main_livelihood.length == 3,
-                                                'md:w-[24%]' : form.main_livelihood.length == 4
+                                                'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
+                                                'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : form.main_livelihood.length == 3,
+                                                'md:w-[49%] lg:w-[32%] xl:w-[30%] 2xl:w-[24%]' : form.main_livelihood.length == 4
                                             }"
                                         >
                                             <div class="p-4 lg:p-6 bg-white">
@@ -668,11 +978,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="bg-white shadow-xl sm:w-full rounded-md" v-if="form.main_livelihood.includes('farm_worker')"
+                                        <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="form.main_livelihood.includes('farm_worker')"
                                             :class="{
-                                                'md:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
-                                                'md:w-[32%]' : form.main_livelihood.length == 3,
-                                                'md:w-[22%]' : form.main_livelihood.length == 4
+                                                'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
+                                                'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : form.main_livelihood.length == 3,
+                                                'md:w-[49%] lg:w-[28%] xl:w-[28%] 2xl:w-[22%]' : form.main_livelihood.length == 4
                                             }"
                                         >
                                             <div class="p-4 lg:p-6 bg-white">
@@ -721,11 +1031,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="bg-white shadow-xl sm:w-full rounded-md" v-if="form.main_livelihood.includes('fisherfolks')"
+                                        <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="form.main_livelihood.includes('fisherfolks')"
                                             :class="{
-                                                'md:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
-                                                'md:w-[32%]' : form.main_livelihood.length == 3,
-                                                'md:w-[25%]' : form.main_livelihood.length == 4
+                                                'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
+                                                'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : form.main_livelihood.length == 3,
+                                                'md:w-[49%] lg:w-[36%] xl:w-[36%] 2xl:w-[26%]' : form.main_livelihood.length == 4
                                             }"
                                         >
                                             <div class="p-4 lg:p-6 bg-white">
@@ -788,11 +1098,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="bg-white shadow-xl sm:w-full rounded-md" v-if="form.main_livelihood.includes('agri_youth')"
+                                        <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="form.main_livelihood.includes('agri_youth')"
                                             :class="{
-                                                'md:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
-                                                'md:w-[32%]' : form.main_livelihood.length == 3,
-                                                'md:w-[25%]' : form.main_livelihood.length == 4
+                                                'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
+                                                'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : form.main_livelihood.length == 3,
+                                                'md:w-[49%] lg:w-[33%] xl:w-[33%] 2xl:w-[24%]' : form.main_livelihood.length == 4
                                             }"
                                         >
                                             <div class="p-4 lg:p-6 bg-white">
@@ -871,22 +1181,22 @@
                                 
                                 <div class="mb-6">
                                     <div class="flex flex-wrap items-center justify-between">
-                                        <div class="md:w-5/12 sm:w-full">
+                                        <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-5/12">
                                             <div class="flex flex-wrap items-center">
-                                                <InputLabel for="farm-parcels" class="w-4/12" value="No. of Farm Parcels" :required="true" />
-                                                <TextInput type="number" class="block uppercase w-2/12" autocomplete="off" />
+                                                <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12" value="No. of Farm Parcels" :required="true" />
+                                                <TextInput type="number" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" autocomplete="off" />
                                             </div>
                                         </div>
-                                        <div class="md:w-7/12 sm:w-full">
+                                        <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-7/12">
                                             <div class="flex flex-wrap items-center">
-                                                <InputLabel for="farm-parcels" class="w-4/12 me-4" value="Agrarian Reform Beneficiary (ARB)" :required="true" />
-                                                <div class="flex flex-wrap items-center w-5/12 space-x-3">
-                                                    <label class="md:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                                <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12 me-4" value="Agrarian Reform Beneficiary (ARB)" :required="true" />
+                                                <div class="flex flex-wrap items-center lg:w-4/12 xl:w-4/12 2xl:w-5/12 space-x-3">
+                                                    <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
                                                         <TextInput type="radio" value="1" class="accent-blue-600" />
                                                         <span class="text-gray-700">Yes</span>
                                                     </label>
 
-                                                    <label class="md:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                    <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
                                                         <TextInput type="radio" value="0" class="accent-blue-600" />
                                                         <span class="text-gray-700">No</span>
                                                     </label>
@@ -907,10 +1217,10 @@
                                                         </div>
                                                         <div class="w-3/12">
                                                             <div class="flex flex-wrap gap-x-2 justify-end">
-                                                                <button @click="addFarmParcel" class="bg-green-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-green-600 flex items-center">
+                                                                <button button="button" @click="addFarmParcel" class="bg-green-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-green-600 flex items-center">
                                                                     <span class="text-sm leading-none">Add Farm Parcel</span>
                                                                 </button>
-                                                                <button v-if="index != 0" @click="removeFarmParcel(index)" class="bg-red-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-red-600 flex items-center">
+                                                                <button button="button" v-if="index != 0" @click="removeFarmParcel(index)" class="bg-red-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-red-600 flex items-center">
                                                                     <span class="text-sm leading-none">Remove Farm Parcel</span>
                                                                 </button>
                                                             </div>
@@ -1009,10 +1319,10 @@
                                                                 </td>
                                                                 <td class="p-3 border border-gray-400">
                                                                     <div class="flex flex-wrap gap-x-1 justify-center mt-2">
-                                                                        <button @click="addParcelInfo(index)" class="bg-green-500 text-white px-2 py-1 rounded-full text-sm hover:bg-green-600 flex items-center">
+                                                                        <button button="button" @click="addParcelInfo(index)" class="bg-green-500 text-white px-2 py-1 rounded-full text-sm hover:bg-green-600 flex items-center">
                                                                             <span class="text-lg leading-none">+</span>
                                                                         </button>
-                                                                        <button v-if="i != 0" @click="removeParcelInfo(i, index)" class="bg-red-500 text-white px-2 py-1 rounded-full text-sm hover:bg-red-600 flex items-center">
+                                                                        <button button="button" v-if="i != 0" @click="removeParcelInfo(i, index)" class="bg-red-500 text-white px-2 py-1 rounded-full text-sm hover:bg-red-600 flex items-center">
                                                                             <span class="text-lg leading-none">−</span>
                                                                         </button>
                                                                     </div>

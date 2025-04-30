@@ -30,7 +30,10 @@
             type: Object,
             default: () => ({}),
         },
-        filter: String,
+        filter: {
+            type: Object,
+            default: () => ({}),
+        },
         auth: {
             type: Object,
             default: () => ({}),
@@ -119,11 +122,11 @@
                                     class="text-xs text-gray-700 uppercase">
                                     <tr>
                                         <th scope="col" class="px-6 py-3 w-1/12"></th>
-                                        <th scope="col" class="px-6 py-3">Control #</th>
-                                        <th scope="col" class="px-6 py-3 w-4/12">Farmer Name</th>
-                                        <th scope="col" class="px-6 py-3">Contact #</th>
-                                        <th scope="col" class="px-6 py-3 w-4/12">Created By</th>
-                                        <th scope="col" class="px-6 py-3">&nbsp;</th>
+                                        <th scope="col" class="px-6 py-3 xl:w-2/12 2xl:w-2/12">Control #</th>
+                                        <th scope="col" class="px-6 py-3 xl:w-3/12 2xl:w-[28%]">Farmer Name</th>
+                                        <th scope="col" class="px-6 py-3 xl:w-2/12 2x:w-2/12">Contact #</th>
+                                        <th scope="col" class="px-6 py-3 xl:w-[19%] 2xl:w-[21%]">Created By</th>
+                                        <th scope="col" class="px-6 py-3 w-2/12">&nbsp;</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -236,10 +239,10 @@
                             </table>
                             <div class="mt-6">
                                 <div class="flex flex-row justify-between items-center">
-                                    <div class="md:w-1/12">
+                                    <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-1/12">
                                         <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                     </div>
-                                    <div class="md:w-11/12">
+                                    <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
                                         <ul class="flex items-center justify-end -space-x-px h-8 text-sm">
                                             <li v-for="(link, index) in farmer.links" :key="index">
                                                 <template v-if="index == '0'">

@@ -30,7 +30,10 @@
             type: Object,
             default: () => ({}),
         },
-        filter: String,
+        filter: {
+            type: Object,
+            default: () => ({}),
+        },
         auth: {
             type: Object,
             default: () => ({}),
@@ -419,10 +422,10 @@
                             </table>
                             <div class="mt-6">
                                 <div class="flex flex-row justify-between items-center">
-                                    <div class="md:w-1/12">
+                                    <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-1/12">
                                         <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                     </div>
-                                    <div class="md:w-11/12">
+                                    <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
                                         <ul class="flex items-center justify-end -space-x-px h-8 text-sm">
                                             <li v-for="(link, index) in users.links" :key="index">
                                                 <template v-if="index == '0'">

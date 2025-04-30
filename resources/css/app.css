@@ -1,5 +1,6 @@
 @import 'dropzone/dist/dropzone.css';
 @import 'select2/dist/css/select2.min.css';
+@import 'daterangepicker/daterangepicker.css';
 
 @tailwind base;
 @tailwind components;
