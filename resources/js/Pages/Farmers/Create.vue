@@ -479,6 +479,7 @@
                                         </div>
                                         <p v-if="hasError('ref_no')" class="text-red-500 text-sm">
                                             <span class="text-red-500 text-sm" v-if="v$.ref_no.required?.$invalid">Reference no is required.</span>
+                                            <span class="text-red-500 text-sm" v-if="v$.ref_no.refNoFormat?.$invalid">Invalid Reference Format</span>
                                         </p>
                                     </div>
                                 </div>
@@ -620,6 +621,7 @@
                                         />
                                         <p v-if="hasError('contact')" class="text-red-500 text-sm">
                                             <span class="text-red-500 text-sm" v-if="v$.contact.required?.$invalid">Contact No. is required.</span>
+                                            <span class="text-red-500 text-sm" v-if="v$.contact.phoneFormat?.$invalid">Invalid phone format. Use (09) 1234-56789</span>
                                         </p>
                                     </div>
                                     <div class="md:w-[24%] sm:w-full">
@@ -882,12 +884,12 @@
                                         <div class="sm:w-full md:w-[49%]">
                                             <InputLabel for="contact-emergency-no" value="Contact No." :required="true" />
                                             <TextInput type="text" class="mt-1 block w-full uppercase" id="contact-emergency" v-model="form.contact_emergency" autocomplete="off" 
-                                                v-mask="'(09) ####-#####'"
                                                 @blur="v$.contact_emergency.$touch()"
                                                 :class="inputBorderClass('contact_emergency')"
                                             />
                                             <p v-if="hasError('contact_emergency')" class="text-red-500 text-sm">
                                                 <span class="text-red-500 text-sm" v-if="v$.contact_emergency.required?.$invalid">Emergency Contact No. is required.</span>
+                                                <span class="text-red-500 text-sm" v-if="v$.contact_emergency.phoneFormat?.$invalid">Invalid phone format. Use (09) 1234-56789</span>
                                             </p>
                                         </div>
                                     </div>
