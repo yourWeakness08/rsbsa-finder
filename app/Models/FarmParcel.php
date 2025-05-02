@@ -1,0 +1,13 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class FarmParcel extends Model
+{
+    use HasFactory;
+    protected $table = 'farm_parcels';
+    protected $fillable = ['farm_profile_id', 'brgy', 'city', 'total_farm_area', 'is_whithin_ancentral_domain', 'is_agrarian_reform_beneficiary', 'ownership_type', 'landowner_name', 'is_other', 'uuid'];
+}

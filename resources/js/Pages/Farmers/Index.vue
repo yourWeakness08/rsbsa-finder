@@ -16,7 +16,7 @@
 
     import Select2 from 'vue3-select2-component';
 
-    import { Link, router } from '@inertiajs/vue3';
+    import { Link, router, usePage } from '@inertiajs/vue3';
     import axios from 'axios';
     import moment from 'moment';
     import Swal from 'sweetalert2';
@@ -84,6 +84,38 @@
             only: ['farmers', 'filter']
         });
     }
+
+    const archiveFarmer = (_id) => {
+        const { id } = props.auth.user;
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will be permanently deleted. You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                axios.put(route('farmers.archive_farmer', _id), { id: id }, {
+                    headers: { 'Accept' : 'application/json' }
+                }).then(async (response) => {
+                    const result = response.data;
+
+                    Swal.fire({
+                        icon: result.state ? 'success' : 'error',
+                        text: result.message
+                    });
+
+                    if (result.state) {
+                        router.reload({ only: ['farmer'] });
+                    }
+                });
+            }
+        });
+    }
 </script>
 
 <template>
@@ -121,10 +153,10 @@
                                 <thead
                                     class="text-xs text-gray-700 uppercase">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 w-1/12"></th>
+                                        <th scope="col" class="px-6 py-3 w-2/12"></th>
                                         <th scope="col" class="px-6 py-3 xl:w-2/12 2xl:w-2/12">Control #</th>
                                         <th scope="col" class="px-6 py-3 xl:w-3/12 2xl:w-[28%]">Farmer Name</th>
-                                        <th scope="col" class="px-6 py-3 xl:w-2/12 2x:w-2/12">Contact #</th>
+                                        <th scope="col" class="px-6 py-3 lg:w-1/12 xl:w-2/12 2x:w-2/12">Contact #</th>
                                         <th scope="col" class="px-6 py-3 xl:w-[19%] 2xl:w-[21%]">Created By</th>
                                         <th scope="col" class="px-6 py-3 w-2/12">&nbsp;</th>
                                     </tr>
@@ -134,19 +166,19 @@
                                         <tr class="bg-white border-b" v-for="farmer in farmer.data" :key="farmer.id">
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-1/12">
                                                 <div class="border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300">
-                                                    <img :src="farmer.farmer_image" :alt="farmer.firstname" class="h-12 w-12 rounded-full object-cover ml-auto mr-auto">
+                                                    <img :src="farmer.farmer_image" :alt="farmer.firstname" class="h-16 w-16 rounded-full object-cover ml-auto mr-auto">
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ farmer.ref_no }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-5/12">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ farmer.name }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-5/12">
-                                                {{ farmer.contact }}
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ farmer.mobile_no ?? farmer.tel_no }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-4/12">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 <p class="font-semibold">{{ farmer.created_name }}</p>
                                                 <small>{{ dateFormat(farmer.created_at) }}</small>
                                             </td>
@@ -168,7 +200,7 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(farmer.id)">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveFarmer(farmer.id)">
                                                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -184,19 +216,19 @@
                                         <tr class="bg-white border-b" v-for="farmer in farmer.data" :key="farmer.id">
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-1/12">
                                                 <div class="border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300">
-                                                    <img :src="farmer.farmer_image" :alt="farmer.firstname" class="h-12 w-12 rounded-full object-cover ml-auto mr-auto">
+                                                    <img :src="farmer.farmer_image" :alt="farmer.firstname" class="h-16 w-16 rounded-full object-cover ml-auto mr-auto">
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ farmer.ref_no }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-5/12">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ farmer.name }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-5/12">
-                                                {{ farmer.contact }}
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ farmer.mobile_no ?? farmer.tel_no }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-4/12">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 <p class="font-semibold">{{ farmer.created_name }}</p>
                                                 <small>{{ dateFormat(farmer.created_at) }}</small>
                                             </td>
@@ -218,7 +250,7 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(farmer.id)">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveFarmer(farmer.id)">
                                                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>

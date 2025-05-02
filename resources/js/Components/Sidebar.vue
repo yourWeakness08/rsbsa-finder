@@ -15,12 +15,14 @@
       <!-- End Backdrop -->
   
       <div class="-translate-x-full ease-in fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-white lg:translate-x-0 lg:static lg:inset-0">
-        <Link class="flex items-center justify-center mt-8" :href="route('dashboard')">
-          <ApplicationMark class="block h-9 w-auto" />
-          <span class="mx-2 text-2xl font-semibold">RSBA</span>
+        <Link class="flex flex-wrap items-center justify-center mt-8" :href="route('dashboard')">
+          <div class="w-full">
+            <ApplicationMark class="block h-24 w-24 mx-auto" />
+          </div>
+          <span class="mx-2 text-2xl w-12/12 font-semibold">RSBA</span>
         </Link>
   
-        <nav class="mt-10">
+        <nav class="mt-5">
             <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 mt-4 duration-200 border-r-4" :href="route('dashboard')" :active="route().current('dashboard')" style="border-bottom: 0 !important">
               <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M2 10C2 5.58172 5.58172 2 10 2V10H18C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10Z" fill="currentColor" />

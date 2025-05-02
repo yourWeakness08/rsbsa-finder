@@ -34,3 +34,22 @@ span.select2-selection__placeholder { font-size: 1rem; }
 .required {
     color: #ff0000;
 }
+
+.select2-selection.select2-selection--multiple {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+.select2-selection.select2-selection--multiple .select2--container li{
+    flex: 1 !important
+}
+
+.select2-selection.select2-selection--multiple .select2-search.select2-search--inline textarea{
+    margin-bottom: 5px !important;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove{
+    position: unset !important;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice{
+    padding: 0 !important
+}
