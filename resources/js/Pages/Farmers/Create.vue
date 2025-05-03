@@ -18,7 +18,8 @@
     import PrimaryButton from '@/Components/PrimaryButton.vue';
 
     import Stepper from '@/Components/StepperNavigation.vue';
-    import DropzoneInput from '@/Components/DropzoneProfileInput.vue'
+    import DropzoneInput from '@/Components/DropzoneProfileInput.vue';
+    import Dropzone from '@/Components/Dropzone.vue';
 
     import Select2 from 'vue3-select2-component';
 
@@ -47,7 +48,15 @@
             type: Object,
             default: () => ({}),
         },
+        types: {
+            type: Object,
+            default: () => ({})
+        }
     });
+
+    let mergeTypes = ref([]);
+    mergeTypes = Object.values(props.types).flat();
+    mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
 
     const pageValue = ref(null);
     const searchValue = ref(null);
@@ -384,12 +393,6 @@
                         form[key] = parsed[key]
                     }
                 })
-
-                // const reader = new FileReader()
-                // reader.onload = e => {
-                //     uploadedImage.value = e.target.result
-                // }
-                // reader.readAsDataURL(file)
             } catch (e) {
                 console.error('Error restoring form:', e)
             }
@@ -471,8 +474,16 @@
         if (form.farmer.includes(selectedValue)) {
             const index = form.farmer.indexOf(selectedValue);
             form.farmer.splice(index, 1);
+
+            const _index = mergeTypes.findIndex(item => item.text.toLowerCase() == 'rice');
+            if (_index !== -1) {
+                mergeTypes.splice(_index, 1);
+            }
         } else {
             form.farmer.push(selectedValue);
+            mergeTypes.push({ id: selectedValue, text: selectedValue.toUpperCase() })
+
+            mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
         }
     }
     
@@ -648,6 +659,11 @@
         }
         return text;
     }
+
+    const handleUploadSuccess = (fileData) => {
+        console.log('Uploaded file info:', fileData);
+    // You can now append the uploaded path/id to your form data
+    };
 </script>
 
 <template>
@@ -665,7 +681,7 @@
                         <Link class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white px-1 py-1" :href="route('farmers.index')">
                             Back to Masterfile
                         </Link>
-
+                        <!-- <Dropzone @success="handleUploadSuccess" /> -->
                         <div class="max-w-2xl mx-auto p-6">
                             <Stepper :currentStep="step" :steps="stepLabels" @step-selected="setStep" />
                         </div>
@@ -1154,7 +1170,7 @@
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('crops')">
                                                                 <InputLabel for="crops-specify" value="Specify: " class="me-4" />
                                                                 <div class="rounded-md block mt-1 w-full">
-                                                                    <Select2 class="uppercase" :options="data" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handleCrops" />
+                                                                    <Select2 class="uppercase" :options="types.crops" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handleCrops" />
                                                                 </div>
 
                                                                 <p v-if="hasError('crops')" class="text-red-500 text-sm">
@@ -1171,7 +1187,7 @@
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('livestock')">
                                                                 <InputLabel for="livestock-specify" value="Specify: " class="me-4" />
                                                                 <div class="rounded-md block mt-1 w-full">
-                                                                    <Select2 class="uppercase" :options="data" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handleLivestock" />
+                                                                    <Select2 class="uppercase" :options="types.livestock" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handleLivestock" />
                                                                 </div>
                                                                 <p v-if="hasError('livestock')" class="text-red-500 text-sm">
                                                                     <span class="text-red-500 text-sm" v-if="v$.livestock.required?.$invalid">Crops is required. Please select atleast 1 livestock.</span>
@@ -1187,7 +1203,7 @@
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('poultry')">
                                                                 <InputLabel for="crops-specify" value="Specify: " class="me-4" />
                                                                 <div class="rounded-md block mt-1 w-full">
-                                                                    <Select2 class="uppercase" :options="data" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handlePoultry" />
+                                                                    <Select2 class="uppercase" :options="types.poultry" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handlePoultry" />
                                                                 </div>
                                                                 <p v-if="hasError('poultry')" class="text-red-500 text-sm">
                                                                     <span class="text-red-500 text-sm" v-if="v$.poultry.required?.$invalid">Poultry is required. Please select atleast 1 poultry.</span>
@@ -1658,7 +1674,7 @@
                                                                 <tr v-for="(v, i) in item.farm_parcel_info" :key="i" style="vertical-align: top;">
                                                                     <td class="p-3 border border-gray-400">
                                                                         <div class="rounded-md block w-full">
-                                                                            <Select2 class="h-10 uppercase" v-model="v.commodity" :options="ownership_type" :settings="{ placeholder: 'Select An Option', width: '200px' }" />
+                                                                            <Select2 class="h-10 uppercase" :key="mergeTypes.length" v-model="v.commodity" :options="mergeTypes" :settings="{ placeholder: 'Select An Option', width: '200px' }" />
                                                                         </div>
                                                                         <template v-for="error in v$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
                                                                             <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].commodity.length == 1">

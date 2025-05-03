@@ -20,6 +20,7 @@
                 const dz = new Dropzone(dropzoneRef.value, {
                     url: props.uploadUrl,
                     autoProcessQueue: false,
+                    maxFilesize: 3,
                     maxFiles: 1,
                     acceptedFiles: 'image/*',
                     clickable: '.upload-trigger', // trigger hidden input via overlay icon

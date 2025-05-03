@@ -27,6 +27,8 @@ const submit = () => {
         onFinish: () => form.reset('password'),
     });
 };
+
+console.log(route('login').params);
 </script>
 
 <template>
@@ -34,7 +36,7 @@ const submit = () => {
 
     <AuthenticationCard>
         <template class="flex justify-center" #logo>
-            <AuthenticationCardLogo />
+            <AuthenticationCardLogo :href="'/login'" />
             
             <h4 class="font-semibold uppercase mt-3 text-center">Registry System for Basic Sectors <br> in Agriculture</h4>
         </template>

@@ -9,6 +9,7 @@ use App\Models\FarmParcelInformation;
 use App\Models\User;
 use App\Models\FarmProfile;
 use App\Models\MainLivelihood;
+use App\Models\FarmingType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -67,10 +68,34 @@ class FarmersController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
+    public function create() {
+        
+        $all = FarmingType::select(DB::raw('id, UPPER(name) as text, type'))
+            ->where('is_archived', 0)
+            ->orderBy('text', 'asc')
+            ->get();
+
+        // Define type labels
+        $typeLabels = [
+            1 => 'crops',
+            2 => 'livestock',
+            3 => 'poultry',
+        ];
+
+        // Group by numeric type and map to labels
+        $grouped = collect($typeLabels)->mapWithKeys(function ($label, $type) use ($all) {
+            return [
+                $label => $all->where('type', $type)->values()->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'text' => $item->text,
+                    ];
+                }),
+            ];
+        });
+
         return Inertia::render(
-            'Farmers/Create'
+            'Farmers/Create', ['types' => $grouped]
         );
     }
 
@@ -219,46 +244,40 @@ class FarmersController extends Controller
                     }
                 }
 
-                if(isset($request->farm_worker) && $request->farm_worker) {
-                    if(count($request->farm_worker) > 0) {
-                        foreach($request->farm_worker as $worker) {
-                            MainLivelihood::create([
-                                'farmer_profile_id' => $farm_profile_id,
-                                'main_livelihood' => 'farm_worker',
-                                'meta' => $worker,
-                                'value' => $worker == 'Others' ? $request->farm_worker_others : $worker,
-                                'uuid'  => Str::random(12)
-                            ]);
-                        }
+                if(isset($request->farm_worker) && count($request->farm_worker) > 0) {
+                    foreach($request->farm_worker as $worker) {
+                        MainLivelihood::create([
+                            'farmer_profile_id' => $farm_profile_id,
+                            'main_livelihood' => 'farm_worker',
+                            'meta' => $worker,
+                            'value' => $worker == 'Others' ? $request->farm_worker_others : $worker,
+                            'uuid'  => Str::random(12)
+                        ]);
                     }
                 }
 
-                if(isset($request->fisherfolks) && $request->fisherfolks) {
-                    if(count($request->fisherfolks) > 0) {
-                        foreach($request->fisherfolks as $fisherfolks) {
-                            MainLivelihood::create([
-                                'farmer_profile_id' => $farm_profile_id,
-                                'main_livelihood' => 'farm_worker',
-                                'meta' => $fisherfolks,
-                                'value' => $worfisherfolksker == 'Others' ? $request->fisherfolks_others : $fisherfolks,
-                                'uuid'  => Str::random(12)
-                            ]);
-                        }
+                if(isset($request->fisherfolks) && count($request->fisherfolks) > 0) {
+                    foreach($request->fisherfolks as $fisherfolks) {
+                        MainLivelihood::create([
+                            'farmer_profile_id' => $farm_profile_id,
+                            'main_livelihood' => 'farm_worker',
+                            'meta' => $fisherfolks,
+                            'value' => $worfisherfolksker == 'Others' ? $request->fisherfolks_others : $fisherfolks,
+                            'uuid'  => Str::random(12)
+                        ]);
                     }
                 }
                 
 
-                if(isset($request->agri_youth) && $request->agri_youth) {
-                    if(count($request->agri_youth) > 0) {
-                        foreach($request->agri_youth as $agri_youth) {
-                            MainLivelihood::create([
-                                'farmer_profile_id' => $farm_profile_id,
-                                'main_livelihood' => 'farm_worker',
-                                'meta' => $agri_youth,
-                                'value' => $agri_youth_others == 'Others' ? $request->fisherfolks_others : $agri_youth,
-                                'uuid'  => Str::random(12)
-                            ]);
-                        }
+                if(isset($request->agri_youth) && count($request->agri_youth) > 0) {
+                    foreach($request->agri_youth as $agri_youth) {
+                        MainLivelihood::create([
+                            'farmer_profile_id' => $farm_profile_id,
+                            'main_livelihood' => 'farm_worker',
+                            'meta' => $agri_youth,
+                            'value' => $agri_youth_others == 'Others' ? $request->fisherfolks_others : $agri_youth,
+                            'uuid'  => Str::random(12)
+                        ]);
                     }
                 }
 

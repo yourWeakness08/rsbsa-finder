@@ -21,6 +21,12 @@ use App\Http\Controllers\FarmingTypeController;
 | contains the "web" middleware group. Now create something great!
 |
 */
+Route::get('/finder', function () {
+    return Inertia::render('Finder/Index', [
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
+});
 
 Route::get('/', function () {
     /** commented out to be used later */
