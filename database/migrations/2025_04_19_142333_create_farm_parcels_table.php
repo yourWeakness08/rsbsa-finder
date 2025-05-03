@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('ownership_type')->nullable();
             $table->text('landowner_name')->nullable();
             $table->text('is_other')->nullable();
+            $table->text('farmer_in_rotation_name')->nullable();
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });

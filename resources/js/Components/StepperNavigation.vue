@@ -19,7 +19,7 @@
 
 <template>
     <div class="flex justify-between">
-        <div v-for="(label, index) in steps" :key="index" class="flex items-center space-x-2 cursor-pointer group" @click="goToStep(index)">
+        <div v-for="(label, index) in steps" :key="index" class="flex items-center space-x-2 group" @click="goToStep(index)">
             <div 
                 class="rounded-full w-6 text-center" 
                 :class="{ 

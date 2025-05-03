@@ -33,6 +33,7 @@
     
     const routeName = 'create-farmer' // Optional: could be dynamic
     const STORAGE_KEY = `form-data-${routeName}`;
+    const image_key = `image-${routeName}`;
 
     const { proxy } = getCurrentInstance()
 
@@ -55,6 +56,7 @@
     let is_not_head = ref('');
     let gov_id = ref('');
     let is_mem = ref('');
+    const uploadedImage = ref(null);
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
@@ -120,6 +122,7 @@
                 is_agrarian_reform_beneficiary: null,
                 land_owner_name: null,
                 is_other: null,
+                farmer_in_rotation_name: null,
                 farm_parcel_info: [
                     {
                         commodity: null,
@@ -213,8 +216,6 @@
     const handleOwnership = (index, event) => {
         const selectedValue = event.id;
 
-        console.log(event);
-
         if (selectedValue == 'Tenant' || selectedValue == 'Lesse') {
             ownerType.value = true;
         } else {
@@ -228,13 +229,12 @@
         }
     }
 
-    watch(() => form.farmer, (newVal) => {
-        console.log(newVal);
-    })
-
     const farmInfo = {
         main_livelihood: { required, minLength: minLength(1) },
-        farmer: { required, minLength: minLength(1) },
+        farmer: { 
+            required: requiredIf(() => form.main_livelihood.includes('farmer')),
+            minLength: minLength(1)
+        },
         crops: {
             required: requiredIf(() => form.farmer.includes('crops')),
             minLength: minLength(1)
@@ -247,15 +247,23 @@
             required: requiredIf(() => form.farmer.includes('poultry')),
             minLength: minLength(1)
         },
-        farm_worker: { required, minLength: minLength(1) },
+        farm_worker: { 
+            required: requiredIf(() => form.main_livelihood.includes('farm_worker')),
+            minLength: minLength(1) 
+        },
         farm_worker_others: {
             required: requiredIf(() => form.farm_worker.includes('Others'))
         },
-        fisherfolks: { required, minLength: minLength(1) },
+        fisherfolks: { 
+            required: requiredIf(() => form.main_livelihood.includes('fisherfolks')),
+            minLength: minLength(1) 
+        },
         fisherfolks_others: {
             required: requiredIf(() => form.fisherfolks.includes('Others'))
         },
-        agri_youth: { required, minLength: minLength(1) },
+        agri_youth: { 
+            required: requiredIf(() => form.main_livelihood.includes('agri_youth')),
+            minLength: minLength(1) },
         agri_youth_others: {
             required: requiredIf(() =>  form.agri_youth.includes('Others'))
         },
@@ -276,6 +284,7 @@
                 is_other: {
                     required: requiredIf(ownerOthers)
                 },
+                farmer_in_rotation_name: { required },
                 farm_parcel_info: {
                     $each: helpers.forEach({
                         commodity: { required },
@@ -294,7 +303,7 @@
         return moment(date).format('MMM. DD, YYYY hh:mm A');
     }
 
-    const step = ref(1);
+    const step = ref(0);
 
     const rules = computed(() => {
         if (step.value == 0) return personalInfo
@@ -313,13 +322,16 @@
     }
 
     const goToNext = (event) => {
+        console.log(v$.value);
         v$.value.$touch();
         if (step.value < stepLabels.length - 1) {
             if (!v$.value.$invalid) {
                 step.value++
             }
-
+            // localStorage.removeItem(STORAGE_KEY)
+            // localStorage.removeItem(image_key)
             // localStorage.setItem(STORAGE_KEY, JSON.stringify(form.data()))
+            // localStorage.setItem(image_key, JSON.stringify(uploadedImage.value))
         }
     }
 
@@ -363,20 +375,26 @@
     onMounted(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         
-        // localStorage.removeItem(STORAGE_KEY) remove cached item
+        // localStorage.removeItem(STORAGE_KEY) //remove cached item
         if (saved) {
             try {
                 const parsed = JSON.parse(saved)
                 Object.keys(form.data()).forEach(key => {
                     if (parsed[key] !== undefined) {
-                    form[key] = parsed[key]
+                        form[key] = parsed[key]
                     }
                 })
+
+                // const reader = new FileReader()
+                // reader.onload = e => {
+                //     uploadedImage.value = e.target.result
+                // }
+                // reader.readAsDataURL(file)
             } catch (e) {
                 console.error('Error restoring form:', e)
             }
         }
-        
+
         ref_no = new Inputmask({
             mask: "99-99-99-999-999",
 	        alias: 'reference_no'
@@ -530,6 +548,7 @@
             is_agrarian_reform_beneficiary: null,
             land_owner_name: null,
             is_other: null,
+            farmer_in_rotation_name: null,
             farm_parcel_info: [
                 {
                     commodity: null,
@@ -549,6 +568,12 @@
 
     function handleImageSelected(file) {
         form.image = file // attach file to form
+
+        const reader = new FileReader()
+        reader.onload = e => {
+            uploadedImage.value = e.target.result
+        }
+        reader.readAsDataURL(file)
     }
 
     const { hasError, inputBorderClass, getFieldState } = useValidationHelpers(v$, form, { autoTouch: true })
@@ -614,6 +639,15 @@
             form.poultry.push(selectedValue);
         }
     }
+
+    const formatFarmType = (id) => {
+        let text = '';
+        if (id) {
+            const result = farm_type.value.find(item => item.id == id);
+            text = result.text;
+        }
+        return text;
+    }
 </script>
 
 <template>
@@ -663,7 +697,7 @@
                                             <DropzoneInput
                                                 label="Profile Photo"
                                                 upload-url="/"
-                                                :current-image-url="'/storage/images/no-user-image.png'"
+                                                :current-image-url="uploadedImage ? uploadedImage : '/storage/images/no-user-image.png'"
                                                 @fileSelected="handleImageSelected"
                                             />
                                             <span class="text-red-500 text-sm" v-if="v$.image.$error">Image is required.</span>
@@ -1467,6 +1501,20 @@
                                                         </div>
                                                         <div class="flex flex-wrap justify-between mb-4">
                                                             <div class="w-full">
+                                                                <div class="flex flex-wrap mb-4">
+                                                                    <div class="w-6/12">
+                                                                        <InputLabel for="rotation" value="Name of Farmer(s) in Rotation" :required="true" />
+                                                                        <TextInput type="text" v-model="item.farmer_in_rotation_name" class="mt-1 block w-full uppercase" autocomplete="off"
+
+                                                                            :class="{
+                                                                                'border-gray-300': item.farmer_in_rotation_name == null,
+                                                                                'border-red-500' : item.farmer_in_rotation_name != NULL && v$.farm_parcel.$each.$response.$errors[index].farmer_in_rotation_name.length == 1,
+                                                                                'border-green-500' : item.farmer_in_rotation_name && v$.farm_parcel.$each.$response.$errors[index].farmer_in_rotation_name.length == 0
+                                                                            }"
+                                                                        />
+                                                                        <span class="text-red-500 text-sm" v-for="error in v$.farm_parcel.$each.$response.$errors[index].farmer_in_rotation_name" :key="error">Name of Farmer(s) in Rotation is Required</span>
+                                                                    </div>
+                                                                </div>
                                                                 <div class="flex flex-wrap justify-between gap-x-1">
                                                                     <div class="w-[40%]">
                                                                         <InputLabel for="farm_municipal" value="Municipality" :required="true" />
@@ -1698,7 +1746,7 @@
                                         <div class="sm:w-full md:w-[18%]  md:w-[16%] lg:w-[18%] 2xl:w-[18%] mx-auto">
                                             <InputLabel for="profile" value="Farmer Image" :required="true" />
                                             <div class="relative md:w-35 md:h-35 2xl:w-40 2xl:h-40 rounded-md border border-gray-300">
-                                                <img :src="form.image.length > 0 ? form.image : '/storage/images/no-user-image.png'" alt="" class="w-full h-full object-contain" style="scale: 0.9;">
+                                                <img :src="uploadedImage ? uploadedImage : '/storage/images/no-user-image.png'" alt="" class="w-full h-full object-contain" style="scale: 0.9;">
                                             </div>
                                         </div>
                                         <div class="sm:w-full md:w-[76%] lg:w-[76%] xl:w-[76%] 2xl:w-[79%]">
@@ -1863,12 +1911,12 @@
                                         <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                             <InputLabel for="pwd" value="Person with Disability (PWD)" :required="true" />
                                             <div class="flex flex-wrap items-center mt-3">
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2">
                                                     <TextInput type="radio" value="1" class="accent-blue-600" :checked="form.is_pwd == 1 && form.is_pwd != ''" disabled />
                                                     <span class="text-gray-700">Yes</span>
                                                 </label>
 
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2">
                                                     <TextInput type="radio" value="0" class="accent-blue-600" :checked="form.is_pwd == 0 && form.is_pwd != ''" disabled />
                                                     <span class="text-gray-700">No</span>
                                                 </label>
@@ -1877,12 +1925,12 @@
                                         <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                             <InputLabel for="4ps" value="4P's Beneficiary?" :required="true" />
                                             <div class="flex flex-wrap items-center mt-3">
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2">
                                                     <TextInput type="radio" value="1" class="accent-blue-600" :checked="form.is_4ps == 1 && form.is_4ps != ''" disabled />
                                                     <span class="text-gray-700">Yes</span>
                                                 </label>
 
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2">
                                                     <TextInput type="radio" value="0" class="accent-blue-600" :checked="form.is_4ps == 0 && form.is_4ps != ''" disabled />
                                                     <span class="text-gray-700">No</span>
                                                 </label>
@@ -1891,12 +1939,12 @@
                                         <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                             <InputLabel for="gov-id" value="With Government ID?" :required="true" />
                                             <div class="flex flex-wrap items-center mt-3">
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2">
                                                     <TextInput type="radio" value="1" class="accent-blue-600" :checked="form.has_gov_id == 1 && form.has_gov_id != ''" disabled />
                                                     <span class="text-gray-700">Yes</span>
                                                 </label>
 
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2">
                                                     <TextInput type="radio" value="0" class="accent-blue-600" :checked="form.has_gov_id == 0 && form.has_gov_id != ''" disabled />
                                                     <span class="text-gray-700">No</span>
                                                 </label>
@@ -1910,12 +1958,12 @@
                                         <div class="sm:w-full md:w-[49%] lg:w-[40%] xl:w-[32%] 2xl:w-[30%] md:mb-4">
                                             <InputLabel for="gov-id" value="Member of any Farmers Association / Cooperative?" :required="true" />
                                             <div class="flex flex-wrap items-center mt-3">
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center space-x-2">
                                                     <TextInput type="radio" value="1" class="accent-blue-600" :checked="form.is_farmer_member == 1 && form.is_farmer_member != ''" disabled />
                                                     <span class="text-gray-700">Yes</span>
                                                 </label>
 
-                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                <label class="md:w-[30%] lg:w-[26%] xl:w-[24%] 2xl:w-[20%] flex items-center m-y-0 space-x-2">
                                                     <TextInput type="radio" value="0" class="accent-blue-600" :checked="form.is_farmer_member == 0 && form.is_farmer_member != ''" disabled />
                                                     <span class="text-gray-700">No</span>
                                                 </label>
@@ -2225,11 +2273,11 @@
                                                 <div class="flex flex-wrap justify-between">
                                                     <div class="sm:w-full md:w-[49%]">
                                                         <InputLabel for="farming" value="Farming" :required="true" />
-                                                        <p class="border rounded block p-2 w-full uppercase">{{ form.farming_gross_income ? form.farming_gross_income : '&nbsp;' }}</p>
+                                                        <p class="border rounded block p-2 w-full uppercase">{{ form.farming_gross_income }}</p>
                                                     </div>
                                                     <div class="sm:w-full md:w-[49%]">
                                                         <InputLabel for="non-farming" value="Non-farming" :required="true" />
-                                                        <p class="border rounded block p-2 w-full uppercase">{{ form.non_farming_gross_income ? form.non_farming_gross_income : '&nbsp;' }}</p>
+                                                        <p class="border rounded block p-2 w-full uppercase">{{ form.non_farming_gross_income }}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2250,18 +2298,161 @@
                                                 <div class="flex flex-wrap items-center">
                                                     <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12 me-4" value="Agrarian Reform Beneficiary (ARB)" :required="true" />
                                                     <div class="flex flex-wrap items-center lg:w-4/12 xl:w-4/12 2xl:w-5/12 space-x-3">
-                                                        <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                                        <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center space-x-2">
                                                             <TextInput type="radio" name="is_arb" :checked="form.is_arb == 1 && form.is_arb != ''" value="1" class="accent-blue-600" disabled />
                                                             <span class="text-gray-700">Yes</span>
                                                         </label>
 
-                                                        <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                        <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center m-y-0 space-x-2">
                                                             <TextInput type="radio" name="is_arb" :checked="form.is_arb == 0 && form.is_arb != ''" value="0" class="accent-blue-600" disabled />
                                                             <span class="text-gray-700">No</span>
                                                         </label>
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <div class="overflow-auto w-full">
+                                            <template v-for="(item, index) in form.farm_parcel" :key="index">
+                                                <div :class="form.farm_parcel.length > 0 ? 'mb-4' : 'mb-0'">
+                                                    <div class="p-6 lg:p-8 bg-white border shadow-3xl rounded-lg border-gray-300">
+                                                        <div class="flex flex-wrap justify-between items-center mb-4">
+                                                            <div class="w-3/12 md:order-2 lg:order-1 xl:order-1 2xl:order-1">
+                                                                <h4 class="text-MD font-semibold">FARM PARCEL NO: {{ index+1 }}</h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex flex-wrap justify-between mb-4">
+                                                            <div class="w-full">
+                                                                <div class="flex flex-wrap">
+                                                                    <div class="w-6/12">
+                                                                        <InputLabel for="rotation" value="Name of Farmer(s) in Rotation" :required="true" />
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.farmer_in_rotation_name ? item.farmer_in_rotation_name : '&nbsp;' }}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex flex-wrap justify-between gap-x-1">
+                                                                    <div class="w-[40%]">
+                                                                        <InputLabel for="farm_municipal" value="Municipality" :required="true" />
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.municipality ? item.municipality : '&nbsp;' }}</p>
+                                                                    </div>
+                                                                    <div class="w-[40%]">
+                                                                        <InputLabel for="farm_brgy" value="Barangay" :required="true" />
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.brgy ? item.brgy : '&nbsp;' }}</p>
+                                                                    </div>
+                                                                    <div class="w-2/12">
+                                                                        <InputLabel for="total_farm_area" value="Total Farm Area" :required="true" />
+                                                                            <div class="mt-1 flex rounded-md shadow-sm">
+                                                                                <p class="border block p-2 w-full uppercase flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">{{ item.total_farm_area ? item.total_farm_area : '&nbsp;' }}</p>
+                                                                            <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"> ha </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
+                                                            <div class="w-5/12">
+                                                                <InputLabel for="Ansentral" value="Within Ancentral Domain" :required="true" />
+                                                                <div class="flex flex-wrap items-center mt-3">
+                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2">
+                                                                        <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1 && item.is_whithin_ancentral_domain != ''" disabled />
+                                                                        <span class="text-gray-700">Yes</span>
+                                                                    </label>
+
+                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                                        <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0 && item.is_whithin_ancentral_domain != ''" disabled />
+                                                                        <span class="text-gray-700">No</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="w-5/12">
+                                                                <InputLabel for="Agrarian" value="Agrarian Reform Beneficiary" :required="true" />
+                                                                <div class="flex flex-wrap items-center mt-3">
+                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2">
+                                                                        <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 1 && item.is_agrarian_reform_beneficiary != ''" disabled />
+                                                                        <span class="text-gray-700">Yes</span>
+                                                                    </label>
+
+                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2">
+                                                                        <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 0 && item.is_agrarian_reform_beneficiary != ''" disabled />
+                                                                        <span class="text-gray-700">No</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
+                                                            <div class="w-3/12">
+                                                                <InputLabel for="ownership_doc" value="Ownership Document No" :required="true" />
+                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.owner_doc_no ? item.owner_doc_no : '&nbsp;' }}</p>
+                                                            </div>
+                                                            <div class="w-3/12">
+                                                                <InputLabel for="ownership_type" value="Type of Ownership" :required="true" />
+                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.ownership_type ? item.ownership_type : '&nbsp;' }}</p>
+                                                            </div>
+                                                            <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
+                                                                <InputLabel for="Name of Land Owner" value="Name of Land Owner" :required="true" />
+                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.land_owner_name ? item.land_owner_name : '&nbsp;' }}</p>
+                                                            </div>
+                                                            <div class="w-4/12"v-if="item.ownership_type == 'Others'">
+                                                                <InputLabel for="specify-other" value="Specify" :required="true" />
+                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.is_other ? item.is_other : '&nbsp;' }}</p>
+                                                            </div>
+                                                        </div>
+
+                                                        <table class="border-collapse border-2 border-gray-400 w-full">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th class="p-3 border border-gray-400 w-[25%]">
+                                                                        <strong>CROP / COMMODITY</strong>
+                                                                        <p class="m-0">
+                                                                            <small class="italic">( Rice / Corn / HVC / Livestock / Poultry /agri-fishery )</small>
+                                                                        </p>
+
+                                                                        <strong>For Livestock & Poultry</strong>
+                                                                        <p class="m-0">
+                                                                            <small>( Specify type of animal) </small>
+                                                                        </p>
+                                                                    </th>
+                                                                    <th class="p-3 border border-gray-400 w-[11%]">SIZE (ha)</th>
+                                                                    <th class="p-3 border border-gray-400 w-[11%]">
+                                                                        <strong>NO. OF HEAD</strong>
+                                                                        <p class="m-0">
+                                                                            <small class="italic">( For livestock and poultry)</small>
+                                                                        </p>
+                                                                    </th>
+                                                                    <th class="p-3 border border-gray-400 w-[24%]">FARM TYPE</th>
+                                                                    <th class="p-3 border border-gray-400 w-[18%]">ORGANIC PRACTITIONER</th>
+                                                                    <th class="p-3 border border-gray-400 w-[18%]">REMARKS</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr v-for="(v, i) in item.farm_parcel_info" :key="i" style="vertical-align: top;">
+                                                                    <td class="p-3 border border-gray-400">
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.commodity ? v.commodity : '&nbsp;' }}</p>
+                                                                    </td>
+                                                                    <td class="p-3 border border-gray-400">
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
+                                                                    </td>
+                                                                    <td class="p-3 border border-gray-400">
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.head_no }}</p>
+                                                                    </td>
+                                                                    <td class="p-3 border border-gray-400">
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.farm_type ? formatFarmType(v.farm_type) : '&nbsp;' }}</p>
+                                                                    </td>
+                                                                    <td class="p-3 border border-gray-400">
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">
+                                                                        {{ v.is_organic_practitioner != null ? (v.is_organic_practitioner == 1 ? 'Yes' : 'No') : '&nbsp;' }}
+                                                                        </p>
+                                                                    </td>
+                                                                    <td class="p-3 border border-gray-400">
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.remarks ? v.remarks : '&nbsp;' }}</p>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>

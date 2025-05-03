@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('main_livelihood')->nullable()->comment('serialized data that can choose multiple main livelihood');
             $table->float('farming_gross')->default(0);
             $table->float('no_farming_gross')->default(0);
-            $table->integer('farm_parcel_no')->default(0);
-            $table->text('farmer_in_rotation_name')->nullable();
+            $table->integer('farm_parcel_no')->default(1);
+            $table->integer('is_arb')->default(0);
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });

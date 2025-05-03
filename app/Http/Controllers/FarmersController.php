@@ -7,6 +7,8 @@ use App\Models\OthersFarmerInformation;
 use App\Models\FarmParcel;
 use App\Models\FarmParcelInformation;
 use App\Models\User;
+use App\Models\FarmProfile;
+use App\Models\MainLivelihood;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -83,8 +85,8 @@ class FarmersController extends Controller
             'ref_no' => $request->ref_no,
             'firstname' => trim(strtolower($request->firstname)),
             'lastname' => trim(strtolower($request->lastname)),
-            'middlename' => $request->middlename ? trim(strtolower($request->middlename)) : NULL,
-            'suffix' => $request->suffix ? trim(strtolower($request->suffix)) : NULL, 
+            'middlename' => $request->middlename ? trim(strtolower($request->middlename)) : null,
+            'suffix' => $request->suffix ? trim(strtolower($request->suffix)) : null, 
             'gender' => trim(strtolower($request->gender)),
             'lot_block_no' => trim(strtolower($request->lot)),
             'street' => trim(strtolower($request->street)),
@@ -95,9 +97,9 @@ class FarmersController extends Controller
             'mobile_no' => $contact,
             'date_of_birth' => date('Y-m-d', strtotime($request->birth)),
             'place_of_birth' => trim(strtolower($request->birthplace)),
-            'religion' => $request->religion ? trim(strtolower($request->religion)) : NULL,
+            'religion' => $request->religion ? trim(strtolower($request->religion)) : null,
             'civil_status' => trim(strtolower($request->civil_status)),
-            'spouse_name_if_married' => $request->spouse ? trim(strtolower($request->region)) : NULL, 
+            'spouse_name_if_married' => $request->spouse ? trim(strtolower($request->region)) : null, 
             'region' => trim(strtolower($request->region)),
             'created_by'=>$user_id,
             'uuid'=> Str::random(12)
@@ -110,7 +112,6 @@ class FarmersController extends Controller
             $filename = $file->getClientOriginalName();
 
             $destinationPath = "uploads/farmers/farmer_".$id;
-            // $filepath = $file->move(public_path('uploads/farmers/farmer_'.$id), $filename);
             if(!file_exists(public_path($destinationPath))){ 
                 File::makeDirectory(public_path($destinationPath), 0777, true);
             }
@@ -137,8 +138,8 @@ class FarmersController extends Controller
                 'farmer_id' => $id, 
                 'mothers_maiden_name' => trim(strtolower($request->mother_maiden_name)), 
                 'is_household_head' => $request->is_household_head, 
-                'name_if_not_head' => $request->household_head_name ? trim(strtolower($request->household_head_name)) : NULL, 
-                'is_not_head_relationship' => $request->head_relationship ? trim(strtolower($request->head_relationship)) : NULL, 
+                'name_if_not_head' => $request->household_head_name ? trim(strtolower($request->household_head_name)) : null, 
+                'is_not_head_relationship' => $request->head_relationship ? trim(strtolower($request->head_relationship)) : null, 
                 'no_of_living_members' => $request->members_no, 
                 'no_of_male' => $request->no_of_male, 
                 'no_of_female' => $request->no_of_female, 
@@ -146,46 +147,153 @@ class FarmersController extends Controller
                 'is_pwd' => $request->is_pwd, 
                 'is_4ps' => $request->is_4ps, 
                 'has_gov_id' => $request->has_gov_id, 
-                'id_no' => $request->gov_id_no ? trim(strtolower($request->gov_id_no)) : NULL, 
+                'id_no' => $request->gov_id_no ? trim(strtolower($request->gov_id_no)) : null, 
                 'is_farmer_coop_mem' => $request->is_farmer_member, 
-                'is_farmer_mem' => $request->asocc_name ? trim(strtolower($request->asocc_name)) : NULL, 
+                'is_farmer_mem' => $request->asocc_name ? trim(strtolower($request->asocc_name)) : null, 
                 'contact_emergency' => trim(strtolower($request->person_emergency)), 
                 'contact_no' => $emer_contact, 
                 'uuid' => Str::random(12)
             ]);
 
             // farm profile here
-            // not done as still figuring out what to do in main livelihood
-            if(count($request->farm_parcel) > 0) {
-                foreach($request->farm_parcel as $parcel) {
-                    $farmparcel = FarmParcel::create([
-                        'farm_profile_id' => 1, 
-                        'brgy' => trim(strtolower($parcel['brgy'])), 
-                        'city'=> trim(strtolower($parcel['municipality'])), 
-                        'total_farm_area' => $parcel['total_farm_area'], 
-                        'is_whithin_ancentral_domain' => $parcel['is_whithin_ancentral_domain'], 
-                        'is_agrarian_reform_beneficiary' => $parcel['is_agrarian_reform_beneficiary'], 
-                        'ownership_document_no' => trim(strtolower($parcel['owner_doc_no'])),
-                        'ownership_type' => $parcel['ownership_type'], 
-                        'landowner_name' => $parcel['land_owner_name'] ? trim(strtolower($parcel['land_owner_name'])) : NULL, 
-                        'is_other' => $parcel['is_other'] ? trim(strtolower($parcel['is_other'])) : NULL,
-                        'uuid' => Str::random(12)
-                    ]);
+            $farmProf = FarmProfile::create([
+                'farmer_id' => $id,
+                'main_livelihood' => serialize($request->main_livelihood), 
+                'farming_gross' => $request->farming_gross_income, 
+                'no_farming_gross' => $request->non_farming_gross_income, 
+                'farm_parcel_no' => $request->farm_parcel_no, 
+                'is_arb' => $request->is_arb, 
+                'uuid'  => Str::random(12)
+            ]);
 
-                    if ($farmparcel) {
-                        $parcel_id = $farmparcel->id;
+            if ($farmProf) {
+                $farm_profile_id = $farmProf->id;
 
-                        foreach($parcel->farm_parcel_info as $info) {
-                            FarmParcelInformation::create([
-                                'farm_parcels_id' => $parcel_id, 
-                                'farming_type' => $info['commodity'], 
-                                'size' => $info['size'], 
-                                'no_of_head' => $info['head_no'], 
-                                'farm_type' => $info['farm_type'], 
-                                'is_organic_practitioner' => $info['farm_type'] , 
-                                'remarks' => $info['remarks'] ? trim(strtolower($info['remarks'])) : NULL, 
-                                'uuid' => Str::random(12)
+                if(isset($request->farmer) && count($request->farmer) > 0) {
+                    foreach($request->farmer as $farmer) {
+                        if ($farmer == 'rice' && $farmer == 'corn') {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farmer',
+                                'meta' => $farmer,
+                                'value' => $farmer,
+                                'uuid'  => Str::random(12)
                             ]);
+                        }
+                    }
+
+                    if(isset($request->crops) && count($request->crops) > 0) {
+                        foreach ($request->crops as $crops) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farmer',
+                                'meta' => 'crops',
+                                'value' => $crops,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
+                    }
+
+                    if(isset($request->livestock) && count($request->livestock) > 0) {
+                        foreach ($request->livestock as $livestock) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farmer',
+                                'meta' => 'livestock',
+                                'value' => $livestock,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
+                    }
+                    
+                    if(isset($request->poultry) && count($request->poultry) > 0) {
+                        foreach ($request->poultry as $poultry) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farmer',
+                                'meta' => 'poultry',
+                                'value' => $poultry,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
+                    }
+                }
+
+                if(isset($request->farm_worker) && $request->farm_worker) {
+                    if(count($request->farm_worker) > 0) {
+                        foreach($request->farm_worker as $worker) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farm_worker',
+                                'meta' => $worker,
+                                'value' => $worker == 'Others' ? $request->farm_worker_others : $worker,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
+                    }
+                }
+
+                if(isset($request->fisherfolks) && $request->fisherfolks) {
+                    if(count($request->fisherfolks) > 0) {
+                        foreach($request->fisherfolks as $fisherfolks) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farm_worker',
+                                'meta' => $fisherfolks,
+                                'value' => $worfisherfolksker == 'Others' ? $request->fisherfolks_others : $fisherfolks,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
+                    }
+                }
+                
+
+                if(isset($request->agri_youth) && $request->agri_youth) {
+                    if(count($request->agri_youth) > 0) {
+                        foreach($request->agri_youth as $agri_youth) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farm_worker',
+                                'meta' => $agri_youth,
+                                'value' => $agri_youth_others == 'Others' ? $request->fisherfolks_others : $agri_youth,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
+                    }
+                }
+
+                if(count($request->farm_parcel) > 0) {
+                    foreach($request->farm_parcel as $parcel) {
+                        $farmparcel = FarmParcel::create([
+                            'farm_profile_id' => $farm_profile_id, 
+                            'brgy' => trim(strtolower($parcel['brgy'])), 
+                            'city'=> trim(strtolower($parcel['municipality'])), 
+                            'total_farm_area' => $parcel['total_farm_area'], 
+                            'is_whithin_ancentral_domain' => $parcel['is_whithin_ancentral_domain'], 
+                            'is_agrarian_reform_beneficiary' => $parcel['is_agrarian_reform_beneficiary'], 
+                            'ownership_document_no' => trim(strtolower($parcel['owner_doc_no'])),
+                            'ownership_type' => $parcel['ownership_type'], 
+                            'landowner_name' => $parcel['land_owner_name'] ? trim(strtolower($parcel['land_owner_name'])) : null, 
+                            'is_other' => $parcel['is_other'] ? trim(strtolower($parcel['is_other'])) : null,
+                            'farmer_in_rotation_name' => trim(strtolower($parcel['farmer_in_rotation_name'])),
+                            'uuid' => Str::random(12)
+                        ]);
+
+                        if ($farmparcel) {
+                            $parcel_id = $farmparcel->id;
+
+                            foreach($parcel['farm_parcel_info'] as $info) {
+                                FarmParcelInformation::create([
+                                    'farm_parcels_id' => $parcel_id, 
+                                    'farming_type' => $info['commodity'], 
+                                    'size' => $info['size'], 
+                                    'no_of_head' => $info['head_no'], 
+                                    'farm_type' => $info['farm_type'], 
+                                    'is_organic_practitioner' => $info['farm_type'] , 
+                                    'remarks' => $info['remarks'] ? trim(strtolower($info['remarks'])) : null, 
+                                    'uuid' => Str::random(12)
+                                ]);
+                            }
                         }
                     }
                 }
