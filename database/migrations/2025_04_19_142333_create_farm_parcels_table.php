@@ -13,13 +13,14 @@ return new class extends Migration
     {
         Schema::create('farm_parcels', function (Blueprint $table) {
             $table->id();
-            $table->integer('farm_profile_id')->default(0);
+            $table->integer('farmer_profile_id')->default(0);
             $table->text('brgy')->nullable();
             $table->string('city')->nullable();
             $table->float('total_farm_area')->default(0);
             $table->integer('is_whithin_ancentral_domain')->default(0)->comment('0 = No; 1 = Yes');
             $table->integer('ownership_document_no')->default(0);
             $table->integer('is_agrarian_reform_beneficiary')->default(0)->comment('0 = No; 1 = Yes');
+            $table->text('document')->nullable();
             $table->string('ownership_type')->nullable();
             $table->text('landowner_name')->nullable();
             $table->text('is_other')->nullable();

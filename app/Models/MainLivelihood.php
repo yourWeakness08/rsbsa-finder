@@ -9,5 +9,5 @@ class MainLivelihood extends Model
 {
     use HasFactory;
     protected $table = 'main_livelihood';
-    protected $fillable = ['farm_profile_id', 'main_livelihood', 'meta', 'value', 'uuid'];
+    protected $fillable = ['farmer_profile_id', 'main_livelihood', 'meta', 'value', 'uuid'];
 }

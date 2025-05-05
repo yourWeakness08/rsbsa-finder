@@ -106,8 +106,8 @@ class UsersController extends Controller
         $rules['lastname'] = ['required', 'string', 'max:255'];
 
         if ($request->role == 1) {
-            $rules['firstname'][] = 'unique:users';
-            $rules['lastname'][] = 'unique:users';
+            // $rules['firstname'][] = 'unique:users';
+            // $rules['lastname'][] = 'unique:users';
         }
         
         Validator::make($input, $rules)->validate();
@@ -177,12 +177,12 @@ class UsersController extends Controller
             'password' => ['nullable', 'string', Rules\Password::min(8)]
         ];
 
-        $rules['firstname'] = ['required', 'string', 'max:255'];
-        $rules['lastname'] = ['required', 'string', 'max:255'];
+        $rules['*.firstname'] = ['required', 'string', 'max:255'];
+        $rules['*.lastname'] = ['required', 'string', 'max:255'];
 
         if ($request->role == 1) {
-            $rules['firstname'][] = 'unique:users,firstname,'.$id;
-            $rules['lastname'][] = 'unique:users,lastname,'.$id;
+            // $rules['firstname'][] = 'unique:users,firstname,'.$id;
+            // $rules['lastname'][] = 'unique:users,lastname,'.$id;
         }
         
         $validated = Validator::make($input, $rules)->validate();

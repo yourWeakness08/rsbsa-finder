@@ -319,8 +319,8 @@
                                                 <small>{{ dateFormat(types.created_at) }}</small>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900  text-center">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormTypesData(types)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormTypesData(types)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -336,8 +336,8 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(types.id)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(types.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -361,8 +361,8 @@
                                                 <small>{{ types.created_at }}</small>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 text-center">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormTypesData(types)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormTypesData(types)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -379,8 +379,8 @@
                                                     </svg>
                                                 </PrimaryButton>
 
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(types.id)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveType(types.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 

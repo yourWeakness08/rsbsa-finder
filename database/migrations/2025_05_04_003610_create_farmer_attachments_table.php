@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('main_livelihood', function (Blueprint $table) {
+        Schema::create('farmer_attachments', function (Blueprint $table) {
             $table->id();
-            $table->integer('farmer_profile_id')->default(0);
-            $table->string('main_livelihood')->nullable();
-            $table->string('meta')->nullable();
-            $table->string('value')->nullable();
+            $table->integer('farmer_id')->default(0);
+            $table->string('filename')->nullable();
+            $table->string('filepath')->nullable();
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('main_livelihood');
+        Schema::dropIfExists('farmer_attachments');
     }
 };

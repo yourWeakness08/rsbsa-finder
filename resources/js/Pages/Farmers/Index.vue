@@ -153,20 +153,20 @@
                                 <thead
                                     class="text-xs text-gray-700 uppercase">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 w-2/12"></th>
-                                        <th scope="col" class="px-6 py-3 xl:w-2/12 2xl:w-2/12">Control #</th>
-                                        <th scope="col" class="px-6 py-3 xl:w-3/12 2xl:w-[28%]">Farmer Name</th>
-                                        <th scope="col" class="px-6 py-3 lg:w-1/12 xl:w-2/12 2x:w-2/12">Contact #</th>
-                                        <th scope="col" class="px-6 py-3 xl:w-[19%] 2xl:w-[21%]">Created By</th>
-                                        <th scope="col" class="px-6 py-3 w-2/12">&nbsp;</th>
+                                        <th scope="col" class="px-6 py-3 w-[11%]"></th>
+                                        <th scope="col" class="px-6 py-3 w-[8%]">Control #</th>
+                                        <th scope="col" class="px-6 py-3 w-[20%]">Farmer Name</th>
+                                        <th scope="col" class="px-6 py-3 w-[8%]">Contact #</th>
+                                        <th scope="col" class="px-6 py-3 w-[20%]">Created By</th>
+                                        <th scope="col" class="px-6 py-3 w-[17%]">&nbsp;</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <template v-if="farmer.total > 0">
                                         <tr class="bg-white border-b" v-for="farmer in farmer.data" :key="farmer.id">
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-1/12">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                                 <div class="border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300">
-                                                    <img :src="farmer.farmer_image" :alt="farmer.firstname" class="h-16 w-16 rounded-full object-cover ml-auto mr-auto">
+                                                    <img :src="farmer.farmer_image" :alt="farmer.firstname" class="h-14 w-14 rounded-full object-cover ml-auto mr-auto">
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
@@ -183,8 +183,8 @@
                                                 <small>{{ dateFormat(farmer.created_at) }}</small>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900  text-center">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormTypesData(farmer)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <Link class="inline-flex items-center bg-yellow-500 rounded-md hover:bg-yellow-700 px-3 text-white mr-1" :href="route('farmers.view', farmer.id)" style="padding: 0.58rem 0.80rem !important">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -199,9 +199,9 @@
                                                             </g> 
                                                         </g>
                                                     </svg>
-                                                </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveFarmer(farmer.id)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                </Link>
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 px-3 text-white" @click="archiveFarmer(farmer.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -233,8 +233,8 @@
                                                 <small>{{ dateFormat(farmer.created_at) }}</small>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900  text-center">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormTypesData(farmer)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <Link class="inline-flex items-center bg-yellow-500 rounded-md hover:bg-yellow-700 px-3 text-white mr-1" :href="route('farmers.view', farmer.id)" style="padding: 0.58rem 0.80rem !important">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -249,9 +249,9 @@
                                                             </g> 
                                                         </g>
                                                     </svg>
-                                                </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveFarmer(farmer.id)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                </Link>
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveFarmer(farmer.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 

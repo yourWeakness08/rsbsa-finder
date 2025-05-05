@@ -1,5 +1,5 @@
 <script setup>
-    import useValidationHelpers from '@/composables/useValidationHelpers'
+    import useValidationHelpers from '@/composables/useValidationHelpers';
     import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate } from 'vue';
     import useVuelidate from '@vuelidate/core';
     import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
@@ -66,6 +66,7 @@
     let gov_id = ref('');
     let is_mem = ref('');
     const uploadedImage = ref(null);
+    let processing = ref(false);
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
@@ -125,6 +126,7 @@
                 municipality: null,
                 brgy: null,
                 total_farm_area: null,
+                document: null,
                 owner_doc_no: null,
                 ownership_type: null,
                 is_whithin_ancentral_domain: null,
@@ -144,7 +146,12 @@
                 ]
             }
         ],
-        user_id: 0
+        user_id: 0,
+        attachments: [],
+        paper_date: '',
+        official: '',
+        muni_city_official: '',
+        cafc_chairman: '',
     });
 
     watch(() => form.is_household_head, (val) => {
@@ -167,7 +174,7 @@
     })
 
     const phoneFormat = helpers.regex(/^\(09\) \d{4}-\d{5}$/)
-    const refNoFormat = helpers.regex(/^\d{2}-\d{2}-\d{2}-\d{3}-\d{3}$/)
+    const refNoFormat = helpers.regex(/^\d{2}-\d{2}-\d{2}-\d{3}-\d{6}$/)
 
     const personalInfo = {
         image: { required },
@@ -177,8 +184,8 @@
         middlename: {},
         suffix: {},
         gender: { required },
-        lot: {},
-        street: {},
+        lot: { required },
+        street: { required },
         brgy: { required },
         muni_city: { required },
         province: { required },
@@ -285,6 +292,7 @@
                 municipality: { 'required' : required },
                 brgy: { required },
                 total_farm_area: { required },
+                document: { required },
                 owner_doc_no: { required },
                 is_whithin_ancentral_domain: { required },
                 is_agrarian_reform_beneficiary: { required },
@@ -308,6 +316,14 @@
         }
     }
 
+    const reviewInfo = {
+        attachments: { required, minLength: minLength(1) },
+        paper_date: { required },
+        official: { required },
+        muni_city_official: { required },
+        cafc_chairman: { required },
+    }
+
     const dateFormat = (date) => {
         return moment(date).format('MMM. DD, YYYY hh:mm A');
     }
@@ -317,6 +333,7 @@
     const rules = computed(() => {
         if (step.value == 0) return personalInfo
         if (step.value == 1) return farmInfo
+        if (step.value == 2) return reviewInfo
         return {}
     });
 
@@ -331,7 +348,6 @@
     }
 
     const goToNext = (event) => {
-        console.log(v$.value);
         v$.value.$touch();
         if (step.value < stepLabels.length - 1) {
             if (!v$.value.$invalid) {
@@ -399,7 +415,7 @@
         }
 
         ref_no = new Inputmask({
-            mask: "99-99-99-999-999",
+            mask: "99-99-99-999-999999",
 	        alias: 'reference_no'
         })
         ref_no.mask($("#ref_no"));
@@ -417,27 +433,44 @@
         emergency.mask($("#contact-emergency"));
 
         datepicker();
+        _datepicker();
     });
 
     const datepicker = () => {
         $('#birth').daterangepicker({
             opens: 'left',
             locale: {
-                format: 'YYYY-MM-DD',
+                format: 'YYYY/MM/DD',
             },
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
+            // maxDate: moment()
         }).on('apply.daterangepicker', function(ev, picker){
-            $(this).val(picker.startDate.format('YYYY-MM-DD'))
+            $(this).val(picker.startDate.format('YYYY/MM/DD'))
 
-            form.birth = moment(picker.startDate.format('YYYY-MM-DD')).format('YYYY-MM-DD');
+            form.birth = moment(picker.startDate.format('YYYY/MM/DD')).format('YYYY/MM/DD');
+        });
+    }
+
+    const _datepicker = () => {
+        $('#paper_date').daterangepicker({
+            opens: 'left',
+            locale: {
+                format: 'YYYY/MM/DD',
+            },
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: false,
+            // maxDate: moment()
+        }).on('apply.daterangepicker', function(ev, picker){
+            $(this).val(picker.startDate.format('YYYY/MM/DD'))
+            form.paper_date = moment(picker.startDate.format('YYYY/MM/DD')).format('YYYY/MM/DD');
         });
     }
 
     watch(() => step.value, (val) => {
         if (val == 0) {
-            console.log(typeof $('#ref_no'))
             if (typeof $("#ref_no") !== 'undefined') {
                 setTimeout(() => {
                     ref_no.mask($("#ref_no"));
@@ -447,6 +480,12 @@
                 }, 250);
 
             }
+        }
+
+        if(val == 2) {
+            setTimeout(() => {
+                _datepicker();
+            }, 250);
         }
     })
 
@@ -475,15 +514,17 @@
             const index = form.farmer.indexOf(selectedValue);
             form.farmer.splice(index, 1);
 
-            const _index = mergeTypes.findIndex(item => item.text.toLowerCase() == 'rice');
+            const _index = mergeTypes.findIndex(item => item.text.toLowerCase() == 'rice' || item.text.toLowerCase() == 'corn');
             if (_index !== -1) {
                 mergeTypes.splice(_index, 1);
             }
         } else {
             form.farmer.push(selectedValue);
-            mergeTypes.push({ id: selectedValue, text: selectedValue.toUpperCase() })
 
-            mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
+            if(selectedValue.toLowerCase() == 'rice' || selectedValue.toLowerCase() == 'corn') {
+                mergeTypes.push({ id: selectedValue, text: selectedValue.toUpperCase() })
+                mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
+            }
         }
     }
     
@@ -553,6 +594,7 @@
             municipality: null,
             brgy: null,
             total_farm_area: null,
+            document: null,
             owner_doc_no: null,
             ownership_type: null,
             is_whithin_ancentral_domain: null,
@@ -570,11 +612,14 @@
                     remarks: null
                 }
             ]
-        })
+        });
+
+        form.farm_parcel_no = form.farm_parcel.length;
     }
 
     const removeFarmParcel = (index) => {
         form.farm_parcel.splice(index, 1);
+        form.farm_parcel_no = form.farm_parcel.length;
     }
 
     function handleImageSelected(file) {
@@ -589,37 +634,80 @@
 
     const { hasError, inputBorderClass, getFieldState } = useValidationHelpers(v$, form, { autoTouch: true })
 
-    const submitForm = () => {
+    const submitForm = (type) => {
         const { id } = props.auth.user;
 
+        processing.value = true;
         form.user_id = id;
+        
+        v$.value.$touch();
+        if (!v$.value.$invalid) {
+            form.post(route('farmers.store'), {
+                // errorBag: 'submitForm',
+                preserveScroll: true,
+                onSuccess: () => {
+                    const page = usePage();
+                    const response = page.props.flash?.response;
+                    processing.value = false;
 
-        form.post(route('farmers.store'), {
-            errorBag: 'submitForm',
-            preserveScroll: true,
-            onSuccess: () => {
-                form.reset();
-            }
-        })
+                    if (response.state) {
+                        Swal.fire({
+                            title: 'New Farmer',
+                            text: 'Successfully added new farmer',
+                            icon: 'success',
+                            allowEscapeKey: false,
+                            allowOutsideClick: false
+                        }).then(result => {
+                            if(result.isConfirmed) {
+
+                                if (type == 'continue') {
+                                    is_not_head.value = '';
+                                    gov_id.value = '';
+                                    is_mem.value = '';
+                                    uploadedImage.value = null;
+                                    isMarried.value = false;
+                                    ownerType.value = false;
+                                    ownerOthers.value = false;
+                                    
+                                    setTimeout( function() {
+                                        v$.value.$reset();
+                                        form.reset();
+                                        scrollToTop()
+                                    }, 100);
+                                } else { 
+                                    router.visit('/farmers', {
+                                        method: 'get',
+                                        only: ['farmers']
+                                    });
+                                }
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'New Farmer',
+                            text: 'Farmer already exists in the records',
+                            icon: 'warning'
+                        });
+                    }
+
+                    
+                },
+                onError: (errors) => {
+                    console.log(errors);
+                }
+            })
+        }
     }
 
-    const data = ref([
-        { id: 'farmer', text: 'Farmer' },
-        { id: 'farm_worker', text: 'Farm Worker / Laborer' },
-        { id: 'fisherfolks', text: 'Fisherfolk' },
-        { id: 'agri_youth', text: 'Agri Youth' },
-        { id: 'farmer1', text: 'Farmer' },
-        { id: 'farm_worker1', text: 'Farm Worker / Laborer' },
-        { id: 'fisherfolks1', text: 'Fisherfolk' },
-        { id: 'agri_youth1', text: 'Agri Youth' },
-        { id: 'farmer2', text: 'Farmer' },
-        { id: 'farm_worker2', text: 'Farm Worker / Laborer' },
-        { id: 'fisherfolks2', text: 'Fisherfolk' },
-        { id: 'agri_youth2', text: 'Agri Youth' },
-    ]);
+    const scrollToTop = () => {
+        const container = document.getElementById('scroll-top');
+        if (container) {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
 
     const handleCrops = (event) => {
-        const selectedValue = event.id;
+        const selectedValue = parseInt(event.id);
 
         if (form.crops.includes(selectedValue)) {
             const index = form.crops.indexOf(selectedValue);
@@ -630,7 +718,7 @@
     }
     
     const handleLivestock = (event) => {
-        const selectedValue = event.id;
+        const selectedValue = parseInt(event.id);
 
         if (form.livestock.includes(selectedValue)) {
             const index = form.livestock.indexOf(selectedValue);
@@ -641,7 +729,7 @@
     }
     
     const handlePoultry = (event) => {
-        const selectedValue = event.id;
+        const selectedValue = parseInt(event.id);
 
         if (form.poultry.includes(selectedValue)) {
             const index = form.poultry.indexOf(selectedValue);
@@ -661,10 +749,55 @@
     }
 
     const handleUploadSuccess = (fileData) => {
-        console.log('Uploaded file info:', fileData);
-    // You can now append the uploaded path/id to your form data
+        form.attachments = fileData;
     };
+
+    const handleOwnerUpload = (fileData, index) => {
+        form.farm_parcel[index].document = fileData ? fileData : null;
+    }
+
+    const famerSpecify = (farmingtype, arr) => {
+        let temp = [];
+        $.each(props.types[farmingtype], function(index, value) {
+            if (arr.includes(value.id)) {
+                temp.push(value.text.toUpperCase());
+            }
+        });
+
+        return temp.length > 0 ? temp.join(', ') : "";
+    }
+
+    const memberNumber = (e) => {
+        const male = form.no_of_male != '' ? parseInt(form.no_of_male) : 0;
+        const female = form.no_of_female != '' ? parseInt(form.no_of_female) : 0;
+        form.members_no = male + female;
+    }
+
+    const farmCommodity = (item) => {
+        let text = '';
+        const val = typeof item === 'string' ? item.toLowerCase() : parseInt(item);
+
+        $.each(mergeTypes, function(index, value) {
+            const temp = value.id;
+            const _val = typeof temp === 'string' ? temp.toLowerCase() : parseInt(temp);
+            
+            if (_val == val){
+                text = value.text;
+            }
+        })
+
+        return text.toUpperCase();
+    }
 </script>
+
+<style type="text/css">
+    #iterated-dropzone .dropzone {
+        min-height: 100px !important;
+    }
+    #iterated-dropzone .dz-message{
+        margin: 1em 0 !important;
+    }
+</style>
 
 <template>
     <AppLayout title="Create Farmer">
@@ -678,10 +811,10 @@
             <div class="w-full mx-auto">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                     <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
-                        <Link class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white px-1 py-1" :href="route('farmers.index')">
+                        <Link id="back-to-masterfile" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white px-1 py-1" :href="route('farmers.index')">
                             Back to Masterfile
                         </Link>
-                        <!-- <Dropzone @success="handleUploadSuccess" /> -->
+
                         <div class="max-w-2xl mx-auto p-6">
                             <Stepper :currentStep="step" :steps="stepLabels" @step-selected="setStep" />
                         </div>
@@ -722,7 +855,7 @@
                                             <div class="flex flex-wrap justify-between mb-4">
                                                 <div class="sm:w-full md:w-[49%]">
                                                     <InputLabel for="firstname" value="First name" :required="true" />
-                                                    <TextInput type="text" name="firstname" v-model="form.firstname" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    <TextInput type="text" v-model="form.firstname" class="mt-1 block w-full uppercase" autocomplete="off"
                                                         @blur="v$.firstname.$touch()"
                                                         :class="inputBorderClass('firstname')"
                                                     />
@@ -732,7 +865,7 @@
                                                 </div>
                                                 <div class="sm:w-full md:w-[49%]">
                                                     <InputLabel for="lastname" value="Last name" :required="true" />
-                                                    <TextInput type="text" name="lastname" v-model="form.lastname" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    <TextInput type="text" v-model="form.lastname" class="mt-1 block w-full uppercase" autocomplete="off"
                                                         @blur="v$.lastname.$touch()"
                                                         :class="inputBorderClass('lastname')"
                                                     />
@@ -779,12 +912,24 @@
 
                                     <div class="flex flex-wrap items-start justify-between mb-4">
                                         <div class="md:w-[32.10%] sm:w-full">
-                                            <InputLabel for="house" value="House / Lot / Bldg. No." />
-                                            <TextInput type="text" v-model="form.lot" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <InputLabel for="house" value="House / Lot / Bldg. No." :required="true" />
+                                            <TextInput type="text" v-model="form.lot" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                                @blur="v$.lot.$touch()"
+                                                :class="inputBorderClass('lot')"
+                                            />
+                                            <p v-if="hasError('lot')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.lot.required?.$invalid">House / Lot is required.</span>
+                                            </p>
                                         </div>
                                         <div class="md:w-[32.10%] sm:w-full">
-                                            <InputLabel for="street" value="Street / Sitio / Subdv." />
-                                            <TextInput type="text" v-model="form.street" class="mt-1 block w-full uppercase" autocomplete="off" />
+                                            <InputLabel for="street" value="Street / Sitio / Subdv." :required="true" />
+                                            <TextInput type="text" v-model="form.street" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                                @blur="v$.street.$touch()"
+                                                :class="inputBorderClass('street')"
+                                            />
+                                            <p v-if="hasError('street')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.street.required?.$invalid">Street / Sitio / Subdv. is required.</span>
+                                            </p>
                                         </div>
                                         <div class="md:w-[32.10%] sm:w-full">
                                             <InputLabel for="barangay" value="Barangay" :required="true" />
@@ -793,7 +938,7 @@
                                                 :class="inputBorderClass('brgy')"
                                             />
                                             <p v-if="hasError('brgy')" class="text-red-500 text-sm">
-                                                <span class="text-red-500 text-sm" v-if="v$.brgy.required?.$invalid">Barangay is required is required.</span>
+                                                <span class="text-red-500 text-sm" v-if="v$.brgy.required?.$invalid">Barangay is required.</span>
                                             </p>
                                         </div>
                                     </div>
@@ -847,7 +992,7 @@
                                         </div>
                                         <div class="md:w-[24%] sm:w-full">
                                             <InputLabel for="birth" value="Date of Birth" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" id="birth" v-model="form.birth" autocomplete="off" 
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" id="birth" placeholder="YYYY/MM/DD" v-model="form.birth" autocomplete="off" 
                                                 @blur="v$.birth.$touch()"
                                                 :class="inputBorderClass('birth')"
                                             />
@@ -963,7 +1108,7 @@
                                             </div>
                                             <div class="sm:w-full md:w-[32%]">
                                                 <InputLabel for="no-of-male" value="No. of Male" :required="true" />
-                                                <TextInput type="number" v-model="form.no_of_male" min="0" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                <TextInput type="number" v-model="form.no_of_male" min="0" class="mt-1 block w-full uppercase" @input="memberNumber" autocomplete="off"
                                                     @blur="v$.no_of_male.$touch()"
                                                     :class="inputBorderClass('no_of_male')"
                                                 />
@@ -973,7 +1118,7 @@
                                             </div>
                                             <div class="sm:w-full md:w-[32%]">
                                                 <InputLabel for="no-of-female" value="No. of Female" :required="true" />
-                                                <TextInput type="number" v-model="form.no_of_female" min="0" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                <TextInput type="number" v-model="form.no_of_female" min="0" class="mt-1 block w-full uppercase" @input="memberNumber" autocomplete="off"
                                                     @blur="v$.no_of_female.$touch()"
                                                     :class="inputBorderClass('no_of_female')"
                                                 />
@@ -1464,7 +1609,7 @@
                                             <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-5/12">
                                                 <div class="flex flex-wrap items-center">
                                                     <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12" value="No. of Farm Parcels" :required="true" />
-                                                    <TextInput type="number" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" min="1" autocomplete="off" v-model="form.farm_parcel_no"
+                                                    <TextInput type="number" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" min="1" readonly autocomplete="off" v-model="form.farm_parcel_no"
                                                         @blur="v$.farm_parcel_no.$touch()"
                                                         :class="inputBorderClass('farm_parcel_no')"
                                                     />
@@ -1557,7 +1702,7 @@
                                                                     <div class="w-2/12">
                                                                         <InputLabel for="total_farm_area" value="Total Farm Area" :required="true" />
                                                                             <div class="mt-1 flex rounded-md shadow-sm">
-                                                                                <TextInput type="number" v-model="item.total_farm_area" class="flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off" style="height: 41px" :class="{
+                                                                                <TextInput type="number" v-model="item.total_farm_area" min="0" class="flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off" style="height: 41px" :class="{
                                                                                     'border-gray-300': item.total_farm_area == null,
                                                                                     'border-red-500' : item.total_farm_area != NULL && v$.farm_parcel.$each.$response.$errors[index].total_farm_area.length == 1,
                                                                                     'border-green-500' : item.total_farm_area && v$.farm_parcel.$each.$response.$errors[index].total_farm_area.length == 0
@@ -1600,6 +1745,13 @@
                                                                     </label>
                                                                 </div>
                                                                 <span class="text-red-500 text-sm" v-for="error in v$.farm_parcel.$each.$response.$errors[index].is_agrarian_reform_beneficiary" :key="error">Agrarian Refom Beneficiary is Required</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex flex-wrap justify-center mb-5">
+                                                            <div class="w-6/12" id="iterated-dropzone">
+                                                                <InputLabel for="owner-document" value="Ownership Document" :required="true" />
+                                                                <Dropzone @fileSelected="handleOwnerUpload($event, index)" :uploadedSingleFile="form.farm_parcel[index].document" :maxFile="1" :currentStep="step"  />
+                                                                <span class="text-red-500 text-sm" v-for="error in v$.farm_parcel.$each.$response.$errors[index].document" :key="error">Ownership Document is Required</span>
                                                             </div>
                                                         </div>
                                                         <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
@@ -2069,10 +2221,7 @@
 
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('crops')">
                                                                 <InputLabel for="crops-specify" value="Specify: " class="me-4" />
-                                                                <div class="rounded-md block mt-1 w-full">
-                                                                    <!-- not done here -->
-                                                                    <Select2 class="uppercase" :options="data" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handleCrops" />
-                                                                </div>
+                                                                <p class="border rounded block p-2 w-full uppercase">{{ famerSpecify('crops', form.crops) }}</p>
                                                             </div>
                                                         </div>
                                                         <div class="w-full mb-2">
@@ -2083,10 +2232,7 @@
 
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('livestock')">
                                                                 <InputLabel for="livestock-specify" value="Specify: " class="me-4" />
-                                                                <div class="rounded-md block mt-1 w-full">
-                                                                    <!-- not done here -->
-                                                                    <Select2 class="uppercase" :options="data" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handleLivestock" />
-                                                                </div>
+                                                                <p class="border rounded block p-2 w-full uppercase">{{ famerSpecify('livestock', form.livestock) }}</p>
                                                             </div>
                                                         </div>
                                                         <div class="w-full">
@@ -2097,10 +2243,7 @@
 
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('poultry')">
                                                                 <InputLabel for="crops-specify" value="Specify: " class="me-4" />
-                                                                <div class="rounded-md block mt-1 w-full">
-                                                                    <!-- not done here -->
-                                                                    <Select2 class="uppercase" :options="data" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true }" @select="handlePoultry" />
-                                                                </div>
+                                                                <p class="border rounded block p-2 w-full uppercase">{{ famerSpecify('poultry', form.poultry) }}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2444,7 +2587,7 @@
                                                             <tbody>
                                                                 <tr v-for="(v, i) in item.farm_parcel_info" :key="i" style="vertical-align: top;">
                                                                     <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.commodity ? v.commodity : '&nbsp;' }}</p>
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ farmCommodity(v.commodity) }}</p>
                                                                     </td>
                                                                     <td class="p-3 border border-gray-400">
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
@@ -2471,6 +2614,79 @@
                                             </template>
                                         </div>
                                     </div>
+
+                                    <hr class="my-6 border-t border-gray-500" />
+
+                                    <div class="mb-4">
+                                        <div class="flex flex-wrap w-full mb-4">
+                                            <div class="w-full">
+                                                <h3 class="font-bold text-md">ATTACHMENTS</h3>
+                                            </div>
+                                        </div>
+
+                                        <div class="w-full mb-4">
+                                            <Dropzone @fileSelected="handleUploadSuccess" :uploadedFiles="form.attachments" :currentStep="step"  />
+                                            <p v-if="hasError('attachments')" class="text-red-500 text-sm mt-1">
+                                                <span class="text-red-500 text-sm" v-if="v$.attachments.required?.$invalid">Attachments is required. Upload atleast 1 attachment.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-6 border-t border-gray-500" />
+
+                                    <div class="mb-4">
+                                        <div class="flex flex-wrap justify-center mb-4">
+                                            <div class="sm:w-full md:w-3/12 lg:w-3/12 xl:w-3/12 2xl:w-3/12">
+                                                <InputLabel for="Date" class="uppercase" value="Date" :required="true" />
+                                                <TextInput type="text" v-model="form.paper_date" id="paper_date" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    @blur="v$.paper_date.$touch()"
+                                                    :class="inputBorderClass('paper_date')"
+                                                />
+                                                <p v-if="hasError('paper_date')" class="text-red-500 text-sm">
+                                                    <span class="text-red-500 text-sm" v-if="v$.paper_date.required?.$invalid">Date is required.</span>
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap w-full mb-4">
+                                            <div class="w-full">
+                                                <h3 class="font-bold text-md uppercase">Verified and Corrected By:</h3>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap justify-between items-end">
+                                            <div class="sm:w-full md:w-4/12 lg:w-4/12 xl:w-4/12 2xl:w-4/12">
+                                                <InputLabel for="firstname" class="uppercase" value="Barangay Chairman / City / Mun. Veterinarian (livestock) / Mill District Office (Sugarcane) / IP Leader / c/m/Paro (arb)" :required="true" />
+                                                <TextInput type="text" v-model="form.official" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    @blur="v$.official.$touch()"
+                                                    :class="inputBorderClass('official')"
+                                                />
+                                                <p v-if="hasError('official')" class="text-red-500 text-sm">
+                                                    <span class="text-red-500 text-sm" v-if="v$.official.required?.$invalid">Value is required.</span>
+                                                </p>
+                                            </div>
+                                            <div class="sm:w-full md:w-3/12 lg:w-3/12 xl:w-3/12 2xl:w-3/12">
+                                                <InputLabel for="firstname" class="uppercase" value="City / Municipal Agriculture Office" :required="true" />
+                                                <TextInput type="text" v-model="form.muni_city_official" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    @blur="v$.muni_city_official.$touch()"
+                                                    :class="inputBorderClass('muni_city_official')"
+                                                />
+                                                <p v-if="hasError('muni_city_official')" class="text-red-500 text-sm">
+                                                    <span class="text-red-500 text-sm" v-if="v$.muni_city_official.required?.$invalid">Value is required.</span>
+                                                </p>
+                                            </div>
+                                            <div class="sm:w-full md:w-3/12 lg:w-3/12 xl:w-3/12 2xl:w-3/12">
+                                                <InputLabel for="firstname" class="uppercase" value="CAFC / MAFC Chairmain" :required="true" />
+                                                <TextInput type="text" v-model="form.cafc_chairman" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                    @blur="v$.cafc_chairman.$touch()"
+                                                    :class="inputBorderClass('cafc_chairman')"
+                                                />
+                                                <p v-if="hasError('cafc_chairman')" class="text-red-500 text-sm">
+                                                    <span class="text-red-500 text-sm" v-if="v$.cafc_chairman.required?.$invalid">Value is required.</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="mt-6 flex justify-end">
@@ -2487,10 +2703,14 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
                                     </svg>
                                 </button>
-    
-                                <button v-else class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded" @click="submitForm" :disabled="form.processing" >
-                                    <strong>SUBMIT</strong> 
-                                </button>
+                                <template v-else>
+                                    <button class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded me-2" @click="submitForm('continue')" :disabled="processing" >
+                                        <strong>SUBMIT AND CONTINUE</strong> 
+                                    </button>
+                                    <button class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded" @click="submitForm('submit')" :disabled="processing" >
+                                        <strong>SUBMIT</strong> 
+                                    </button>
+                                </template>
                             </div>
                         </form>
                     </div>

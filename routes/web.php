@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\FarmersController;
 use App\Http\Controllers\FarmingTypeController;
+use App\Http\Controllers\PublicPostController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,16 +22,10 @@ use App\Http\Controllers\FarmingTypeController;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::get('/finder', function () {
-    return Inertia::render('Finder/Index', [
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+
+Route::match(['get', 'post'], '/finder', [PublicPostController::class, 'finder'])->name('finder');
 
 Route::get('/', function () {
-    /** commented out to be used later */
-
     if (Auth::check()) {
         return redirect()->route('dashboard');
     } else {
@@ -66,6 +61,7 @@ Route::middleware([
     Route::put('/types/archive_type/{id}', [FarmingTypeController::class, 'archive_type'])->name('types.archive_type');
     Route::put('/users/archive_user/{id}', [UsersController::class, 'archive_user'])->name('users.archive_user');
     Route::put('/farmers/archive_farmer/{id}', [FarmersController::class, 'archive_farmer'])->name('farmers.archive_farmer');
+    Route::get('farmers/view/{id}', [FarmersController::class, 'view'])->name('farmers.view');
 });
 
 Artisan::call('storage:link');

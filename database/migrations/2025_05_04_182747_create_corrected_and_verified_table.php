@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('main_livelihood', function (Blueprint $table) {
+        Schema::create('corrected_and_verified', function (Blueprint $table) {
             $table->id();
-            $table->integer('farmer_profile_id')->default(0);
-            $table->string('main_livelihood')->nullable();
-            $table->string('meta')->nullable();
-            $table->string('value')->nullable();
+            $table->integer('farmer_id')->default(0);
+            $table->string('paper_date')->nullable();
+            $table->string('official')->nullable();
+            $table->string('muni_city_official')->nullable();
+            $table->string('cafc_chairman')->nullable();
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('main_livelihood');
+        Schema::dropIfExists('corrected_and_verified');
     }
 };
