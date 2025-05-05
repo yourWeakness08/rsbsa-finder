@@ -816,7 +816,7 @@
                         </Link>
 
                         <div class="max-w-2xl mx-auto p-6">
-                            <Stepper :currentStep="step" :steps="stepLabels" @step-selected="setStep" />
+                            <Stepper :currentStep="step" :steps="stepLabels" />
                         </div>
                         <form @submit.prevent>
                             <div class="sm:w-full md:w-12/12 lg:w-[95%] xl:w-[90%] 2xl:w-[85%] mx-auto px-2">

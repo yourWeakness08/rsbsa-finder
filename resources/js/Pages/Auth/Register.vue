@@ -42,12 +42,12 @@ const submit = () => {
             <div id="basic-info" class="flex flex-wrap justify-between">
                 <div class="col-md-6">
                     <InputLabel for="firstname" value="Firstname" />
-                    <TextInput id="firstname" v-model="form.firstname" type="text" class="mt-1 block w-full" required autofocus autocomplete="firstname" />
+                    <TextInput id="firstname" v-model="form.firstname" type="text" class="mt-1 block w-full uppercase" required autofocus autocomplete="firstname" />
                     <InputError class="mt-2" :message="form.errors.firstname" />
                 </div>
                 <div class="col-md-6">
                     <InputLabel for="lastname" value="Lastname" />
-                    <TextInput id="lastname" v-model="form.lastname" type="text" class="mt-1 block w-full" required autocomplete="lastname" />
+                    <TextInput id="lastname" v-model="form.lastname" type="text" class="mt-1 block w-full uppercase" required autocomplete="lastname" />
                     <InputError class="mt-2" :message="form.errors.lastname" />
                 </div>
             </div>
@@ -58,7 +58,7 @@ const submit = () => {
                     id="email"
                     v-model="form.email"
                     type="email"
-                    class="mt-1 block w-full"
+                    class="mt-1 block w-full uppercase"
                     required
                     autocomplete="username"
                 />
@@ -71,7 +71,7 @@ const submit = () => {
                     id="password"
                     v-model="form.password"
                     type="password"
-                    class="mt-1 block w-full"
+                    class="mt-1 block w-full uppercase"
                     required
                     autocomplete="new-password"
                 />
@@ -84,7 +84,7 @@ const submit = () => {
                     id="password_confirmation"
                     v-model="form.password_confirmation"
                     type="password"
-                    class="mt-1 block w-full"
+                    class="mt-1 block w-full uppercase"
                     required
                     autocomplete="new-password"
                 />
