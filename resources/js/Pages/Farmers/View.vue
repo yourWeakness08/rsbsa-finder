@@ -20,6 +20,7 @@
     import Stepper from '@/Components/StepperNavigation.vue';
     import DropzoneInput from '@/Components/DropzoneProfileInput.vue';
     import Dropzone from '@/Components/Dropzone.vue';
+    import FarmerTabs from '@/Components/FarmerTabs.vue';
 
     import Select2 from 'vue3-select2-component';
 
@@ -57,5 +58,25 @@
                 FARMERS / ViEW FARMER
             </h2>
         </template>
+
+        <div class="py-8">
+            <div class="w-full mx-auto">
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                    <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
+                        <FarmerTabs>
+                            <template #farmer-profile>
+                                <p class="text-gray-700 uppercase">This is the Farmer Profile section.</p>
+                                <!-- your form or data here -->
+                            </template>
+
+                            <template #farm-profile>
+                                <p class="text-gray-700 uppercase">This is the Farm Profile section.</p>
+                                <!-- your form or data here -->
+                            </template>
+                        </FarmerTabs>
+                    </div>
+                </div>
+            </div>
+        </div>
     </AppLayout>
 </template>

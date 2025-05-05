@@ -83,24 +83,37 @@
     const farmer = ref([]);
 
     const submit = () => {
-        form.post(route('finder'), {
-            preserveScroll: true,
-            onProgress: () => processing.value = true,
-
-            onSuccess: () => {
-                const response = props.response;
-
-                if (response) {
-                    console.log(response);
-                    farmerModal.value = true;
-                    farmer.value = props.data;
+        v$.value.$touch();
+        if (!v$.value.$invalid) {
+            form.post(route('finder'), {
+                preserveScroll: true,
+                onProgress: () => processing.value = true,
+    
+                onSuccess: () => {
+                    const response = props.response;
+    
+                    if (response) {
+                        farmerModal.value = true;
+                        farmer.value = props.data;
+                    } else {
+                        Swal.fire({
+                            title: 'Search Farmer',
+                            text: 'Searched Farmer Information not found.',
+                            icon: 'warning'
+                        })
+                    }
                 }
-            }
-        });
+            });
+        }
     };
 
     const resetForm = () => {
-        form.reset();
+        form.firstname = '';
+        form.lastname = '';
+        form.middlename = '';
+        form.extension = '';
+        form.gender = '';
+        form.birth = '';
         v$.value.$reset();
     }
 
@@ -144,7 +157,7 @@
                 <div id="basic-info" class="flex flex-wrap justify-between items-start mb-4">
                     <div class="col-md-6">
                         <InputLabel for="firstname" value="First name" :required="true" />
-                        <TextInput id="firstname" v-model="form.firstname" type="text" class="mt-1 block w-full" autocomplete="firstname" 
+                        <TextInput id="firstname" v-model="form.firstname" type="text" class="mt-1 block w-full uppercase" autocomplete="firstname" 
                             @blur="v$.firstname.$touch()"
                             :class="inputBorderClass('firstname')"
                         />
@@ -154,13 +167,13 @@
                     </div>
                     <div class="col-md-6">
                         <InputLabel for="middlename" value="Middle name" :optional="true" />
-                        <TextInput id="middlename" v-model="form.middlename" type="text" class="mt-1 block w-full" autocomplete="middlename" />
+                        <TextInput id="middlename" v-model="form.middlename" type="text" class="mt-1 block w-full uppercase" autocomplete="middlename" />
                     </div>
                 </div>
 
                 <div class="w-full mb-4">
                     <InputLabel for="lastname" value="Last name" :required="true" />
-                    <TextInput id="lastname" v-model="form.lastname" type="text" class="mt-1 block w-full" autocomplete="lastname" 
+                    <TextInput id="lastname" v-model="form.lastname" type="text" class="mt-1 block w-full uppercase" autocomplete="lastname" 
                         @blur="v$.lastname.$touch()"
                         :class="inputBorderClass('lastname')"
                     />
@@ -172,7 +185,7 @@
                 <div id="basic-info" class="flex flex-wrap justify-between mb-4">
                     <div class="col-md-4">
                         <InputLabel for="extension" value="Extension" :optional="true" />
-                        <TextInput id="extension" v-model="form.extension" type="text" class="mt-1 block w-full" autocomplete="extension" />
+                        <TextInput id="extension" v-model="form.extension" type="text" class="mt-1 block w-full uppercase" autocomplete="extension" />
                     </div>
                     <div class="col-md-4">
                         <InputLabel for="gender" value="Gender" :required="true" />
@@ -185,7 +198,7 @@
                     </div>
                     <div class="col-md-4">
                         <InputLabel for="birth" value="Birth Date" :required="true" />
-                        <TextInput id="birth" v-model="form.birth" type="text" class="mt-1 block w-full" autocomplete="birth" readonly 
+                        <TextInput id="birth" v-model="form.birth" type="text" class="mt-1 block w-full uppercase" autocomplete="birth" readonly 
                             @blur="v$.birth.$touch()"
                             :class="inputBorderClass('birth')"
                         />
@@ -199,7 +212,7 @@
                     <PrimaryButton class="bg-green-600 active:bg-green-600 hover:bg-green-800" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
                         SUBMIT
                     </PrimaryButton>
-                    <PrimaryButton class="bg-red-600 active:bg-red-600 hover:bg-red-800" @click="resetForm" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
+                    <PrimaryButton type="button" class="bg-red-600 active:bg-red-600 hover:bg-red-800" @click="resetForm" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
                         RESET
                     </PrimaryButton>
                 </div>
