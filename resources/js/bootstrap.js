@@ -5,9 +5,11 @@
  */
 import $ from 'jquery';
 import select2 from 'select2';
+import moment from 'moment';
 
 window.jQuery = window.$ = $;
 window.select2 = select2;
+window.moment = moment;
 
 import axios from 'axios';
 window.axios = axios;

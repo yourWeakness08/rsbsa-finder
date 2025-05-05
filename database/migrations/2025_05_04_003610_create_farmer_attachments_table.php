@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('farm_profile', function (Blueprint $table) {
+        Schema::create('farmer_attachments', function (Blueprint $table) {
             $table->id();
             $table->integer('farmer_id')->default(0);
-            $table->string('main_livelihood')->nullable()->comment('serialized data that can choose multiple main livelihood');
-            $table->float('farming_gross')->default(0);
-            $table->float('no_farming_gross')->default(0);
-            $table->integer('farm_parcel_no')->default(1);
-            $table->integer('is_arb')->default(0);
+            $table->string('filename')->nullable();
+            $table->string('filepath')->nullable();
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });
@@ -29,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('farm_profile');
+        Schema::dropIfExists('farmer_attachments');
     }
 };

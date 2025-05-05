@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Farmers extends Model
+class Attachments extends Model
 {
     use HasFactory;
-
-    protected $fillable = ['firstname', 'lastname'];
+    protected $table = 'farmer_attachments';
+    protected $fillable = ['farmer_id', 'filename', 'filepath', 'uuid'];
 }

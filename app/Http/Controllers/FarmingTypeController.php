@@ -16,7 +16,7 @@ class FarmingTypeController extends Controller
      */
     public function index(Request $request) {
         DB::enableQueryLog();
-        $paginate = $request->paginate ? intval($request->paginate): 25;
+        $paginate = $request->paginate ? intval($request->paginate): 10;
         $farming_types = FarmingType::LeftJoin('users', 'users.id', '=', 'farming_types.created_by')
         ->select(DB::raw('CONCAT(users.firstname, " ", users.lastname) as created_name, farming_types.id, farming_types.type, farming_types.name, farming_types.created_at'))
         ->where('farming_types.is_archived', 0)

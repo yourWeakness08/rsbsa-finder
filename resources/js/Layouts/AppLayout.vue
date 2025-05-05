@@ -33,7 +33,7 @@
 </script>
 
 <template>
-    <div>
+    <div class="fixed w-full">
         <Head :title="title" />
 
         <Banner />
@@ -176,7 +176,7 @@
                 </header>
     
                 <!-- Page Content -->
-                <main class="px-4 sm:px-6 lg:px-8">
+                <main id="scroll-top" class="px-4 sm:px-6 lg:px-8 overflow-y-auto" style="height: calc(100vh - 4rem - 4rem);">
                     <slot />
                 </main>
             </div>

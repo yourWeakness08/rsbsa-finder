@@ -33,6 +33,7 @@ class CreateNewUser implements CreatesNewUsers
             'firstname' => trim(strtolower($input['firstname'])),
             'lastname' => trim(strtolower($input['lastname'])),
             'email' => trim($input['email']),
+            'role' => 1,
             'password' => Hash::make($input['password']),
             'uuid' => Str::random(12),
         ]);

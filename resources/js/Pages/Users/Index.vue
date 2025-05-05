@@ -30,7 +30,10 @@
             type: Object,
             default: () => ({}),
         },
-        filter: String,
+        filter: {
+            type: Object,
+            default: () => ({}),
+        },
         auth: {
             type: Object,
             default: () => ({}),
@@ -45,7 +48,7 @@
     const searchValue = ref(null);
     const debouncedSearch = ref('');
 
-    const pages = ref([ 25, 50, 100, 200, 'All']);
+    const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
     const handleSearch = proxy.$debounce((val) => {
         const { value } = pageValue;
@@ -279,7 +282,7 @@
 <template>
     <AppLayout title="Users">
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-md text-gray-800 leading-tight">
                 USERS
             </h2>
         </template>
@@ -335,8 +338,8 @@
                                                 {{ (users.role == 1) ? 'Administrator' : 'Member' }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -352,8 +355,8 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveUser(users.id)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveUser(users.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -381,8 +384,8 @@
                                                 {{ (users.role == 1) ? 'Administrator' : 'Member' }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -398,8 +401,8 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveUser(users.id)">
-                                                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveUser(users.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
@@ -419,10 +422,10 @@
                             </table>
                             <div class="mt-6">
                                 <div class="flex flex-row justify-between items-center">
-                                    <div class="md:w-1/12">
+                                    <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-1/12">
                                         <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                     </div>
-                                    <div class="md:w-11/12">
+                                    <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
                                         <ul class="flex items-center justify-end -space-x-px h-8 text-sm">
                                             <li v-for="(link, index) in users.links" :key="index">
                                                 <template v-if="index == '0'">
