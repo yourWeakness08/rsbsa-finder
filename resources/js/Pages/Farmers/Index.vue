@@ -57,12 +57,13 @@
         let formData = {};
         if (value) { formData.paginate = value };
         formData.search = debouncedSearch.value ? val : '';
+        searchValue.value = debouncedSearch.value ? val : '';
         
         router.visit('/farmers', {
             method: 'get',
             data: formData,
             preserveState: true,
-            only: ['farmers', 'filter']
+            only: ['farmer', 'filter']
         });
     }, 1000);
 
@@ -81,7 +82,7 @@
             method: 'get',
             data: formData,
             preserveState: true,
-            only: ['farmers', 'filter']
+            only: ['farmer', 'filter']
         });
     }
 
