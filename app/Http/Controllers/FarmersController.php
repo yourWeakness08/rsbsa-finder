@@ -27,29 +27,46 @@ class FarmersController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request) {
+        DB::enableQueryLog();
+
         $paginate = $request->paginate ? intval($request->paginate): 10;
-        $farmer = FarmerInformation::LeftJoin('users', 'users.id', '=', 'farmer_information.created_by')
-            ->select(DB::raw("CONCAT(farmer_information.firstname, ' ', farmer_information.lastname) as name, farmer_information.*, CONCAT(users.firstname, ' ', users.lastname) as created_name"))
-            ->where('farmer_information.is_archived', 0)
-            ->where(function($query) use($request){
-            if($request->search){
-                $query->where('farmer_information.firstname', 'like', '%'.$request->search.'%')
-                ->orWhere('farmer_information.lastname', 'like', '%'.$request->search.'%')
-                ->orWhere('farmer_information.middlename', 'like', '%'.$request->search.'%');
-            }
-        })
+
+        $farmer = FarmerInformation::from('farmer_information as a')
+            ->select(DB::raw("a.id, CONCAT(
+                        a.firstname, ' ',
+                        IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
+                        a.lastname,
+                        IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
+                    ) AS name, a.ref_no, a.mobile_no, a.farmer_image, a.created_at,  CONCAT(b.firstname, ' ', b.lastname) as created_name
+                "))
+            ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
+            ->where('a.is_archived', 0)
+            ->where( function($query) use ($request) {
+                if ($request->search) {
+                    $query->where('a.firstname', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.lastname', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.middlename', 'like', '%'.$request->search.'%');
+                }
+            })
         ->paginate($paginate);
         $farmer->appends(['paginate' => $paginate]);
-        
-        if($request->paginate == 'All'){ 
-            $farmer = FarmerInformation::LeftJoin('users', 'users.id', '=', 'farmer_information.created_by')
-            ->select(DB::raw("CONCAT(farmer_information.firstname, ' ', farmer_information.lastname) as name, farmer_information.*, CONCAT(users.firstname, ' ', users.lastname) as created_name"))
-            ->where('farmer_information.is_archived', 0)
-            ->where(function($query) use($request){
-                if($request->search){
-                    $query->where('farmer_information.firstname', 'like', '%'.$request->search.'%')
-                ->orWhere('farmer_information.lastname', 'like', '%'.$request->search.'%')
-                ->orWhere('farmer_information.middlename', 'like', '%'.$request->search.'%');
+
+        if($request->paginate == 'All'){
+            $farmer = FarmerInformation::from('farmer_information as a')
+            ->select(DB::raw("a.id, CONCAT(
+                        a.firstname, ' ',
+                        IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
+                        a.lastname,
+                        IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
+                    ) AS name, a.ref_no, a.mobile_no, a.farmer_image, a.created_at,  CONCAT(b.firstname, ' ', b.lastname) as created_name
+                "))
+            ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
+            ->where('a.is_archived', 0)
+            ->where( function($query) use ($request) {
+                if ($request->search) {
+                    $query->where('a.firstname', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.lastname', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.middlename', 'like', '%'.$request->search.'%');
                 }
             })
             ->get();
