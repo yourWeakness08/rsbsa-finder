@@ -23,7 +23,7 @@
         </Link>
   
         <nav class="mt-5">
-            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 mt-4 duration-200 border-r-4" :href="route('dashboard')" :active="route().current('dashboard')" style="border-bottom: 0 !important">
+            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 mt-4 duration-200 border-r-4" :key="'dashboard'" :href="route('dashboard')" :active="route().current('dashboard')" style="border-bottom: 0 !important">
               <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M2 10C2 5.58172 5.58172 2 10 2V10H18C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10Z" fill="currentColor" />
                 <path d="M12 2.25195C14.8113 2.97552 17.0245 5.18877 17.748 8.00004H12V2.25195Z" fill="currentColor" />
@@ -31,7 +31,7 @@
 
               DASHBOARD
             </NavLink>
-            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :href="route('farmers.index')" :active="route().current('farmers.index') || route().current('farmers.create')" style="border-bottom: 0 !important">
+            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'farmers'" :href="route('farmers.index')" :active="route().current('farmers.index') || route().current('farmers.create')" style="border-bottom: 0 !important">
               <svg fill="#000000" class="w-5 h-5" viewBox="0 0 14 14" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -43,7 +43,7 @@
               FARMERS
             </NavLink>
 
-            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :href="route('types.index')" :active="route().current('types.index')" style="border-bottom: 0 !important">
+            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'types'" :href="route('types.index')" :active="route().current('types.index')" style="border-bottom: 0 !important">
               <svg fill="#000000" class="w-5 h-5" viewBox="0 0 96 96" id="Layer_1_1_" version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -100,7 +100,7 @@
               FARMING TYPES
             </NavLink>
             
-            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :href="route('users.index')" :active="route().current('users.index')" style="border-bottom: 0 !important">
+            <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'users'" :href="route('users.index')" :active="route().current('users.index')" style="border-bottom: 0 !important">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
