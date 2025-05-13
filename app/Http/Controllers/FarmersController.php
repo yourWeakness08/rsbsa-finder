@@ -556,7 +556,34 @@ class FarmersController extends Controller
         );
     }
 
-    public function search_farmer(Request $request,  FarmerInformation $farmerInformation) {
-        dd($request);
+    public function search(Request $request, FarmerInformation $farmerInformation) {
+        $q = $request->input('query');
+        $farmer = FarmerInformation::from('farmer_information as a')
+            ->select(DB::raw("a.farmer_image, a.id, CONCAT(
+                a.firstname, ' ',
+                IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
+                a.lastname,
+                IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
+            ) AS name"))
+            ->where('a.is_archived', 0)
+            ->where( function($query) use ($q) {
+                if ($q) {
+                    $query->where('a.firstname', 'like', '%'.$q.'%')
+                    ->orWhere('a.lastname', 'like', '%'.$q.'%')
+                    ->orWhere('a.middlename', 'like', '%'.$q.'%')
+                    ->orWhere(DB::raw('CONCAT(a.firstname, "", a.lastname)'), 'like', '%'.$q.'%');
+                }
+            })
+        ->get();
+        $farmer->all();
+
+        $farmer->transform(function ($farmers) {
+            $farmers->farmer_image = asset('uploads/farmers/farmer_'.$farmers->id.'/'.$farmers->farmer_image);
+            $farmers->name = strtoupper($farmers->name);
+            
+            return $farmers;   
+        });
+
+        return response()->json($farmer);
     }
 }

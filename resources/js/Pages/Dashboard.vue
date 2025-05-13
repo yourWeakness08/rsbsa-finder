@@ -3,24 +3,7 @@
     import AppLayout from '@/Layouts/AppLayout.vue';
     import Welcome from '@/Components/Welcome.vue';
     import PrimaryButton from '@/Components/PrimaryButton.vue';
-
-    import FormRepeater from '@/Components/RepeatingFields.vue';
-
-    const form = useForm({
-        email: '',
-        password: '',
-        remember: false,
-    });
-
-    const submit = () => {
-        form.transform(data => ({
-            ...data,
-            remember: form.remember ? 'on' : '',
-        })).post(route('login'), {
-            onFinish: () => form.reset('password'),
-        });
-        // console.log(form);
-    }
+    import SearchDropdown from '@/Components/SearchDropdown.vue'
 </script>
 
 <template>
@@ -32,9 +15,11 @@
         </template>
 
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    
+            <div class="w-full mx-auto">
+                <div class="flex flex-wrap justify-end">
+                    <div class="w-3/12">
+                        <SearchDropdown />
+                    </div>
                 </div>
             </div>
         </div>
