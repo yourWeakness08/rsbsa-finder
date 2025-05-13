@@ -62,6 +62,7 @@ Route::middleware([
     Route::put('/users/archive_user/{id}', [UsersController::class, 'archive_user'])->name('users.archive_user');
     Route::put('/farmers/archive_farmer/{id}', [FarmersController::class, 'archive_farmer'])->name('farmers.archive_farmer');
     Route::get('farmers/view/{id}', [FarmersController::class, 'view'])->name('farmers.view');
+    Route::get('/search', [FarmersController::class, 'search'])->name('farmers.search');
 });
 
 Artisan::call('storage:link');
