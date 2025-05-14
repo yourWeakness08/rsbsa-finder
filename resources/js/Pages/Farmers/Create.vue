@@ -440,16 +440,16 @@
         $('#birth').daterangepicker({
             opens: 'left',
             locale: {
-                format: 'YYYY/MM/DD',
+                format: 'MM/DD/YYYY',
             },
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
             // maxDate: moment()
         }).on('apply.daterangepicker', function(ev, picker){
-            $(this).val(picker.startDate.format('YYYY/MM/DD'))
+            $(this).val(picker.startDate.format('MM/DD/YYYY'))
 
-            form.birth = moment(picker.startDate.format('YYYY/MM/DD')).format('YYYY/MM/DD');
+            form.birth = moment(picker.startDate.format('MM/DD/YYYY')).format('MM/DD/YYYY');
         });
     }
 
@@ -457,15 +457,15 @@
         $('#paper_date').daterangepicker({
             opens: 'left',
             locale: {
-                format: 'YYYY/MM/DD',
+                format: 'MM/DD/YYYY',
             },
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
             // maxDate: moment()
         }).on('apply.daterangepicker', function(ev, picker){
-            $(this).val(picker.startDate.format('YYYY/MM/DD'))
-            form.paper_date = moment(picker.startDate.format('YYYY/MM/DD')).format('YYYY/MM/DD');
+            $(this).val(picker.startDate.format('MM/DD/YYYY'))
+            form.paper_date = moment(picker.startDate.format('MM/DD/YYYY')).format('MM/DD/YYYY');
         });
     }
 
@@ -992,7 +992,7 @@
                                         </div>
                                         <div class="md:w-[24%] sm:w-full">
                                             <InputLabel for="birth" value="Date of Birth" :required="true" />
-                                            <TextInput type="text" class="mt-1 block w-full uppercase" id="birth" placeholder="YYYY/MM/DD" v-model="form.birth" autocomplete="off" 
+                                            <TextInput type="text" class="mt-1 block w-full uppercase" id="birth" placeholder="MM/DD/YYYY" v-model="form.birth" autocomplete="off" 
                                                 @blur="v$.birth.$touch()"
                                                 :class="inputBorderClass('birth')"
                                             />
@@ -2638,7 +2638,7 @@
                                         <div class="flex flex-wrap justify-center mb-4">
                                             <div class="sm:w-full md:w-3/12 lg:w-3/12 xl:w-3/12 2xl:w-3/12">
                                                 <InputLabel for="Date" class="uppercase" value="Date" :required="true" />
-                                                <TextInput type="text" v-model="form.paper_date" id="paper_date" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                <TextInput type="text" v-model="form.paper_date" id="paper_date" class="mt-1 block w-full uppercase" placeholder="MM/DD/YYYY" autocomplete="off"
                                                     @blur="v$.paper_date.$touch()"
                                                     :class="inputBorderClass('paper_date')"
                                                 />
