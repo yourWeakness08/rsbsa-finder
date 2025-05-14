@@ -435,7 +435,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="flex flex-wrap lg:justify-start xl:justify-center 2xl:justify-center items-stretch gap-x-3">
+                                        <div class="flex flex-wrap w-full lg:justify-start xl:justify-center 2xl:justify-center items-stretch gap-x-3">
                                             <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood_info['farmer'].length > 0"
                                                 :class="{
                                                     'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : farmer.main_livelihood.length >= 1 && farmer.main_livelihood.length <= 2,
@@ -835,7 +835,7 @@
                                                             <tbody>
                                                                 <tr v-for="(v, i) in item.farm_parcel_informations" :key="i" style="vertical-align: top;">
                                                                     <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ typeof v.farming_type === 'number' ? farmCommodity(v.farming_type) : v.farming_type }}</p>
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ !isNaN(parseFloat(v.farming_type)) && isFinite(v.farming_type) ? farmCommodity(v.farming_type) : v.farming_type }}</p>
                                                                     </td>
                                                                     <td class="p-3 border border-gray-400">
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
@@ -848,7 +848,7 @@
                                                                     </td>
                                                                     <td class="p-3 border border-gray-400">
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">
-                                                                        {{ v.is_organic_practitioner != null ? (v.is_organic_practitioner == 1 ? 'Yes' : 'No') : '&nbsp;' }}
+                                                                        {{ v.is_organic_practitioner == 1 ? 'Yes' : 'No' }}
                                                                         </p>
                                                                     </td>
                                                                     <td class="p-3 border border-gray-400">
