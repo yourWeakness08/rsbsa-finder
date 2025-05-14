@@ -335,7 +335,7 @@ class FarmersController extends Controller
                                 'farmer_profile_id' => $farm_profile_id, 
                                 'brgy' => trim(strtolower($parcel['brgy'])), 
                                 'city'=> trim(strtolower($parcel['municipality'])),
-                                'document' => $document,
+                                'document' => $docFilename,
                                 'total_farm_area' => $parcel['total_farm_area'], 
                                 'is_whithin_ancentral_domain' => $parcel['is_whithin_ancentral_domain'], 
                                 'is_agrarian_reform_beneficiary' => $parcel['is_agrarian_reform_beneficiary'], 
