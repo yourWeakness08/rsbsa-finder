@@ -13,6 +13,7 @@
 
     import SecondaryButton from '@/Components/SecondaryButton.vue';
     import PrimaryButton from '@/Components/PrimaryButton.vue';
+    import TablePagination from '@/Components/TablePagination.vue';
 
     import Select2 from 'vue3-select2-component';
 
@@ -346,7 +347,7 @@
                                                             <title></title> 
                                                             <g id="Complete"> 
                                                                 <g id="edit">
-                                                                     <g> 
+                                                                    <g> 
                                                                         <path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8" fill="none" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path> 
                                                                         <polygon fill="none" points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon> 
                                                                     </g> 
@@ -392,7 +393,7 @@
                                                             <title></title> 
                                                             <g id="Complete"> 
                                                                 <g id="edit">
-                                                                     <g> 
+                                                                    <g> 
                                                                         <path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8" fill="none" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path> 
                                                                         <polygon fill="none" points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon> 
                                                                     </g> 
@@ -426,19 +427,7 @@
                                         <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                     </div>
                                     <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
-                                        <ul class="flex items-center justify-end -space-x-px h-8 text-sm">
-                                            <li v-for="(link, index) in users.links" :key="index">
-                                                <template v-if="index == '0'">
-                                                    <Link :href="link.url || '#'" :key="link.label" v-html="link.label" class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
-                                                </template>
-                                                <template v-else-if="index == users.links.length - 1">
-                                                    <Link :href="link.url || '#'" :key="link.label" v-html="link.label" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
-                                                </template>
-                                                <template v-else>
-                                                    <Link :href="link.url || '#'" :key="link.label" v-html="link.label" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
-                                                </template>
-                                            </li>
-                                        </ul>
+                                        <TablePagination :arr="users" />
                                     </div>
                                 </div>
                             </div>
