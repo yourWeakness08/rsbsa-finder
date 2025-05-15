@@ -117,12 +117,12 @@
           </button>
 
           <div v-show="showReports" class="pl-6 mt-2 space-y-2">
-            <NavLink
+            <NavLink :href="'#'"
               class="block text-sm text-gray-700 w-full"
             >
               Activities
             </NavLink>
-            <NavLink
+            <NavLink :href="'#'"
               class="block text-sm text-gray-700 w-full"
             >
               Main Livelihood
