@@ -1,6 +1,6 @@
 <script setup>
     import { Link, router, useForm, usePage } from '@inertiajs/vue3';
-    
+
     defineProps({
         arr: {
             type: Object,
