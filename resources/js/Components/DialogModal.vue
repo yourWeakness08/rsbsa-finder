@@ -28,6 +28,7 @@ const close = () => {
         :show="show"
         :max-width="maxWidth"
         :closeable="closeable"
+        :close-on-outside-click="false"
         @close="close"
     >
         <div class="px-6 py-4">

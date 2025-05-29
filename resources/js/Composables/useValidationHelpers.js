@@ -36,18 +36,7 @@ export default function useValidationHelpers(v$, form, options = { autoTouch: fa
       console.warn('form is not a ref or is empty')
     }
   }
-
-//   example for dynamic fields
-//   <input
-//   v-model="form.farm_parcel[0].brgy"
-//   @blur="getFieldState('farm_parcel[0].brgy')?.$touch()"
-//   :class="inputBorderClass('farm_parcel[0].brgy')"
-// />
-
-// <p v-if="hasError('farm_parcel[0].brgy')" class="text-red-500 text-sm">
-//   Barangay is required
-// </p>
-
+  
   return {
     hasError,
     inputBorderClass,

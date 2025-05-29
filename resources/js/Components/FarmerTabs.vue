@@ -1,7 +1,7 @@
 <script setup>
     import { ref } from 'vue'
 
-    const tabs = ['Farmer Information', 'Farm Profile']
+    const tabs = ['Farmer Information', 'Farm Profile', 'Other Information', 'Assistance']
     const activeTab = ref('Farmer Information')
 </script>
 
@@ -22,6 +22,14 @@
 
             <div v-if="activeTab === 'Farm Profile'">
                 <slot name="farm-profile" />
+            </div>
+
+            <div v-if="activeTab === 'Other Information'">
+                <slot name="other-information" />
+            </div>
+
+            <div v-if="activeTab === 'Assistance'">
+                <slot name="assistance" />
             </div>
         </div>
     </div>
