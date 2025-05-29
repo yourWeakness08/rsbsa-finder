@@ -643,7 +643,6 @@
         v$.value.$touch();
         if (!v$.value.$invalid) {
             form.post(route('farmers.store'), {
-                // errorBag: 'submitForm',
                 preserveScroll: true,
                 onSuccess: () => {
                     const page = usePage();
@@ -756,7 +755,7 @@
         form.farm_parcel[index].document = fileData ? fileData : null;
     }
 
-    const famerSpecify = (farmingtype, arr) => {
+    const farmerSpecify = (farmingtype, arr) => {
         let temp = [];
         $.each(props.types[farmingtype], function(index, value) {
             if (arr.includes(value.id)) {
@@ -870,7 +869,7 @@
                                                         :class="inputBorderClass('lastname')"
                                                     />
                                                     <p v-if="hasError('lastname')" class="text-red-500 text-sm">
-                                                        <span class="text-red-500 text-sm" v-if="v$.firstname.required?.$invalid">Last name is required.</span>
+                                                        <span class="text-red-500 text-sm" v-if="v$.lastname.required?.$invalid">Last name is required.</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -2221,7 +2220,7 @@
 
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('crops')">
                                                                 <InputLabel for="crops-specify" value="Specify: " class="me-4" />
-                                                                <p class="border rounded block p-2 w-full uppercase">{{ famerSpecify('crops', form.crops) }}</p>
+                                                                <p class="border rounded block p-2 w-full uppercase">{{ farmerSpecify('crops', form.crops) }}</p>
                                                             </div>
                                                         </div>
                                                         <div class="w-full mb-2">
@@ -2232,7 +2231,7 @@
 
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('livestock')">
                                                                 <InputLabel for="livestock-specify" value="Specify: " class="me-4" />
-                                                                <p class="border rounded block p-2 w-full uppercase">{{ famerSpecify('livestock', form.livestock) }}</p>
+                                                                <p class="border rounded block p-2 w-full uppercase">{{ farmerSpecify('livestock', form.livestock) }}</p>
                                                             </div>
                                                         </div>
                                                         <div class="w-full">
@@ -2243,7 +2242,7 @@
 
                                                             <div class="flex flex-wrap items-center ms-4" v-if="form.farmer.includes('poultry')">
                                                                 <InputLabel for="crops-specify" value="Specify: " class="me-4" />
-                                                                <p class="border rounded block p-2 w-full uppercase">{{ famerSpecify('poultry', form.poultry) }}</p>
+                                                                <p class="border rounded block p-2 w-full uppercase">{{ farmerSpecify('poultry', form.poultry) }}</p>
                                                             </div>
                                                         </div>
                                                     </div>
