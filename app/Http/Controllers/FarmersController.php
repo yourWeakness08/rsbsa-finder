@@ -653,23 +653,47 @@ class FarmersController extends Controller
             $emer_contact = preg_replace('/\D/', '', $request->contact_no);
 
             $other_info = OthersFarmerInformation::where('farmer_id', $id)->first();
-            $other_info->mothers_maiden_name = trim(strtolower($request->mothers_maiden_name));
-            $other_info->is_household_head = $request->is_household_head;
-            $other_info->name_if_not_head = trim(strtolower($request->name_if_not_head));
-            $other_info->is_not_head_relationship = trim(strtolower($request->is_not_head_relationship));
-            $other_info->no_of_living_members = $request->no_of_living_members;
-            $other_info->no_of_male = $request->no_of_male;
-            $other_info->no_of_female = $request->no_of_female;
-            $other_info->highest_formal_education = $request->highest_formal_education;
-            $other_info->is_pwd = $request->is_pwd;
-            $other_info->is_4ps = $request->is_4ps;
-            $other_info->has_gov_id = $request->has_gov_id;
-            $other_info->id_no = trim(strtolower($request->id_no));
-            $other_info->is_farmer_coop_mem = $request->is_farmer_coop_mem;
-            $other_info->is_farmer_mem = trim(strtolower($request->is_farmer_mem));
-            $other_info->contact_emergency = trim(strtolower($request->contact_emergency));
-            $other_info->contact_no = $emer_contact;
-            $other_info->save();
+
+            if ($other_info) {
+                $other_info->mothers_maiden_name = trim(strtolower($request->mothers_maiden_name));
+                $other_info->is_household_head = $request->is_household_head;
+                $other_info->name_if_not_head = trim(strtolower($request->name_if_not_head));
+                $other_info->is_not_head_relationship = trim(strtolower($request->is_not_head_relationship));
+                $other_info->no_of_living_members = $request->no_of_living_members;
+                $other_info->no_of_male = $request->no_of_male;
+                $other_info->no_of_female = $request->no_of_female;
+                $other_info->highest_formal_education = $request->highest_formal_education;
+                $other_info->is_pwd = $request->is_pwd;
+                $other_info->is_4ps = $request->is_4ps;
+                $other_info->has_gov_id = $request->has_gov_id;
+                $other_info->id_no = trim(strtolower($request->id_no));
+                $other_info->is_farmer_coop_mem = $request->is_farmer_coop_mem;
+                $other_info->is_farmer_mem = trim(strtolower($request->is_farmer_mem));
+                $other_info->contact_emergency = trim(strtolower($request->contact_emergency));
+                $other_info->contact_no = $emer_contact;
+                $other_info->save();
+            } else {
+                $query = OthersFarmerInformation::create([
+                    'farmer_id' => $id,
+                    "mothers_maiden_name" => trim(strtolower($request->mothers_maiden_name)),
+                    "is_household_head" => $request->is_household_head,
+                    "name_if_not_head" => trim(strtolower($request->name_if_not_head)),
+                    "is_not_head_relationship" => trim(strtolower($request->is_not_head_relationship)),
+                    "no_of_living_members" => $request->no_of_living_members,
+                    "no_of_male" => $request->no_of_male,
+                    "no_of_female" => $request->no_of_female,
+                    "highest_formal_education" => $request->highest_formal_education,
+                    "is_pwd" => $request->is_pwd,
+                    "is_4ps" => $request->is_4ps,
+                    "has_gov_id" => $request->has_gov_id,
+                    "id_no" => trim(strtolower($request->id_no)),
+                    "is_farmer_coop_mem" => $request->is_farmer_coop_mem,
+                    "is_farmer_mem" => trim(strtolower($request->is_farmer_mem)),
+                    "contact_emergency" => trim(strtolower($request->contact_emergency)),
+                    "contact_no" => $emer_contact,
+                    'uuid' => Str::random(12)
+                ]);
+            }
         }
 
         return $query ? true : false;
@@ -678,17 +702,32 @@ class FarmersController extends Controller
     private function updateLivelihood($request, $id) {
         $profile = FarmProfile::where('farmer_id', $id)->first();
 
-        $profile->main_livelihood = serialize($request->main_livelihood);
-        $profile->farming_gross = $request->farming_gross;
-        $profile->no_farming_gross = $request->no_farming_gross;
-        $query = $profile->save();
+        if($profile) {
+            $profile->main_livelihood = serialize($request->main_livelihood);
+            $profile->farming_gross = $request->farming_gross;
+            $profile->no_farming_gross = $request->no_farming_gross;
+            $query = $profile->save();
+        } else {
+            $query = FarmProfile::create([
+                'farmer_id' => $id,
+                'main_livelihood' => serialize($request->main_livelihood),
+                'farming_gross' => $request->farming_gross,
+                'no_farming_gross' => $request->no_farming_gross,
+                'uuid' => Str::random(12)
+            ]);
+        }
 
         if ($query) {
-            $farm_profile_id = $profile->id;
+            $farm_profile_id = $profile->id ?? $query->id;
 
             if ($request->farmer !== null && $request->farmer) {
                 if(count($request->farmer) > 0) {
-                    MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->delete();
+                    $checkMain = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->get();
+
+                    if (count($checkMain->toArray()) > 0) {
+                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->delete();
+                    }
+
                     foreach($request->farmer as $farmer) {
                         if ($farmer == 'rice' || $farmer == 'corn') {
                             MainLivelihood::create([
@@ -747,7 +786,11 @@ class FarmersController extends Controller
 
             if($request->farm_worker !== null && $request->farm_worker) {
                 if(count($request->farm_worker) > 0) {
-                    MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farm_worker')->delete();
+                    $checkFarmWorker = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->get();
+                    if (count($checkFarmWorker->toArray()) > 0) {
+                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farm_worker')->delete();
+                    }
+
                     foreach($request->farm_worker as $worker) {
                         MainLivelihood::create([
                             'farmer_profile_id' => $farm_profile_id,
@@ -762,7 +805,11 @@ class FarmersController extends Controller
 
             if($request->fisherfolks !== null && $request->fisherfolks) {
                 if(count($request->fisherfolks) > 0) {
-                    MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'fisherfolks')->delete();
+                    $checkFisherfolks = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'fisherfolks')->get();
+                    if (count($checkFisherfolks->toArray()) > 0) {
+                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'fisherfolks')->delete();
+                    }
+
                     foreach($request->fisherfolks as $fisherfolks) {
                         MainLivelihood::create([
                             'farmer_profile_id' => $farm_profile_id,
@@ -777,7 +824,11 @@ class FarmersController extends Controller
             
             if($request->agri_youth !== null && $request->agri_youth) {
                 if(count($request->agri_youth) > 0) {
-                    MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'agri_youth')->delete();
+                    $checkAgri = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'agri_youth')->get();
+                    if (count($checkAgri->toArray()) > 0) {
+                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'agri_youth')->delete();
+                    }
+
                     foreach($request->agri_youth as $agri_youth) {
                         MainLivelihood::create([
                             'farmer_profile_id' => $farm_profile_id,

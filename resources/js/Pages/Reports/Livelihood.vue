@@ -210,16 +210,16 @@
 </script>
 
 <template>
-    <AppLayout title="Assistance Report">
+    <AppLayout title="Livelihood Report">
         <template #header>
             <h2 class="font-semibold text-md text-gray-800 leading-tight">
-                ASSISTANCE REPORTS
+                LIVELIHOOD REPORTS
             </h2>
         </template>
 
         <div class="py-8">
             <div class="flex flex-wrap justify-between">
-                <div class="w-[33%]">
+                <div class="w-[28%]">
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                         <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
                             <div class="w-full mb-4">
@@ -233,18 +233,6 @@
                                 <div class="rounded-md block w-full mt-1">
                                     <Select2 class="h-10 uppercase" v-model="form.livelihood" :options="main_livelihood" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="handleLivelihood" />
                                 </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <InputLabel for="Assistance" value="Assistance" />
-                                <div class="rounded-md block w-full mt-1">
-                                    <Select2 class="h-10 uppercase" v-model="form.assistance" :options="select2Assitance" :settings="{ placeholder: 'Select An Option', width: '100%' }" />
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <InputLabel for="daterange" value="Date" />
-                                <TextInput type="text" class="mt-1 block w-full uppercase" id="daterange" placeholder="MM/DD/YYYY - MM/DD/YYYY" />
                             </div>
 
                             <hr class="mb-4">
@@ -261,7 +249,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="w-[65%]">
+                <div class="w-[70%]">
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                         <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
                             <div class="flex flex-wrap justify-end">
@@ -307,7 +295,7 @@
                                             </tr>
                                         </template>
                                         <template v-else-if="filter.paginate == 'All' && reports.length > 0">
-                                             <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
+                                            <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                     {{ reports.name }}
                                                 </td>
