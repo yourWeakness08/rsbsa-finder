@@ -368,7 +368,7 @@
             emergency.mask($("#contact-emergency"));
 
             datepicker();
-        }, 250);
+        }, 350);
     }
 
     const memberNumber = (e) => {
@@ -404,12 +404,12 @@
         }).on('apply.daterangepicker', function(ev, picker){
             $(this).val(picker.startDate.format('MM/DD/YYYY'))
 
-            form.birth = moment(picker.startDate.format('MM/DD/YYYY')).format('MM/DD/YYYY');
+            form.date_of_birth = moment(picker.startDate.format('MM/DD/YYYY')).format('MM/DD/YYYY');
         });
     }
 
     function formatPhoneNumber(number) {
-        const match = number.match(/^09(\d{4})(\d{5})$/);
+        const match = number ? number.match(/^09(\d{4})(\d{5})$/) : false;
         if (!match) return number;
         return `(09) ${match[1]}-${match[2]}`;
     }
@@ -859,10 +859,10 @@
 
         history$.value.$touch();
         if (!history$.value.$invalid) {
-            processing.value = true;
 
             historyForm.post(route('assistance.save_assistance'), {
                 preserveScroll: true,
+                onProgress: () => processing.value = true,
                 onSuccess: () => {
                     const page = usePage();
                     const response = page.props.flash?.response;
@@ -882,6 +882,7 @@
                     }
                 },
                 onError: (errors) => {
+                    processing.value = false;
                     console.log(errors);
                 }
             });
@@ -1112,14 +1113,14 @@
                                         <div class="flex flex-wrap items-start gap-x-4">
                                             <div class="sm:w-full md:w-[40%]">
                                                 <InputLabel for="living-household-members" value="No. of living household members" />
-                                                <p class="border rounded block p-2 w-full uppercase">{{ farmer.no_of_living_members ? farmer.no_of_living_members : '&nbsp;' }}</p>
+                                                <p class="border rounded block p-2 w-full uppercase">{{ farmer.no_of_living_members ? farmer.no_of_living_members : 0 }}</p>
                                             </div>
                                             <div class="sm:w-full md:w-[18%]">
-                                                <InputLabel for="no-of-male" value="No. of Male" :required="true" />
+                                                <InputLabel for="no-of-male" value="No. of Male" />
                                                 <p class="border rounded block p-2 w-full uppercase">{{ farmer.no_of_male > 0 ? farmer.no_of_male : 0 }}</p>
                                             </div>
                                             <div class="sm:w-full md:w-[18%]">
-                                                <InputLabel for="no-of-female" value="No. of Female" :required="true" />
+                                                <InputLabel for="no-of-female" value="No. of Female" />
                                                 <p class="border rounded block p-2 w-full uppercase">{{ farmer.no_of_female > 0 ? farmer.no_of_female : 0 }}</p>
                                             </div>
                                         </div>
@@ -1746,19 +1747,26 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <template v-for="(item, index) in farmer.attachments" :key="index">
+                                                    <template v-if="farmer.attachments.length > 0">
+                                                        <template v-for="(item, index) in farmer.attachments" :key="index">
+                                                            <tr class="bg-white border-b">
+                                                                <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.filename }}</td>
+                                                                <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap text-right">
+                                                                    <svg @click="viewAttachment('attachments', item.filepath)" class="cursor-pointer h-10 w-10 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                                        <g id="SVGRepo_iconCarrier"> 
+                                                                            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                                            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94291 16.4788 5 12.0012 5Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                                        </g>
+                                                                    </svg>
+                                                                </td>
+                                                            </tr>
+                                                        </template>
+                                                    </template>
+                                                    <template v-else>
                                                         <tr class="bg-white border-b">
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.filename }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap text-right">
-                                                                <svg @click="viewAttachment('attachments', item.filepath)" class="cursor-pointer h-10 w-10 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                                                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                                                                    <g id="SVGRepo_iconCarrier"> 
-                                                                        <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
-                                                                        <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94291 16.4788 5 12.0012 5Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                                                                    </g>
-                                                                </svg>
-                                                            </td>
+                                                            <td colspan="2" id="no-data-found" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No Data Found.</td>
                                                         </tr>
                                                     </template>
                                                 </tbody>
@@ -2642,7 +2650,7 @@
                                             :class="!y$.farming_gross.$dirty && livelihoodForm.farming_gross ? 'border-gray-300' : livelihoodInputBorderClass('farming_gross')"
                                         />
                                         <p v-if="hasLivelihoodError('farming_gross')" class="text-red-500 text-sm">
-                                            <span class="text-red-500 text-sm" v-if="y$.farming_gross_income.required?.$invalid">Farming Gross Income is required.</span>
+                                            <span class="text-red-500 text-sm" v-if="y$.farming_gross.required?.$invalid">Farming Gross Income is required.</span>
                                         </p>
                                     </div>
                                     <div class="sm:w-full md:w-[49%]">
