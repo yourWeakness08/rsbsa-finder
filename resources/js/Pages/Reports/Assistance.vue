@@ -43,6 +43,10 @@
         assistance: {
             type: Object,
             default: () => ({})
+        },
+        allassistance: {
+            type: Object,
+            default: () => ({})
         }
     });
 
@@ -164,8 +168,8 @@
     }
 
     const formatAssistance = (arr) => {
-        const index = props.assistance.map(obj => obj.id).indexOf(arr.assistance_id);
-        return props.assistance[index].name;
+        const index = props.allassistance.map(obj => obj.id).indexOf(arr.assistance_id);
+        return props.allassistance[index].name;
     }
 
     const formatLivelihood = (val) => {

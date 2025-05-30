@@ -299,8 +299,16 @@ class AssistanceController extends Controller
             $rs->livelihoods = $meta;
         }
 
+        $allassistance = Assistance::select(DB::raw('livelihoods, id, name'))->get();
+        $allassistanceCollection = collect($allassistance);
+
+        foreach($allassistanceCollection as $key => $rs) {
+            $meta = @unserialize($rs->livelihoods) ?? array();
+            $rs->livelihoods = $meta;
+        }
+
         return Inertia::render(
-            'Reports/Assistance', ['reports' => $assistanceHistory, 'assistance' => $assistanceCollection]
+            'Reports/Assistance', ['reports' => $assistanceHistory, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
         );
     }
 }
