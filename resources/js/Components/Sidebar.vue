@@ -126,19 +126,19 @@
           </button>
 
           <div v-show="showReports" class="pl-6 mt-2 border-b-0">
-            <NavLink :href="route('reports.activities')" :key="'activities'" :active="route().current('reports.activities')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'activities'" :active="route().current('reports.activities')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               ACTIVITIES
             </NavLink>
             <NavLink :href="route('reports.assistance')" :key="'assistance'" :active="route().current('reports.assistance')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               ASSISTANCE
             </NavLink>
-            <NavLink :href="route('reports.registered')" :key="'registered'" :active="route().current('reports.registered')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'registered'" :active="route().current('reports.registered')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               REGISTERED
             </NavLink>
-            <NavLink :href="route('reports.farming')" :key="'farming'" :active="route().current('reports.farming')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'farming'" :active="route().current('reports.farming')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               CROPS / LIVESTOCK / POULTRY
             </NavLink>
-            <NavLink :href="route('reports.livelihood')" :key="'Livelihood'" :active="route().current('reports.livelihood')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'Livelihood'" :active="route().current('reports.livelihood')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               MAIN LIVELIHOOD
             </NavLink>
           </div>
