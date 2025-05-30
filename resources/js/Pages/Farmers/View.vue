@@ -56,6 +56,10 @@
         assistance: {
             type: Object,
             default: () => ({})
+        },
+        allassistance: {
+            type: Object,
+            default: () => ({})
         }
     });
 
@@ -875,7 +879,21 @@
                         recentlySuccessful.value = true;
 
                         setTimeout(() => { recentlySuccessful.value = false; }, 1500);
-                        setTimeout(() => { closeAssistanceModal(); historyForm.reset(); history$.value.$reset(); }, 800);
+                        setTimeout(() => { 
+                            closeAssistanceModal(); 
+
+                            historyForm.reset(); 
+                            history$.value.$reset(); 
+                            isCashAssist.value = false;
+
+                            historyForm.farmer_id = 0
+                            historyForm.assistance = ''
+                            historyForm.livelihood = ''
+                            historyForm.amount = ''
+                            historyForm.remarks = ''
+                            historyForm.user_id =0
+                            
+                        }, 800);
                     } else {
                         recentlyFailed.value = true;
                         setTimeout(() => { recentlyFailed.value = false; }, 1500);
@@ -894,7 +912,7 @@
     }
 
     const assistanceFormat = (val) => {
-        const temp = props.assistance;
+        const temp = props.allassistance;
         const index = temp.map(obj => obj.id).indexOf(val);
         const text = temp[index] !== 'undefined' ? temp[index].name : '---';
         
