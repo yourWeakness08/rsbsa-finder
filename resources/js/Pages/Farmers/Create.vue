@@ -845,7 +845,7 @@
                                             <DropzoneInput
                                                 label="Profile Photo"
                                                 upload-url="/"
-                                                :current-image-url="uploadedImage ? uploadedImage : '/storage/images/no-user-image.png'"
+                                                :current-image-url="uploadedImage ? uploadedImage : '/images/no-user-image.png'"
                                                 @fileSelected="handleImageSelected"
                                             />
                                             <span class="text-red-500 text-sm" v-if="v$.image.$error">Image is required.</span>
@@ -1913,7 +1913,7 @@
                                         <div class="sm:w-full md:w-[18%]  md:w-[16%] lg:w-[18%] 2xl:w-[18%] mx-auto">
                                             <InputLabel for="profile" value="Farmer Image" :required="true" />
                                             <div class="relative md:w-35 md:h-35 2xl:w-40 2xl:h-40 rounded-md border border-gray-300">
-                                                <img :src="uploadedImage ? uploadedImage : '/storage/images/no-user-image.png'" alt="" class="w-full h-full object-contain" style="scale: 0.9;">
+                                                <img :src="uploadedImage ? uploadedImage : '/images/no-user-image.png'" alt="" class="w-full h-full object-contain" style="scale: 0.9;">
                                             </div>
                                         </div>
                                         <div class="sm:w-full md:w-[76%] lg:w-[76%] xl:w-[76%] 2xl:w-[79%]">
