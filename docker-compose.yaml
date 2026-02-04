@@ -12,22 +12,31 @@ services:
       - db
     entrypoint: |
       sh -c "./wait-for-it.sh db:3306 -- \
-         composer install && \
-         php artisan migrate && \
-         php artisan serve --host=0.0.0.0 --port=8000"
+        composer install && \
+        php artisan migrate && \
+        npm install && \
+        npm run dev & \
+        php artisan serve --host=0.0.0.0 --port=8000"
   db:
     image: mysql/mysql-server:8.0.23
     restart: always
     container_name: db
     environment:
-      MYSQL_DATABASE: laravel_db
-      MYSQL_USER: testuser
-      MYSQL_PASSWORD: "@admin!234"
-      MYSQL_ROOT_PASSWORD: "@admin!234"
+      MYSQL_DATABASE: rsbsa_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "admin!234"
+      MYSQL_ROOT_PASSWORD: "admin!234"
     ports:
       - "3306:3306"
     volumes:
       - dbdata:/var/lib/mysql
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
 
 volumes:
   dbdata:

@@ -143,7 +143,7 @@
     <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
         <div class="flex flex-wrap items-center justify-between gap-x-5">
             <div>
-                <img src="/storage/images/DA-LOGO-1024x1024.png" alt="logo" class="h-36 w-36 mx-auto">
+                <img src="/images/DA-LOGO-1024x1024.png" alt="logo" class="h-36 w-36 mx-auto">
             </div>
 
             <div>
@@ -227,10 +227,10 @@
         <template #content>
             <div class="mb-4">
                 <div class="w-full max-w-3xl mx-auto aspect-[847/534] relative text-black font-sans">
-                    <img src="/storage/images/rsbsa-card-v2.png" alt="RSBSA Background" class="absolute inset-0 w-full h-full object-cover z-0 rounded-md" />
+                    <img src="/images/rsbsa-card-v2.png" alt="RSBSA Background" class="absolute inset-0 w-full h-full object-cover z-0 rounded-md" />
 
                     <div class="absolute left-[8%] top-[45%] w-[25%] aspect-square bg-white z-10 overflow-hidden rounded">
-                        <img src="/storage/images/male-farmer.png" alt="Photo" class="w-full h-full object-cover"/>
+                        <img src="/images/male-farmer.png" alt="Photo" class="w-full h-full object-cover"/>
                     </div>
 
                     <div class="absolute left-[40%] top-[55%] z-10">
