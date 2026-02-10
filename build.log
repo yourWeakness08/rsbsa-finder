@@ -1,0 +1,44 @@
+ Image rsbsa-finder-app Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 559B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 408B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/composer:latest
+#3 DONE 1.1s
+
+#4 [internal] load metadata for docker.io/library/php:8.2-cli
+#4 DONE 1.1s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 216B done
+#5 DONE 0.0s
+
+#6 FROM docker.io/library/composer:latest@sha256:e4ff7e012505df43b4404cf73a4590e06a3f752a7f77d9079a89f770d257eb84
+#6 resolve docker.io/library/composer:latest@sha256:e4ff7e012505df43b4404cf73a4590e06a3f752a7f77d9079a89f770d257eb84 0.0s done
+#6 ...
+
+#7 [stage-0 1/7] FROM docker.io/library/php:8.2-cli@sha256:b96eaaf7f53ccf643244b8bbcc45da061112c93d2bfb2e07603226c49b1f1705
+#7 resolve docker.io/library/php:8.2-cli@sha256:b96eaaf7f53ccf643244b8bbcc45da061112c93d2bfb2e07603226c49b1f1705 0.0s done
+#7 DONE 0.3s
+
+#8 [internal] load build context
+#8 transferring context: 3.53MB 0.3s done
+#8 ERROR: invalid file request CUsersjp02Documentsapplicationsrsbsa-finderpublicstorage
+
+#7 [stage-0 1/7] FROM docker.io/library/php:8.2-cli@sha256:b96eaaf7f53ccf643244b8bbcc45da061112c93d2bfb2e07603226c49b1f1705
+#7 DONE 0.3s
+
+#9 [stage-0 2/7] RUN apt-get update && apt-get install -y     libpng-dev     libonig-dev     libxml2-dev     git     curl     zip     unzip
+#9 CANCELED
+
+#6 FROM docker.io/library/composer:latest@sha256:e4ff7e012505df43b4404cf73a4590e06a3f752a7f77d9079a89f770d257eb84
+#6 CANCELED
+------
+ > [internal] load build context:
+------
+failed to solve: invalid file request CUsersjp02Documentsapplicationsrsbsa-finderpublicstorage
+

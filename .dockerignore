@@ -1,4 +1,13 @@
 node_modules
 vendor
-public/storage
 .env
+.git
+*.log
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+.dockerignore
+.gitignore
+public/storage
