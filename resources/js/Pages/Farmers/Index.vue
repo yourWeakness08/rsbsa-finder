@@ -168,11 +168,11 @@
             <div class="w-full mx-auto">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                     <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
-                        <div class="flex flex-row justify-between align-center">
-                            <div class="md:w-3/12">
-                                <div class="flex flex-wrap justify-start gap-x-1">
-                                    <div class="w-3/12">
-                                        <Link class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white px-2 py-3 mr-3" :href="route('farmers.create')">
+                        <div class="flex flex-row flex-wrap justify-between align-center">
+                            <div class="sm:w-full md:w-[30%] sm:mb-3 md:mb-0">
+                                <div class="flex flex-wrap">
+                                    <div class="sm:w-[16%] md:w-[38%] lg:w-[37%] xl:w-[30%] 2xl:w-[24%]">
+                                        <Link class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white px-2 py-3" :href="route('farmers.create')">
                                             <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -183,8 +183,8 @@
                                             New
                                         </Link>
                                     </div>
-                                    <div class="w-[30%]">
-                                        <PrimaryButton class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-green-500 hover:bg-green-700 text-white px-2 py-3 mr-3" @click="uploadFarmerDialog = true">
+                                    <div class="sm:w-[19.4%] md:w-[38%] lg:w-[37%] xl:w-[28%] 2xl:w-[29%]">
+                                        <PrimaryButton class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-green-500 hover:bg-green-700 text-white px-2 py-3" @click="uploadFarmerDialog = true">
                                             <svg class="w-5 h-5 me-2" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg"  stroke="#ffffff">
                                                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -197,8 +197,8 @@
                                             Import
                                         </PrimaryButton>
                                     </div>
-                                    <div class="w-5/12">
-                                        <a :href="'/download/BookFarmer.csv'" download class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-green-500 hover:bg-green-700 text-white px-2 py-3 mr-3" title="DOWNLOAD FORMAT">
+                                    <div class="sm:w-[23.3%] md:w-[40%] lg:w-[39%] xl:w-[38%] 2xl:w-[36%]">
+                                        <a :href="'/download/BookFarmer.csv'" download class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-green-500 hover:bg-green-700 text-white px-2 py-3" title="DOWNLOAD FORMAT">
                                             <svg class="w-5 h-5 me-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -212,7 +212,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="md:w-3/12">
+                            <div class="sm:w-full md:w-3/12">
                                 <TextInput v-model="searchValue" type="text" class="block w-full h-10" placeholder="Search" autocomplete="off" />
                             </div>
                         </div>
