@@ -236,6 +236,12 @@
         let formData = {};
         if (value) { formData.paginate = value };
         formData.search = debouncedSearch.value ? val : '';
+
+        // deletes the search key if the search value is empty to prevent unnecessary query parameter in the url
+        if (!formData.search) {
+            delete formData.search
+        }
+        
         
         router.visit('/types', {
             method: 'get',
@@ -350,7 +356,7 @@
                                         </tr>
                                     </template>
                                     <template v-else-if="filter.paginate == 'All' && farming_type.length > 0">
-                                        <tr class="bg-white border-b" v-for="types in farming_type.data" :key="farming_type.id">
+                                        <tr class="bg-white border-b" v-for="types in farming_type" :key="types.id">
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ formatType(types.type) }}
                                             </td>

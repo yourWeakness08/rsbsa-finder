@@ -29,7 +29,9 @@ class AssistanceController extends Controller
                 $query->where('assistance.livelihoods', 'like', '%'.$request->search.'%')
                 ->orWhere('assistance.name', 'like', '%'.$request->search.'%');
             }
-        })->paginate($paginate);
+        })
+        ->orderBy('assistance.created_at', 'desc')
+        ->paginate($paginate);
         $assistance->appends(['paginate' => $paginate]);
         
         if($request->paginate == 'All'){
@@ -41,7 +43,9 @@ class AssistanceController extends Controller
                     $query->where('assistance.livelihoods', 'like', '%'.$request->search.'%')
                     ->orWhere('assistance.name', 'like', '%'.$request->search.'%');
                 }
-            })->get();
+            })
+            ->orderBy('assistance.created_at', 'desc')
+            ->get();
             $assistance->all();
         }
 
@@ -97,13 +101,16 @@ class AssistanceController extends Controller
 
         $state = $created ? true : false;
 
-        return redirect()
-            ->route('assistance.index')
-            ->with([
-                'response' => [
-                    'state' => $state
-                ]
-            ]);
+        // return redirect()
+        //     ->route('assistance.index')
+        //     ->with([
+        //         'response' => [
+        //             'state' => $state
+        //         ]
+        //     ]);
+        return redirect()->back()->with('response', [
+            'state' => $state
+        ]);
     }
 
     /**
@@ -146,13 +153,14 @@ class AssistanceController extends Controller
 
         $state = $toUpdate ? true : false;
 
-        return redirect()
-            ->route('assistance.index')
-            ->with([
-                'response' => [
-                    'state' => $state
-                ]
-            ]);
+        // return redirect()
+        //     ->route('assistance.index')
+        //     ->with('response', [
+        //         'state' => $state
+        //     ]);
+        return redirect()->back()->with('response', [
+            'state' => $state
+        ]);
     }
 
     /**

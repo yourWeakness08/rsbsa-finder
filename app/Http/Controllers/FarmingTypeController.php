@@ -25,7 +25,9 @@ class FarmingTypeController extends Controller
                 $query->where('farming_types.type', 'like', '%'.$request->search.'%')
                 ->orWhere('farming_types.name', 'like', '%'.$request->search.'%');
             }
-        })->paginate($paginate);
+        })
+        ->orderBy('farming_types.created_at', 'desc')
+        ->paginate($paginate);
         $farming_types->appends(['paginate' => $paginate]);
         
         if($request->paginate == 'All'){
@@ -37,7 +39,9 @@ class FarmingTypeController extends Controller
                     $query->where('farming_types.type', 'like', '%'.$request->search.'%')
                     ->orWhere('farming_types.name', 'like', '%'.$request->search.'%');
                 }
-            })->get();
+            })
+            ->orderBy('farming_types.created_at', 'desc')
+            ->get();
             $farming_types->all();
         }
 

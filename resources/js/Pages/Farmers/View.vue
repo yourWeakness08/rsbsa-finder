@@ -454,6 +454,8 @@
                     console.log(errors);
                 }
             });
+        } else {
+            processing.value = false;
         }
     }
 
@@ -717,6 +719,8 @@
                     console.log(errors);
                 }
             });
+        } else {
+            processing.value = false;
         }
     }
 
@@ -2141,7 +2145,7 @@
                             </div>
                         </div>
 
-                        <div class="sm:w-full md:w-10/12 lg:w-8/12 xl:w-6/12 2xl:w-6/12 mx-auto mb-4" v-if="form.is_household_head == 0 && form.is_household_head != ''">
+                        <div class="sm:w-full md:w-10/12 lg:w-8/12 xl:w-6/12 2xl:w-6/12 mx-auto mb-4" v-if="form.is_household_head == 0">
                             <div class="flex flex-wrap align-start justify-between">
                                 <div class="sm:w-full md:w-[49%]">
                                     <InputLabel for="household-head" value="Name of Household Head" :required="true" />
@@ -2433,7 +2437,7 @@
                                             <div class="flex flex-wrap items-center ms-4" v-if="livelihoodForm.farmer.includes('poultry')">
                                                 <InputLabel for="crops-specify" value="Specify: " class="me-4" />
                                                 <div class="rounded-md block mt-1 w-full">
-                                                    <Select2 class="uppercase" :options="types.poultry" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true, dropdownParent: $('#editMainLivelihood') }" />
+                                                    <Select2 class="uppercase" v-model="livelihoodForm.poultry" :options="types.poultry" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true, dropdownParent: $('#editMainLivelihood') }" />
                                                 </div>
                                                 <p v-if="hasLivelihoodError('poultry')" class="text-red-500 text-sm">
                                                     <span class="text-red-500 text-sm" v-if="y$.poultry.required?.$invalid">Poultry is required. Please select atleast 1 poultry.</span>

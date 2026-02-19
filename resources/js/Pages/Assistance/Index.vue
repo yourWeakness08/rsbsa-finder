@@ -43,6 +43,7 @@
 
     const pageValue = ref(null);
     const searchValue = ref(null);
+    const page = ref(1);
     const debouncedSearch = ref('');
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
@@ -54,6 +55,11 @@
         let formData = {};
         if (value) { formData.paginate = value };
         formData.search = debouncedSearch.value ? val : '';
+
+        // deletes the search key if the search value is empty to prevent unnecessary query parameter in the url
+        if (!formData.search) {
+            delete formData.search
+        }
         
         router.visit('/assistance', {
             method: 'get',
@@ -175,7 +181,7 @@
                 const page = usePage();
                 const response = page.props.flash?.response;
 
-                if (response.state) {
+                if (response?.state) {
                     recentlySuccessful.value = true;
                     processing.value = false;
 
@@ -310,7 +316,7 @@
                                         </tr>
                                     </template>
                                     <template v-else-if="filter.paginate == 'All' && assistance.length > 0">
-                                        <tr class="bg-white border-b" v-for="assistance in assistance.data" :key="assistance.id">
+                                        <tr class="bg-white border-b" v-for="assistance in assistance" :key="assistance.id">
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ assistance.name }}
                                             </td>
