@@ -1,5 +1,5 @@
 <script setup>
-    import { ref, onMounted, nextTick } from 'vue'
+    import { ref, onMounted, nextTick, watch } from 'vue'
     import Dropzone from 'dropzone'
     import 'dropzone/dist/dropzone.css'
 
@@ -42,6 +42,21 @@
             }
         })
     })
+
+    watch(
+        () => props.currentImageUrl,
+        (newVal) => {
+            if (!newVal) {
+                // reset image preview
+                uploadedImage.value = null
+                selectedFile.value = null
+
+                emit('fileSelected', null)
+            } else {
+                uploadedImage.value = newVal
+            }
+        }
+    )
 </script>
 
 

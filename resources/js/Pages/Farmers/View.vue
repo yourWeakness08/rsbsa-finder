@@ -535,6 +535,10 @@
         livelihoodForm.main_livelihood = Object.assign([], farmer.main_livelihood);
         livelihoodForm.farming_gross = farmer.farming_gross;
         livelihoodForm.no_farming_gross = farmer.no_farming_gross;
+        livelihoodForm.farmer = [];
+        livelihoodForm.farm_worker = [];
+        livelihoodForm.fisherfolks = [];
+        livelihoodForm.agri_youth = [];
 
         if(!isEmpty(farmer.main_livelihood_info.farmer)) {
             $.each(farmer.main_livelihood_info.farmer, function(index, item) {
@@ -593,6 +597,11 @@
         if (livelihoodForm.main_livelihood.includes(selectedValue)) {
             const index = livelihoodForm.main_livelihood.indexOf(selectedValue);
             livelihoodForm.main_livelihood.splice(index, 1);
+            livelihoodForm[selectedValue] = [];
+
+            if (selectedValue == 'farm_worker') { livelihoodForm['farm_worker_others'] = []; }
+            if (selectedValue == 'fisherfolks') { livelihoodForm['fisherfolks_others'] = []; }
+            if (selectedValue == 'agri_youth') { livelihoodForm['agri_others'] = []; }
         } else {
             livelihoodForm.main_livelihood.push(selectedValue);
         }
@@ -692,7 +701,7 @@
     const submitEditLivelihood = () => {
         const { id } = props.auth.user;
 
-        processing.value = true;
+        processing.value = false;
 
         y$.value.$touch();
         if (!y$.value.$invalid) {
@@ -731,6 +740,15 @@
 
     const isNumber = (val) => {
         return !isNaN(val);
+    }
+
+    const numberFormat = (val) => {
+        const options = { 
+            minimumFractionDigits: 2,    
+            maximumFractionDigits: 2 
+        };
+
+        return val.toLocaleString('en', options);
     }
 
     const pageValue = ref(null);
@@ -1275,14 +1293,14 @@
                                         <div class="w-full mx-auto">
                                             <div class="flex flex-wrap items-center justify-center sm:gap-x-6 md:gap-x-7 lg:gap-x-10 xl:gap-x-15 2xl:gap-x-32">
                                                 <div v-for="option in main_livelihood" class="inline-flex items-center space-x-2" >
-                                                    <TextInput type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 " :checked="farmer.main_livelihood.includes(option.value)" disabled />
+                                                    <TextInput type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" :checked="farmer.main_livelihood.includes(option.value)" disabled />
                                                     <InputLabel :for="option.value" :value="option.label" class="text-sm text-gray-700" />
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="flex flex-wrap w-full lg:justify-start xl:justify-center 2xl:justify-center items-stretch gap-x-3 mb-4">
-                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood_info['farmer'].length > 0"
+                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood.includes('farmer') && farmer.main_livelihood_info['farmer'].length > 0"
                                                 :class="{
                                                     'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : farmer.main_livelihood.length >= 1 && farmer.main_livelihood.length <= 2,
                                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : farmer.main_livelihood.length == 3,
@@ -1342,7 +1360,8 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood_info['farm_worker'].length > 0"
+
+                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood.includes('farm_worker') && farmer.main_livelihood_info['farm_worker'].length > 0"
                                                 :class="{
                                                     'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : farmer.main_livelihood.length >= 1 && farmer.main_livelihood.length <= 2,
                                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : farmer.main_livelihood.length == 3,
@@ -1394,7 +1413,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood_info['fisherfolks'].length > 0"
+                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood.includes('fisherfolks') && farmer.main_livelihood_info['fisherfolks'].length > 0"
                                                 :class="{
                                                     'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : farmer.main_livelihood.length >= 1 && farmer.main_livelihood.length <= 2,
                                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : farmer.main_livelihood.length == 3,
@@ -1460,7 +1479,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood_info['agri_youth'].length > 0"
+                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="farmer.main_livelihood.includes('agri_youth') && farmer.main_livelihood_info['agri_youth'].length > 0"
                                                 :class="{
                                                     'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : farmer.main_livelihood.length >= 1 && farmer.main_livelihood.length <= 2,
                                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : farmer.main_livelihood.length == 3,
@@ -1527,11 +1546,12 @@
                                                 <div class="flex flex-wrap justify-between">
                                                     <div class="sm:w-full md:w-[49%]">
                                                         <InputLabel for="farming" value="Farming" />
-                                                        <p class="border rounded block p-2 w-full uppercase">{{ farmer.farming_gross > 0 ? farmer.farming_gross : 0 }}</p>
+                                                        <!-- here -->
+                                                        <p class="border rounded block p-2 w-full uppercase">{{ farmer.farming_gross > 0 ? numberFormat(farmer.farming_gross) : numberFormat(0) }}</p>
                                                     </div>
                                                     <div class="sm:w-full md:w-[49%]">
                                                         <InputLabel for="non-farming" value="Non-farming" />
-                                                        <p class="border rounded block p-2 w-full uppercase">{{ farmer.no_farming_gross > 0 ? farmer.no_farming_gross : 0 }}</p>
+                                                        <p class="border rounded block p-2 w-full uppercase">{{ farmer.no_farming_gross > 0 ? numberFormat(farmer.no_farming_gross) : numberFormat(0) }}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1769,8 +1789,30 @@
                             <template #other-information>
                                 <div class="p-3">
                                     <div class="flex flex-wrap w-full mb-6">
-                                        <div class="w-full mb-3">
-                                            <h3 class="font-bold text-md">Uploaded Files</h3>
+                                        <div class="flex flex-wrap w-full justify-between mb-4">
+                                            <div class="w-3/12">
+                                                <h3 class="font-bold text-md">Uploaded Files</h3>
+                                            </div>
+                                            <div class="w-6/12 text-right">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white" @click="addAttachments(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <title></title> 
+                                                            <g id="Complete"> 
+                                                                <g id="edit">
+                                                                    <g> 
+                                                                        <path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8" fill="none" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path> 
+                                                                        <polygon fill="none" points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon> 
+                                                                    </g> 
+                                                                </g> 
+                                                            </g> 
+                                                        </g>
+                                                    </svg>
+                                                    Edit
+                                                </PrimaryButton>
+                                            </div>
                                         </div>
                                         <div class="w-full">
                                             <table class="w-full text-sm text-left text-gray-500">
