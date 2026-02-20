@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, nextTick } from 'vue';
+import { onMounted, ref, nextTick, watch } from 'vue';
 import Dropzone from 'dropzone';
 import 'dropzone/dist/dropzone.css';
 
@@ -68,8 +68,7 @@ onMounted(() => {
       });
     });
 
-    if (x.getAcceptedFiles.length == 0) {
-
+    if (x.getAcceptedFiles().length == 0) {
       if (props.currentStep == 1) {
         if (props.uploadedSingleFile !== null) {
           const _file = props.uploadedSingleFile;

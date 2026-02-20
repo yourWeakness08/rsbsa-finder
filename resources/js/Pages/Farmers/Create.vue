@@ -344,7 +344,15 @@
     const stepLabels = ['PERSONAL INFORMATION', 'FARM DETAILS', 'VIEW DETAILS'];
 
     const setStep = (index) => {
-        step.value = index
+        step.value = index;
+
+        setTimeout( function() {
+            v$.value.$reset();
+            form.reset();
+            form.image = [];
+            uploadedImage.value = null;
+            $("#create-form").trigger('reset');
+        }, 300)
     }
 
     const goToNext = (event) => {
@@ -669,10 +677,10 @@
                                     ownerOthers.value = false;
                                     
                                     setTimeout( function() {
-                                        v$.value.$reset();
-                                        form.reset();
-                                        scrollToTop()
+                                        scrollToTop();
                                     }, 100);
+
+                                    setStep(0);
                                 } else { 
                                     router.visit('/farmers', {
                                         method: 'get',
@@ -692,7 +700,6 @@
                     
                 },
                 onError: (errors) => {
-                    console.log(errors);
                 }
             })
         }
@@ -787,6 +794,11 @@
 
         return text.toUpperCase();
     }
+
+    const test = () => {
+        setStep(0);
+        scrollToTop();
+    }
 </script>
 
 <style type="text/css">
@@ -817,7 +829,7 @@
                         <div class="max-w-2xl mx-auto p-6">
                             <Stepper :currentStep="step" :steps="stepLabels" />
                         </div>
-                        <form @submit.prevent>
+                        <form id="create-form" @submit.prevent>
                             <div class="sm:w-full md:w-12/12 lg:w-[95%] xl:w-[90%] 2xl:w-[85%] mx-auto px-2">
                                 <div v-if="step === 0">
                                 
@@ -2703,9 +2715,9 @@
                                     </svg>
                                 </button>
                                 <template v-else>
-                                    <button class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded me-2" @click="submitForm('continue')" :disabled="processing" >
+                                    <!-- <button class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded me-2" @click="submitForm('continue')" :disabled="processing" >
                                         <strong>SUBMIT AND CONTINUE</strong> 
-                                    </button>
+                                    </button> -->
                                     <button class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded" @click="submitForm('submit')" :disabled="processing" >
                                         <strong>SUBMIT</strong> 
                                     </button>

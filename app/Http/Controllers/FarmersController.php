@@ -433,8 +433,9 @@ class FarmersController extends Controller
             ->route('farmers.create')
             ->with([
                 'response' => [
-                    'state' => $state
-                ]
+                    'state' => $state,
+                ],
+                'id' => $id
             ]);
     }
 
@@ -726,125 +727,133 @@ class FarmersController extends Controller
         }
 
         if ($query) {
-            $farm_profile_id = $profile->id ?? $query->id;
+            $farm_profile_id = isset($profile->id) && $profile->id ? $profile->id : $query->id;
 
+            $checkMain = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->get();
+            if (count($checkMain->toArray()) > 0 || !in_array('farmer', $request->main_livelihood)) {
+                MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->delete();
+            }
+            
             if ($request->farmer !== null && $request->farmer) {
                 if(count($request->farmer) > 0) {
-                    $checkMain = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->get();
-
-                    if (count($checkMain->toArray()) > 0) {
-                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->delete();
-                    }
-
-                    foreach($request->farmer as $farmer) {
-                        if ($farmer == 'rice' || $farmer == 'corn') {
-                            MainLivelihood::create([
-                                'farmer_profile_id' => $farm_profile_id,
-                                'main_livelihood' => 'farmer',
-                                'meta' => $farmer,
-                                'value' => $farmer,
-                                'uuid'  => Str::random(12)
-                            ]);
-                        }
-                    }
-
-                    if ($request->crops !== null && $request->crops) {
-                        if(count($request->crops) > 0) {
-                            foreach ($request->crops as $crops) {
+                    if (in_array('farmer', $request->main_livelihood)) {
+                        foreach($request->farmer as $farmer) {
+                            if ($farmer == 'rice' || $farmer == 'corn') {
                                 MainLivelihood::create([
                                     'farmer_profile_id' => $farm_profile_id,
                                     'main_livelihood' => 'farmer',
-                                    'meta' => 'crops',
-                                    'value' => $crops,
+                                    'meta' => $farmer,
+                                    'value' => $farmer,
                                     'uuid'  => Str::random(12)
                                 ]);
                             }
                         }
-                    }
-                    
-                    if ($request->livestock !== null && $request->livestock) {
-                        if(count($request->livestock) > 0) {
-                            foreach ($request->livestock as $livestock) {
-                                MainLivelihood::create([
-                                    'farmer_profile_id' => $farm_profile_id,
-                                    'main_livelihood' => 'farmer',
-                                    'meta' => 'livestock',
-                                    'value' => $livestock,
-                                    'uuid'  => Str::random(12)
-                                ]);
+    
+                        if ($request->crops !== null && $request->crops) {
+                            if(count($request->crops) > 0) {
+                                foreach ($request->crops as $crops) {
+                                    MainLivelihood::create([
+                                        'farmer_profile_id' => $farm_profile_id,
+                                        'main_livelihood' => 'farmer',
+                                        'meta' => 'crops',
+                                        'value' => $crops,
+                                        'uuid'  => Str::random(12)
+                                    ]);
+                                }
                             }
                         }
-                    }
-                    
-                    if ($request->poultry !== null && $request->poultry) {
-                        if(count($request->poultry) > 0) {
-                            foreach ($request->poultry as $poultry) {
-                                MainLivelihood::create([
-                                    'farmer_profile_id' => $farm_profile_id,
-                                    'main_livelihood' => 'farmer',
-                                    'meta' => 'poultry',
-                                    'value' => $poultry,
-                                    'uuid'  => Str::random(12)
-                                ]);
+                        
+                        if ($request->livestock !== null && $request->livestock) {
+                            if(count($request->livestock) > 0) {
+                                foreach ($request->livestock as $livestock) {
+                                    MainLivelihood::create([
+                                        'farmer_profile_id' => $farm_profile_id,
+                                        'main_livelihood' => 'farmer',
+                                        'meta' => 'livestock',
+                                        'value' => $livestock,
+                                        'uuid'  => Str::random(12)
+                                    ]);
+                                }
+                            }
+                        }
+                        
+                        if ($request->poultry !== null && $request->poultry) {
+                            if(count($request->poultry) > 0) {
+                                foreach ($request->poultry as $poultry) {
+                                    MainLivelihood::create([
+                                        'farmer_profile_id' => $farm_profile_id,
+                                        'main_livelihood' => 'farmer',
+                                        'meta' => 'poultry',
+                                        'value' => $poultry,
+                                        'uuid'  => Str::random(12)
+                                    ]);
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            $checkFarmWorker = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->get();
+            if (count($checkFarmWorker->toArray()) > 0 || !in_array('farm_worker', $request->main_livelihood)) {
+                MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farm_worker')->delete();
             }
 
             if($request->farm_worker !== null && $request->farm_worker) {
                 if(count($request->farm_worker) > 0) {
-                    $checkFarmWorker = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->get();
-                    if (count($checkFarmWorker->toArray()) > 0) {
-                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farm_worker')->delete();
-                    }
-
-                    foreach($request->farm_worker as $worker) {
-                        MainLivelihood::create([
-                            'farmer_profile_id' => $farm_profile_id,
-                            'main_livelihood' => 'farm_worker',
-                            'meta' => $worker,
-                            'value' => $worker == 'Others' ? $request->farm_worker_others : $worker,
-                            'uuid'  => Str::random(12)
-                        ]);
+                    if (in_array('farm_worker', $request->main_livelihood)) {
+                        foreach($request->farm_worker as $worker) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'farm_worker',
+                                'meta' => $worker,
+                                'value' => $worker == 'Others' ? $request->farm_worker_others : $worker,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
                     }
                 }
+            }
+
+            $checkFisherfolks = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'fisherfolks')->get();
+            if (count($checkFisherfolks->toArray()) > 0 || !in_array('fisherfolks', $request->main_livelihood)) {
+                MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'fisherfolks')->delete();
             }
 
             if($request->fisherfolks !== null && $request->fisherfolks) {
                 if(count($request->fisherfolks) > 0) {
-                    $checkFisherfolks = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'fisherfolks')->get();
-                    if (count($checkFisherfolks->toArray()) > 0) {
-                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'fisherfolks')->delete();
-                    }
 
-                    foreach($request->fisherfolks as $fisherfolks) {
-                        MainLivelihood::create([
-                            'farmer_profile_id' => $farm_profile_id,
-                            'main_livelihood' => 'fisherfolks',
-                            'meta' => $fisherfolks,
-                            'value' => $fisherfolks == 'Others' ? $request->fisherfolks_others : $fisherfolks,
-                            'uuid'  => Str::random(12)
-                        ]);
+                    if (in_array('fisherfolks', $request->main_livelihood)) {
+                        foreach($request->fisherfolks as $fisherfolks) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'fisherfolks',
+                                'meta' => $fisherfolks,
+                                'value' => $fisherfolks == 'Others' ? $request->fisherfolks_others : $fisherfolks,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
                     }
                 }
             }
             
+            $checkAgri = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'agri_youth')->get();
+            if (count($checkAgri->toArray()) > 0 || !in_array('agri_youth', $request->main_livelihood)) {
+                MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'agri_youth')->delete();
+            }
             if($request->agri_youth !== null && $request->agri_youth) {
                 if(count($request->agri_youth) > 0) {
-                    $checkAgri = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'agri_youth')->get();
-                    if (count($checkAgri->toArray()) > 0) {
-                        MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'agri_youth')->delete();
-                    }
 
-                    foreach($request->agri_youth as $agri_youth) {
-                        MainLivelihood::create([
-                            'farmer_profile_id' => $farm_profile_id,
-                            'main_livelihood' => 'agri_youth',
-                            'meta' => $agri_youth,
-                            'value' => $agri_youth == 'Others' ? $request->fisherfolks_others : $agri_youth,
-                            'uuid'  => Str::random(12)
-                        ]);
+                    if (in_array('agri_youth', $request->main_livelihood)) {
+                        foreach($request->agri_youth as $agri_youth) {
+                            MainLivelihood::create([
+                                'farmer_profile_id' => $farm_profile_id,
+                                'main_livelihood' => 'agri_youth',
+                                'meta' => $agri_youth,
+                                'value' => $agri_youth == 'Others' ? $request->fisherfolks_others : $agri_youth,
+                                'uuid'  => Str::random(12)
+                            ]);
+                        }
                     }
                 }
             }

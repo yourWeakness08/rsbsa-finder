@@ -86,6 +86,7 @@
         { id: 1, text: 'Crops' },
         { id: 2, text: 'Livestocks' },
         { id: 3, text: 'Poultry' },
+        { id: 4, text: 'Agri-Fishery'}
     ]);
 
     const submitNewType = (close=true) => {
@@ -131,6 +132,8 @@
             _type = 'Livestocks';
         } else if (type == 3) {
             _type = 'Poultry';
+        } else if (type == 4) {
+            _type = 'Agri-Fishery';
         }
 
         return _type;

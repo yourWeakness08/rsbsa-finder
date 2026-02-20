@@ -53,3 +53,7 @@ span.select2-selection__placeholder { font-size: 1rem; }
 .select2-container--default .select2-selection--multiple .select2-selection__choice{
     padding: 0 !important
 }
+
+.nprogress-busy {
+    z-index: 999999 !important;
+}
