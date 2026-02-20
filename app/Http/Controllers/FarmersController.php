@@ -99,6 +99,7 @@ class FarmersController extends Controller
             1 => 'crops',
             2 => 'livestock',
             3 => 'poultry',
+            4 => 'agri_fishery'
         ];
 
         // Group by numeric type and map to labels
@@ -508,7 +509,7 @@ class FarmersController extends Controller
     }
 
     public function view($id, FarmerInformation $farmerInformation) {
-        $select = "a.*,  CONCAT(
+        $select = "a.*, IFNULL(farmer_image, 'images/male-farmer.png') AS farmer_image, CONCAT(
             a.firstname, ' ',
             IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
             a.lastname,
@@ -521,9 +522,20 @@ class FarmersController extends Controller
             ->leftJoin('corrected_and_verified as d', 'd.farmer_id', '=', 'a.id')
             ->where('a.id', $id)
             ->first();
+        
+        // dd($id);
+        
+        $default = asset('images/male-farmer.png');
+        if (isset($farmer->farmer_image) && $farmer?->farmer_image) {
+            if (file_exists(public_path('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image))) {
+                $farmer->farmer_image = asset('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image);
+            } else {
+                $farmer->farmer_image = $default;
+            }
+        } else {
+            // $farmer->farmer_image = $default;
+        }
 
-        // $farmer->farmer_image = asset('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image);
-        $farmer->farmer_image = $farmer->farmer_image && file_exists((public_path('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image))) ? asset('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image) : asset('images/male-farmer.png');
         $farmer->main_livelihood = @unserialize($farmer->main_livelihood) ? @unserialize($farmer->main_livelihood) : array();
 
         $parcel = FarmParcel::where('farmer_profile_id', $farmer->farm_id)->get();
@@ -535,8 +547,10 @@ class FarmersController extends Controller
         }
 
         $farmer->farm_parcel = $parcelCollection;
+
+        //here
         $attachments = Attachments::where('farmer_id', $farmer->id)->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(10, '*', 'attachments_page');
 
         $attachments->transform(function ($attachment) {
             $attachment->filepath = file_exists((public_path($attachment->filepath.'/'.$attachment->filename))) ? asset($attachment->filepath.'/'.$attachment->filename) : 'Document not found.';
@@ -544,7 +558,6 @@ class FarmersController extends Controller
             return $attachment;   
         });
 
-        $farmer->attachments = $attachments;
         $farming = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'farmer')->get();
         $farmworker = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'farm_worker')->get();
         $fisherfolks = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'fisherfolks')->get();
@@ -562,6 +575,7 @@ class FarmersController extends Controller
             1 => 'crops',
             2 => 'livestock',
             3 => 'poultry',
+            4 => 'agri_fishery'
         ];
 
         // Group by numeric type and map to labels
@@ -581,7 +595,7 @@ class FarmersController extends Controller
             ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
             ->where('a.farmer_id', $farmer->id)
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(3, '*', 'history_page');
 
         $assistance = Assistance::select(DB::raw('livelihoods, id, name'))->where('is_archived', 0)->get();
         $assistanceCollection = collect($assistance);
@@ -600,7 +614,7 @@ class FarmersController extends Controller
         }
 
         return Inertia::render(
-            'Farmers/View', ['farmer' => $farmer, 'types' => $grouped, 'history' => $assistanceHistory, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
+            'Farmers/View', ['farmer' => $farmer, 'types' => $grouped, 'history' => $assistanceHistory, 'attachments' => $attachments, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
         );
     }
 

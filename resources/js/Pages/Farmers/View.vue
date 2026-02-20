@@ -61,12 +61,15 @@
         allassistance: {
             type: Object,
             default: () => ({})
-        }
+        },
+        attachments: {
+            type: Object,
+            default: () => ({})
+        },
     });
 
     let mergeTypes = ref([]);
-    mergeTypes = Object.values(props.types).flat();
-    mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
+    const nextTab = ref(null);
 
     const back = () => {
         const url = route('farmers.index');
@@ -610,61 +613,117 @@
     }
 
     const handleFarmer = (e) => {
-        const selectedValue = e.target.value;
+        const selectedValue = e.target.value.toLowerCase();
 
         if (livelihoodForm.farmer.includes(selectedValue)) {
             const index = livelihoodForm.farmer.indexOf(selectedValue);
-            livelihoodForm.farmer.splice(index, 1);
-
-            const _index = mergeTypes.findIndex(item => item.text.toLowerCase() == 'rice' || item.text.toLowerCase() == 'corn');
-            if (_index !== -1) {
-                mergeTypes.splice(_index, 1);
+            livelihoodForm.farmer = livelihoodForm.farmer.filter(val => val !== selectedValue);
+            if (selectedValue === 'rice' || selectedValue === 'corn') {
+                mergeTypes.value = mergeTypes.value.filter(
+                    item => item.text.toLowerCase() !== selectedValue
+                );
             }
         } else {
             livelihoodForm.farmer.push(selectedValue);
 
-            if(selectedValue.toLowerCase() == 'rice' || selectedValue.toLowerCase() == 'corn') {
-                mergeTypes.push({ id: selectedValue, text: selectedValue.toUpperCase() })
-                mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
+            if (selectedValue === 'rice' || selectedValue === 'corn') {
+                const exists = mergeTypes.value.some(
+                    item => item.text.toLowerCase() === selectedValue
+                );
+
+                if (!exists) {
+                    mergeTypes.value.push({
+                        id: selectedValue,
+                        text: selectedValue.toUpperCase(),
+                        type: 'crops'
+                    });
+
+                    mergeTypes.value.sort((a, b) => a.text.localeCompare(b.text));
+                }
+            }
+
+            if (!$(e.target).is(':checked') && (selectedValue !== 'rice' && selectedValue !== 'corn')) {
+                mergeTypes.value = mergeTypes.value.filter(
+                    item => item.type.toLowerCase() !== selectedValue
+                );
             }
         }
     }
 
     const handleCrops = (event) => {
+        let types = props.types.crops;
         const selectedValue = parseInt(event.id);
+        const crop = types.find(item => item.id == selectedValue);
 
         if (livelihoodForm.crops.includes(selectedValue)) {
             const index = livelihoodForm.crops.indexOf(selectedValue);
             livelihoodForm.crops.splice(index, 1);
+
+            if (crop) {
+                mergeTypes.value = mergeTypes.value.filter(item => item.id !== crop.id);
+            }
         } else {
             livelihoodForm.crops.push(selectedValue);
+
+            if (crop) {
+                mergeTypes.value = [
+                    ...mergeTypes.value,
+                    { id: crop.id, text: crop.text.toUpperCase(), type: 'crops' }
+                ].sort((a, b) => a.text.localeCompare(b.text));
+            }
         }
     }
     
     const handleLivestock = (event) => {
+        let types = props.types.livestock;
         const selectedValue = parseInt(event.id);
+        const livestock = types.find(item => item.id == selectedValue);
 
         if (livelihoodForm.livestock.includes(selectedValue)) {
             const index = livelihoodForm.livestock.indexOf(selectedValue);
             livelihoodForm.livestock.splice(index, 1);
+
+            if (livestock) {
+                mergeTypes.value = mergeTypes.value.filter(item => item.id !== livestock.id);
+            }
         } else {
             livelihoodForm.livestock.push(selectedValue);
+
+            if (livestock) {
+                mergeTypes.value = [
+                    ...mergeTypes.value,
+                    { id: livestock.id, text: livestock.text.toUpperCase(), type: 'livestock' }
+                ].sort((a, b) => a.text.localeCompare(b.text));
+            }
         }
     }
     
     const handlePoultry = (event) => {
+        let types = props.types.poultry;
         const selectedValue = parseInt(event.id);
+        const poultry = types.find(item => item.id == selectedValue);
 
         if (livelihoodForm.poultry.includes(selectedValue)) {
             const index = livelihoodForm.poultry.indexOf(selectedValue);
             livelihoodForm.poultry.splice(index, 1);
+
+            if (poultry) {
+                mergeTypes.value = mergeTypes.value.filter(item => item.id !== poultry.id);
+            }
         } else {
             livelihoodForm.poultry.push(selectedValue);
+
+            if (poultry) {
+                mergeTypes.value = [
+                    ...mergeTypes.value,
+                    { id: poultry.id, text: poultry.text.toUpperCase(), type: 'poultry' }
+                ].sort((a, b) => a.text.localeCompare(b.text));
+            }
         }
     }
 
     const handleFarmWorker = (e) => {
-        const selectedValue = e.target.value;
+        const selectedValue = e.target.value.toLowerCase();
 
         if (livelihoodForm.farm_worker.includes(selectedValue)) {
             const index = livelihoodForm.farm_worker.indexOf(selectedValue);
@@ -675,13 +734,31 @@
     }
 
     const handleFisherFolks = (e) => {
+        let types = props.types.agri_fishery;
         const selectedValue = e.target.value;
+        const fishery = mergeTypes.value.find(item => item.type == 'agri-fishery');
 
         if (livelihoodForm.fisherfolks.includes(selectedValue)) {
             const index = livelihoodForm.fisherfolks.indexOf(selectedValue);
             livelihoodForm.fisherfolks.splice(index, 1);
         } else {
             livelihoodForm.fisherfolks.push(selectedValue);
+        }
+
+        if (selectedValue !== 'others') {
+            if (typeof fishery == 'undefined') {
+                $.each(types, function(index, value) {
+                    mergeTypes.value = [
+                        ...mergeTypes.value,
+                        { id: value.id, text: value.text.toUpperCase(), type: 'agri-fishery' }
+                    ];
+                });
+                mergeTypes.value = mergeTypes.value.sort((a, b) => a.text.localeCompare(b.text));
+            }
+        }
+
+        if (form.fisherfolks.length == 0 || (form.fisherfolks.length == 1 && form.fisherfolks.includes('others'))) {
+            mergeTypes.value = mergeTypes.value.filter(item => item.type !== 'agri-fishery');
         }
     }
     
@@ -948,10 +1025,6 @@
         editFarmParcelDialog = true;
     }
 
-    const fetchData = (page = 1) => {
-        console.log(page)
-    }
-
     function getPage(url) {
         if (!url) return null
 
@@ -959,6 +1032,24 @@
         const params = new URLSearchParams(queryString)
 
         return params.get('page')
+    }
+
+    const handleTabChange = (tab) => {
+        if (tab.toLowerCase() == 'assistance') {
+            const url = new URL(window.location.href)
+            const params = url.searchParams;
+            if (props.history.current_page != 1) {
+                router.visit(route(route().current(), props.farmer.id), {
+                    preserveState: true,
+                    replace: true,
+                    only: ['history'],
+                    onSuccess: () => {
+                        nextTab.value = 'Assistance';
+                        props.history = Object.assign({}, props.history, { current_page: 1 });
+                    }
+                });
+            }
+        }
     }
 </script>
 
@@ -1009,7 +1100,7 @@
                 </div>
                 <div class="w-[74%]">
                     <div class="bg-white rounded-sm shadow-xl sm:rounded-lg px-8 py-8">
-                        <FarmerTabs>
+                        <FarmerTabs @tab-changed="handleTabChange" :switchToTab="nextTab" :active-tab="activeTab" >
                             <template #farmer-profile>
                                 <div class="p-3">
                                     <div class="flex flex-wrap justify-between mb-4">
@@ -1601,7 +1692,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="mb-6">
+                                    <div class="mb-6" v-if="farmer.farm_parcel.length > 0">
                                         <div class="flex flex-wrap items-center justify-between">
                                             <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-5/12">
                                                 <div class="flex flex-wrap items-center">
@@ -1830,8 +1921,8 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <template v-if="farmer.attachments.data.length > 0">
-                                                        <template v-for="(item, index) in farmer.attachments.data" :key="index">
+                                                    <template v-if="attachments.total > 0">
+                                                        <template v-for="(item, index) in attachments.data" :key="index">
                                                             <tr class="bg-white border-b">
                                                                 <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.filename }}</td>
                                                                 <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap text-right">
@@ -1860,14 +1951,18 @@
                                                         <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                                     </div>
                                                     <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
-                                                        <div class="flex items-center justify-end -space-x-px h-8 text-sm" v-if="farmer.attachments.data.length > 0">
-                                                            <button
-                                                                v-for="(link, index) in farmer.attachments.links" :key="link.label" @click="item.url && fetchData(getPage(link.url))" v-html="link.label" :disabled="!link.url" 
-                                                                :class="{
-                                                                    'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700' : index == 0,
-                                                                    'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700' : index == farmer.attachments.links.length - 1,
-                                                                    'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700' : farmer.attachments.links.length > 1
-                                                                }" />
+                                                        <div class="flex items-center justify-end -space-x-px h-8 text-sm" v-if="attachments.total > 0">
+                                                            <template v-for="(link, index) in attachments.links" :key="index">
+                                                                <template v-if="index == '0'">
+                                                                    <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {}, { preserveState: true })"  class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
+                                                                </template>
+                                                                <template v-else-if="index == attachments.links.length - 1">
+                                                                    <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {'page': 'assistance'}, { preserveState: true })"  class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
+                                                                </template>
+                                                                <template v-else>
+                                                                    <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {}, { preserveState: true })" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
+                                                                </template>
+                                                            </template>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1979,7 +2074,20 @@
                                                     <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                                 </div>
                                                 <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
-                                                    <TablePagination :arr="history" />
+                                                    <!-- <TablePagination :arr="history" /> -->
+                                                    <div class="flex items-center justify-end -space-x-px h-8 text-sm" v-if="history.total > 0">
+                                                        <template v-for="(link, index) in history.links" :key="index">
+                                                            <template v-if="index == '0'">
+                                                                <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {}, { preserveState: true })"  class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
+                                                            </template>
+                                                            <template v-else-if="index == history.links.length - 1">
+                                                                <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {'page': 'assistance'}, { preserveState: true })"  class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
+                                                            </template>
+                                                            <template v-else>
+                                                                <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {}, { preserveState: true })" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
+                                                            </template>
+                                                        </template>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -2583,7 +2691,7 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="livelihoodForm.main_livelihood.includes('fisherfolks')"
+                            <div d="fisherfolks-section" class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="livelihoodForm.main_livelihood.includes('fisherfolks')"
                                 :class="{
                                     'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : livelihoodForm.main_livelihood.length >= 1 && livelihoodForm.main_livelihood.length <= 2,
                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : livelihoodForm.main_livelihood.length == 3,
