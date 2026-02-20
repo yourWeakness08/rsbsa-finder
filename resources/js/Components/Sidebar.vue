@@ -114,31 +114,38 @@
 
         <!-- Report Menu with Submenus -->
         <div class="w-full px-6 pt-3 py-3">
-          <button @click="showReports = !showReports" class="flex items-center justify-between w-full text-left focus:outline-none">
+          <button @click="showReports = !showReports" class="flex items-center justify-between w-full text-left focus:outline-none text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out duration-200">
             <div class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M3 14V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H13C16.7712 2 18.6569 2 19.8284 3.17157C20.4816 3.82476 20.7706 4.69989 20.8985 6M21 10V14C21 17.7712 21 19.6569 19.8284 20.8284C18.6569 22 16.7712 22 13 22H11C7.22876 22 5.34315 22 4.17157 20.8284C3.51839 20.1752 3.22937 19.3001 3.10149 18" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> <path d="M8 14H13" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> <path d="M8 10H9M16 10H12" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
+              <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier"> 
+                  <path d="M3 14V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H13C16.7712 2 18.6569 2 19.8284 3.17157C20.4816 3.82476 20.7706 4.69989 20.8985 6M21 10V14C21 17.7712 21 19.6569 19.8284 20.8284C18.6569 22 16.7712 22 13 22H11C7.22876 22 5.34315 22 4.17157 20.8284C3.51839 20.1752 3.22937 19.3001 3.10149 18" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> 
+                  <path d="M8 14H13" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> 
+                  <path d="M8 10H9M16 10H12" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> 
+                </g>
+              </svg>
               REPORTS
             </div>
-            <svg :class="{'rotate-180': showReports}" class="w-4 h-4 transition-transform" fill="none"
-              stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg :class="{'rotate-180': showReports}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
           <div v-show="showReports" class="pl-6 mt-2 border-b-0">
-            <NavLink :href="'#'" :key="'activities'" :active="route().current('reports.activities')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'activities'" :active="route().current('reports.activities')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               ACTIVITIES
             </NavLink>
-            <NavLink :href="route('reports.assistance')" :key="'assistance'" :active="route().current('reports.assistance')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="route('reports.assistance')" :key="'assistance'" :active="route().current('reports.assistance')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               ASSISTANCE
             </NavLink>
-            <NavLink :href="'#'" :key="'registered'" :active="route().current('reports.registered')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'registered'" :active="route().current('reports.registered')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               REGISTERED
             </NavLink>
-            <NavLink :href="'#'" :key="'farming'" :active="route().current('reports.farming')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'farming'" :active="route().current('reports.farming')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               CROPS / LIVESTOCK / POULTRY
             </NavLink>
-            <NavLink :href="'#'" :key="'Livelihood'" :active="route().current('reports.livelihood')" class="block pt-3 py-3 border-b-0 text-gray-700 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+            <NavLink :href="'#'" :key="'Livelihood'" :active="route().current('reports.livelihood')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
               MAIN LIVELIHOOD
             </NavLink>
           </div>
