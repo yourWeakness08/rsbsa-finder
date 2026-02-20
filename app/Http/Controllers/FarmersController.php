@@ -535,14 +535,16 @@ class FarmersController extends Controller
         }
 
         $farmer->farm_parcel = $parcelCollection;
-        $attachments = Attachments::where('farmer_id', $farmer->id)->get();
-        $attachmentCollection = collect($attachments);
+        $attachments = Attachments::where('farmer_id', $farmer->id)->orderBy('created_at', 'desc')
+            ->paginate(10);
 
-        foreach ($attachmentCollection as $file) {
-            $file->filepath = file_exists((public_path($file->filepath.'/'.$file->filename))) ? asset($file->filepath.'/'.$file->filename) : 'Document not found.';
-        }
+        $attachments->transform(function ($attachment) {
+            $attachment->filepath = file_exists((public_path($attachment->filepath.'/'.$attachment->filename))) ? asset($attachment->filepath.'/'.$attachment->filename) : 'Document not found.';
+            
+            return $attachment;   
+        });
 
-        $farmer->attachments = $attachmentCollection;
+        $farmer->attachments = $attachments;
         $farming = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'farmer')->get();
         $farmworker = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'farm_worker')->get();
         $fisherfolks = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'fisherfolks')->get();

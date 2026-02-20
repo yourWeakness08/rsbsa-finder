@@ -21,6 +21,7 @@
     import DropzoneInput from '@/Components/DropzoneProfileInput.vue';
     import Dropzone from '@/Components/Dropzone.vue';
     import FarmerTabs from '@/Components/FarmerTabs.vue';
+    import TablePagination from '@/Components/TablePagination.vue';
 
     import Select2 from 'vue3-select2-component';
 
@@ -181,6 +182,7 @@
                 'text': type == 'document' ? 'Document not found.' : 'Attachment not found.'
             })
         } else {
+            console.log(path)
             window.open(path);
         }
     }
@@ -945,6 +947,19 @@
     const setFarmParcel = (farmer) => {
         editFarmParcelDialog = true;
     }
+
+    const fetchData = (page = 1) => {
+        console.log(page)
+    }
+
+    function getPage(url) {
+        if (!url) return null
+
+        const queryString = url.split('?')[1]
+        const params = new URLSearchParams(queryString)
+
+        return params.get('page')
+    }
 </script>
 
 <template>
@@ -1656,12 +1671,12 @@
                                                                     <InputLabel for="Ansentral" value="Within Ancentral Domain" />
                                                                     <div class="flex flex-wrap items-center mt-3">
                                                                         <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2">
-                                                                            <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1 && item.is_whithin_ancentral_domain != ''" disabled />
+                                                                            <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1" disabled />
                                                                             <span class="text-gray-700">Yes</span>
                                                                         </label>
     
                                                                         <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
-                                                                            <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0 && item.is_whithin_ancentral_domain != ''" disabled />
+                                                                            <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0" disabled />
                                                                             <span class="text-gray-700">No</span>
                                                                         </label>
                                                                     </div>
@@ -1685,7 +1700,7 @@
                                                                 <div class="w-full">
                                                                     <InputLabel for="ownership_doc" value="Ownership Document" />
                                                                     <div class="h-32 border rounded-lg p-6 mb-2 text-center uppercase" style="border: 1px solid rgba(0,0,0,.8) !important">
-                                                                        <div @click="viewAttachment(item.document_path)" class="cursor-pointer">
+                                                                        <div @click="viewAttachment('document', item.document_path)" class="cursor-pointer">
                                                                             <svg class="h-14 w-14 mx-auto" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve" fill="#000000">
                                                                                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                                                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -1724,7 +1739,7 @@
                                                             <table class="border-collapse border-2 border-gray-400 w-full">
                                                                 <thead>
                                                                     <tr>
-                                                                        <th class="p-3 border border-gray-400 w-[25%]">
+                                                                        <th class="p-3 border border-gray-400 w-[18%] text-sm">
                                                                             <strong>CROP / COMMODITY</strong>
                                                                             <p class="m-0">
                                                                                 <small class="italic">( Rice / Corn / HVC / Livestock / Poultry /agri-fishery )</small>
@@ -1735,16 +1750,16 @@
                                                                                 <small>( Specify type of animal) </small>
                                                                             </p>
                                                                         </th>
-                                                                        <th class="p-3 border border-gray-400 w-[11%]">SIZE (ha)</th>
-                                                                        <th class="p-3 border border-gray-400 w-[11%]">
+                                                                        <th class="p-3 border border-gray-400 w-[11%] text-sm">SIZE (ha)</th>
+                                                                        <th class="p-3 border border-gray-400 w-[11%] text-sm">
                                                                             <strong>NO. OF HEAD</strong>
-                                                                            <p class="m-0">
+                                                                            <p class="m-0 ">
                                                                                 <small class="italic">( For livestock and poultry)</small>
                                                                             </p>
                                                                         </th>
-                                                                        <th class="p-3 border border-gray-400 w-[24%]">FARM TYPE</th>
-                                                                        <th class="p-3 border border-gray-400 w-[18%]">ORGANIC PRACTITIONER</th>
-                                                                        <th class="p-3 border border-gray-400 w-[18%]">REMARKS</th>
+                                                                        <th class="p-3 border border-gray-400 w-[18%] text-sm">FARM TYPE</th>
+                                                                        <th class="p-3 border border-gray-400 w-[10%] text-sm">ORGANIC PRACTITIONER</th>
+                                                                        <th class="p-3 border border-gray-400 w-[22%] text-sm">REMARKS</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -1763,7 +1778,7 @@
                                                                         </td>
                                                                         <td class="p-3 border border-gray-400">
                                                                             <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">
-                                                                            {{ v.is_organic_practitioner == 1 ? 'Yes' : 'No' }}
+                                                                                {{ v.is_organic_practitioner == 1 ? 'Yes' : 'No' }}
                                                                             </p>
                                                                         </td>
                                                                         <td class="p-3 border border-gray-400">
@@ -1794,23 +1809,15 @@
                                                 <h3 class="font-bold text-md">Uploaded Files</h3>
                                             </div>
                                             <div class="w-6/12 text-right">
-                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white" @click="addAttachments(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
-                                                    <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                <PrimaryButton class=" hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white" @click="addAttachments(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                         <g id="SVGRepo_iconCarrier"> 
-                                                            <title></title> 
-                                                            <g id="Complete"> 
-                                                                <g id="edit">
-                                                                    <g> 
-                                                                        <path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8" fill="none" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path> 
-                                                                        <polygon fill="none" points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon> 
-                                                                    </g> 
-                                                                </g> 
-                                                            </g> 
+                                                            <path fill="#fff" fill-rule="evenodd" d="M9 17a1 1 0 102 0v-6h6a1 1 0 100-2h-6V3a1 1 0 10-2 0v6H3a1 1 0 000 2h6v6z"></path> 
                                                         </g>
                                                     </svg>
-                                                    Edit
+                                                    Upload
                                                 </PrimaryButton>
                                             </div>
                                         </div>
@@ -1823,12 +1830,12 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <template v-if="farmer.attachments.length > 0">
-                                                        <template v-for="(item, index) in farmer.attachments" :key="index">
+                                                    <template v-if="farmer.attachments.data.length > 0">
+                                                        <template v-for="(item, index) in farmer.attachments.data" :key="index">
                                                             <tr class="bg-white border-b">
                                                                 <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.filename }}</td>
                                                                 <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap text-right">
-                                                                    <svg @click="viewAttachment('attachments', item.filepath)" class="cursor-pointer h-10 w-10 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                    <svg @click="viewAttachment('attachments', item.filepath)" class="cursor-pointer h-6 w-6 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                                                                         <g id="SVGRepo_iconCarrier"> 
@@ -1847,8 +1854,28 @@
                                                     </template>
                                                 </tbody>
                                             </table>
+                                            <div class="mt-6">
+                                                <div class="flex flex-row justify-between items-center">
+                                                    <div class="md:w-[10%] lg:w-[10%] xl:w-[10%] 2xl:w-[9%]">
+                                                        <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
+                                                    </div>
+                                                    <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
+                                                        <div class="flex items-center justify-end -space-x-px h-8 text-sm" v-if="farmer.attachments.data.length > 0">
+                                                            <button
+                                                                v-for="(link, index) in farmer.attachments.links" :key="link.label" @click="item.url && fetchData(getPage(link.url))" v-html="link.label" :disabled="!link.url" 
+                                                                :class="{
+                                                                    'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700' : index == 0,
+                                                                    'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700' : index == farmer.attachments.links.length - 1,
+                                                                    'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700' : farmer.attachments.links.length > 1
+                                                                }" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    <hr class="my-6 border-t border-gray-300">
 
                                     <div class="flex flex-wrap justify-center mb-4">
                                         <div class="w-3/12">
@@ -1885,7 +1912,7 @@
                                     <div class="w-full">
                                         <div class="flex flex-row justify-between align-center">
                                             <div class="md:w-1/6">
-                                                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white px-2 py-3 mr-3" @click="createAssistanceDialog = true">
+                                                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white" @click="createAssistanceDialog = true" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
                                                     <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -1948,23 +1975,11 @@
                                         </table>
                                         <div class="mt-6">
                                             <div class="flex flex-row justify-between items-center">
-                                                <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-1/12">
+                                                <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-[9%]">
                                                     <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                                 </div>
                                                 <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
-                                                    <ul class="flex items-center justify-end -space-x-px h-8 text-sm">
-                                                        <li v-for="(link, index) in history.links" :key="index">
-                                                            <template v-if="index == '0'">
-                                                                <Link :href="link.url || '#'" :key="link.label" v-html="link.label" class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
-                                                            </template>
-                                                            <template v-else-if="index == history.links.length - 1">
-                                                                <Link :href="link.url || '#'" :key="link.label" v-html="link.label" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
-                                                            </template>
-                                                            <template v-else>
-                                                                <Link :href="link.url || '#'" :key="link.label" v-html="link.label" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
-                                                            </template>
-                                                        </li>
-                                                    </ul>
+                                                    <TablePagination :arr="history" />
                                                 </div>
                                             </div>
                                         </div>
