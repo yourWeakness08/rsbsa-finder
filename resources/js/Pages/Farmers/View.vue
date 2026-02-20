@@ -191,6 +191,7 @@
 
     const editPersonalDialog = ref(false);
     const editMainLivelihoodDialog = ref(false);
+    const editFarmParcelDialog = ref(false);
 
     const form = useForm({
         id: '',
@@ -922,6 +923,10 @@
         
         return text;
     }
+
+    const setFarmParcel = (farmer) => {
+        editFarmParcelDialog = true;
+    }
 </script>
 
 <template>
@@ -1540,7 +1545,7 @@
                                             <h3 class="font-bold text-md">FARM PARCELS</h3>
                                         </div>
                                         <div class="w-6/12 text-right">
-                                            <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white" @click="setMainLivelihoodFormType(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                            <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white" @click="setFarmParcel(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
                                                 <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                     <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                     <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -1590,163 +1595,170 @@
 
                                     <div class="mb-4">
                                         <div class="overflow-auto w-full">
-                                            <template v-for="(item, index) in farmer.farm_parcel" :key="index">
-                                                <div :class="farmer.farm_parcel.length > 0 ? 'mb-4' : 'mb-0'">
-                                                    <div class="p-6 lg:p-8 bg-white border shadow-3xl rounded-lg border-gray-300">
-                                                        <div class="flex flex-wrap justify-between items-center mb-4">
-                                                            <div class="w-3/12 md:order-2 lg:order-1 xl:order-1 2xl:order-1">
-                                                                <h4 class="text-MD font-semibold">FARM PARCEL NO: {{ index+1 }}</h4>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex flex-wrap justify-between mb-4">
-                                                            <div class="w-full">
-                                                                <div class="flex flex-wrap mb-4">
-                                                                    <div class="w-6/12">
-                                                                        <InputLabel for="rotation" value="Name of Farmer(s) in Rotation"/>
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.farmer_in_rotation_name ? item.farmer_in_rotation_name : '&nbsp;' }}</p>
-                                                                    </div>
+                                            <template v-if="farmer.farm_parcel.length > 0">
+                                                <template v-for="(item, index) in farmer.farm_parcel" :key="index">
+                                                    <div :class="farmer.farm_parcel.length > 0 ? 'mb-4' : 'mb-0'">
+                                                        <div class="p-6 lg:p-8 bg-white border shadow-3xl rounded-lg border-gray-300">
+                                                            <div class="flex flex-wrap justify-between items-center mb-4">
+                                                                <div class="w-3/12 md:order-2 lg:order-1 xl:order-1 2xl:order-1">
+                                                                    <h4 class="text-MD font-semibold">FARM PARCEL NO: {{ index+1 }}</h4>
                                                                 </div>
-                                                                <div class="flex flex-wrap justify-between gap-x-1">
-                                                                    <div class="w-[40%]">
-                                                                        <InputLabel for="farm_municipal" value="Municipality" />
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.city ? item.city : '&nbsp;' }}</p>
+                                                            </div>
+                                                            <div class="flex flex-wrap justify-between mb-4">
+                                                                <div class="w-full">
+                                                                    <div class="flex flex-wrap mb-4">
+                                                                        <div class="w-6/12">
+                                                                            <InputLabel for="rotation" value="Name of Farmer(s) in Rotation"/>
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.farmer_in_rotation_name ? item.farmer_in_rotation_name : '&nbsp;' }}</p>
+                                                                        </div>
                                                                     </div>
-                                                                    <div class="w-[40%]">
-                                                                        <InputLabel for="farm_brgy" value="Barangay" />
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.brgy ? item.brgy : '&nbsp;' }}</p>
-                                                                    </div>
-                                                                    <div class="w-2/12">
-                                                                        <InputLabel for="total_farm_area" value="Total Farm Area" />
-                                                                            <div class="mt-1 flex rounded-md shadow-sm">
-                                                                                <p class="border block p-2 w-full uppercase flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">{{ item.total_farm_area ? item.total_farm_area : '&nbsp;' }}</p>
-                                                                            <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"> ha </span>
+                                                                    <div class="flex flex-wrap justify-between gap-x-1">
+                                                                        <div class="w-[40%]">
+                                                                            <InputLabel for="farm_municipal" value="Municipality" />
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.city ? item.city : '&nbsp;' }}</p>
+                                                                        </div>
+                                                                        <div class="w-[40%]">
+                                                                            <InputLabel for="farm_brgy" value="Barangay" />
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.brgy ? item.brgy : '&nbsp;' }}</p>
+                                                                        </div>
+                                                                        <div class="w-2/12">
+                                                                            <InputLabel for="total_farm_area" value="Total Farm Area" />
+                                                                                <div class="mt-1 flex rounded-md shadow-sm">
+                                                                                    <p class="border block p-2 w-full uppercase flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">{{ item.total_farm_area ? item.total_farm_area : '&nbsp;' }}</p>
+                                                                                <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"> ha </span>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
-                                                            <div class="w-5/12">
-                                                                <InputLabel for="Ansentral" value="Within Ancentral Domain" />
-                                                                <div class="flex flex-wrap items-center mt-3">
-                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2">
-                                                                        <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1 && item.is_whithin_ancentral_domain != ''" disabled />
-                                                                        <span class="text-gray-700">Yes</span>
-                                                                    </label>
-
-                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
-                                                                        <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0 && item.is_whithin_ancentral_domain != ''" disabled />
-                                                                        <span class="text-gray-700">No</span>
-                                                                    </label>
+                                                            <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
+                                                                <div class="w-5/12">
+                                                                    <InputLabel for="Ansentral" value="Within Ancentral Domain" />
+                                                                    <div class="flex flex-wrap items-center mt-3">
+                                                                        <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2">
+                                                                            <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1 && item.is_whithin_ancentral_domain != ''" disabled />
+                                                                            <span class="text-gray-700">Yes</span>
+                                                                        </label>
+    
+                                                                        <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                                            <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0 && item.is_whithin_ancentral_domain != ''" disabled />
+                                                                            <span class="text-gray-700">No</span>
+                                                                        </label>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                            <div class="w-5/12">
-                                                                <InputLabel for="Agrarian" value="Agrarian Reform Beneficiary" />
-                                                                <div class="flex flex-wrap items-center mt-3">
-                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2">
-                                                                        <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 1" disabled />
-                                                                        <span class="text-gray-700">Yes</span>
-                                                                    </label>
-
-                                                                    <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2">
-                                                                        <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 0" disabled />
-                                                                        <span class="text-gray-700">No</span>
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex flex-wrap w-full mb-4">
-                                                            <div class="w-full">
-                                                                <InputLabel for="ownership_doc" value="Ownership Document" />
-                                                                <div class="h-32 border rounded-lg p-6 mb-2 text-center uppercase" style="border: 1px solid rgba(0,0,0,.8) !important">
-                                                                    <div @click="viewAttachment(item.document_path)" class="cursor-pointer">
-                                                                        <svg class="h-14 w-14 mx-auto" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve" fill="#000000">
-                                                                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                                                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                                                                            <g id="SVGRepo_iconCarrier"> 
-                                                                                <g> 
-                                                                                    <path class="st0" d="M378.413,0H208.297h-13.182L185.8,9.314L57.02,138.102l-9.314,9.314v13.176v265.514 c0,47.36,38.528,85.895,85.896,85.895h244.811c47.353,0,85.881-38.535,85.881-85.895V85.896C464.294,38.528,425.766,0,378.413,0z M432.497,426.105c0,29.877-24.214,54.091-54.084,54.091H133.602c-29.884,0-54.098-24.214-54.098-54.091V160.591h83.716 c24.885,0,45.077-20.178,45.077-45.07V31.804h170.116c29.87,0,54.084,24.214,54.084,54.092V426.105z"></path> 
-                                                                                    <path class="st0" d="M171.947,252.785h-28.529c-5.432,0-8.686,3.533-8.686,8.825v73.754c0,6.388,4.204,10.599,10.041,10.599 c5.711,0,9.914-4.21,9.914-10.599v-22.406c0-0.545,0.279-0.817,0.824-0.817h16.436c20.095,0,32.188-12.226,32.188-29.612 C204.136,264.871,192.182,252.785,171.947,252.785z M170.719,294.888h-15.208c-0.545,0-0.824-0.272-0.824-0.81v-23.23 c0-0.545,0.279-0.816,0.824-0.816h15.208c8.42,0,13.447,5.027,13.447,12.498C184.167,290,179.139,294.888,170.719,294.888z"></path> 
-                                                                                    <path class="st0" d="M250.191,252.785h-21.868c-5.432,0-8.686,3.533-8.686,8.825v74.843c0,5.3,3.253,8.693,8.686,8.693h21.868 c19.69,0,31.923-6.249,36.81-21.324c1.76-5.3,2.723-11.681,2.723-24.857c0-13.175-0.964-19.557-2.723-24.856 C282.113,259.034,269.881,252.785,250.191,252.785z M267.856,316.896c-2.318,7.331-8.965,10.459-18.21,10.459h-9.23 c-0.545,0-0.824-0.272-0.824-0.816v-55.146c0-0.545,0.279-0.817,0.824-0.817h9.23c9.245,0,15.892,3.128,18.21,10.46 c0.95,3.128,1.62,8.56,1.62,17.93C269.476,308.336,268.805,313.768,267.856,316.896z"></path> 
-                                                                                    <path class="st0" d="M361.167,252.785h-44.812c-5.432,0-8.7,3.533-8.7,8.825v73.754c0,6.388,4.218,10.599,10.055,10.599 c5.697,0,9.914-4.21,9.914-10.599v-26.351c0-0.538,0.265-0.81,0.81-0.81h26.086c5.837,0,9.23-3.532,9.23-8.56 c0-5.028-3.393-8.553-9.23-8.553h-26.086c-0.545,0-0.81-0.272-0.81-0.817v-19.425c0-0.545,0.265-0.816,0.81-0.816h32.733 c5.572,0,9.245-3.666,9.245-8.553C370.411,256.45,366.738,252.785,361.167,252.785z"></path> 
-                                                                                </g> 
-                                                                            </g>
-                                                                        </svg>
-                                                                        <p>{{ item.document }}</p>
+                                                                <div class="w-5/12">
+                                                                    <InputLabel for="Agrarian" value="Agrarian Reform Beneficiary" />
+                                                                    <div class="flex flex-wrap items-center mt-3">
+                                                                        <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2">
+                                                                            <TextInput type="radio" value="1" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 1" disabled />
+                                                                            <span class="text-gray-700">Yes</span>
+                                                                        </label>
+    
+                                                                        <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2">
+                                                                            <TextInput type="radio" value="0" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 0" disabled />
+                                                                            <span class="text-gray-700">No</span>
+                                                                        </label>
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                            <div class="flex flex-wrap w-full mb-4">
+                                                                <div class="w-full">
+                                                                    <InputLabel for="ownership_doc" value="Ownership Document" />
+                                                                    <div class="h-32 border rounded-lg p-6 mb-2 text-center uppercase" style="border: 1px solid rgba(0,0,0,.8) !important">
+                                                                        <div @click="viewAttachment(item.document_path)" class="cursor-pointer">
+                                                                            <svg class="h-14 w-14 mx-auto" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve" fill="#000000">
+                                                                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                                                <g id="SVGRepo_iconCarrier"> 
+                                                                                    <g> 
+                                                                                        <path class="st0" d="M378.413,0H208.297h-13.182L185.8,9.314L57.02,138.102l-9.314,9.314v13.176v265.514 c0,47.36,38.528,85.895,85.896,85.895h244.811c47.353,0,85.881-38.535,85.881-85.895V85.896C464.294,38.528,425.766,0,378.413,0z M432.497,426.105c0,29.877-24.214,54.091-54.084,54.091H133.602c-29.884,0-54.098-24.214-54.098-54.091V160.591h83.716 c24.885,0,45.077-20.178,45.077-45.07V31.804h170.116c29.87,0,54.084,24.214,54.084,54.092V426.105z"></path> 
+                                                                                        <path class="st0" d="M171.947,252.785h-28.529c-5.432,0-8.686,3.533-8.686,8.825v73.754c0,6.388,4.204,10.599,10.041,10.599 c5.711,0,9.914-4.21,9.914-10.599v-22.406c0-0.545,0.279-0.817,0.824-0.817h16.436c20.095,0,32.188-12.226,32.188-29.612 C204.136,264.871,192.182,252.785,171.947,252.785z M170.719,294.888h-15.208c-0.545,0-0.824-0.272-0.824-0.81v-23.23 c0-0.545,0.279-0.816,0.824-0.816h15.208c8.42,0,13.447,5.027,13.447,12.498C184.167,290,179.139,294.888,170.719,294.888z"></path> 
+                                                                                        <path class="st0" d="M250.191,252.785h-21.868c-5.432,0-8.686,3.533-8.686,8.825v74.843c0,5.3,3.253,8.693,8.686,8.693h21.868 c19.69,0,31.923-6.249,36.81-21.324c1.76-5.3,2.723-11.681,2.723-24.857c0-13.175-0.964-19.557-2.723-24.856 C282.113,259.034,269.881,252.785,250.191,252.785z M267.856,316.896c-2.318,7.331-8.965,10.459-18.21,10.459h-9.23 c-0.545,0-0.824-0.272-0.824-0.816v-55.146c0-0.545,0.279-0.817,0.824-0.817h9.23c9.245,0,15.892,3.128,18.21,10.46 c0.95,3.128,1.62,8.56,1.62,17.93C269.476,308.336,268.805,313.768,267.856,316.896z"></path> 
+                                                                                        <path class="st0" d="M361.167,252.785h-44.812c-5.432,0-8.7,3.533-8.7,8.825v73.754c0,6.388,4.218,10.599,10.055,10.599 c5.697,0,9.914-4.21,9.914-10.599v-26.351c0-0.538,0.265-0.81,0.81-0.81h26.086c5.837,0,9.23-3.532,9.23-8.56 c0-5.028-3.393-8.553-9.23-8.553h-26.086c-0.545,0-0.81-0.272-0.81-0.817v-19.425c0-0.545,0.265-0.816,0.81-0.816h32.733 c5.572,0,9.245-3.666,9.245-8.553C370.411,256.45,366.738,252.785,361.167,252.785z"></path> 
+                                                                                    </g> 
+                                                                                </g>
+                                                                            </svg>
+                                                                            <p>{{ item.document }}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
+                                                                <div class="w-3/12">
+                                                                    <InputLabel for="ownership_doc" value="Ownership Document No" />
+                                                                    <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.ownership_document_no ? item.ownership_document_no : '&nbsp;' }}</p>
+                                                                </div>
+                                                                <div class="w-3/12">
+                                                                    <InputLabel for="ownership_type" value="Type of Ownership" />
+                                                                    <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.ownership_type ? item.ownership_type : '&nbsp;' }}</p>
+                                                                </div>
+                                                                <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
+                                                                    <InputLabel for="Name of Land Owner" value="Name of Land Owner" />
+                                                                    <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.landowner_name ? item.landowner_name : '&nbsp;' }}</p>
+                                                                </div>
+                                                                <div class="w-4/12"v-if="item.ownership_type == 'Others'">
+                                                                    <InputLabel for="specify-other" value="Specify" />
+                                                                    <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.is_other ? item.is_other : '&nbsp;' }}</p>
+                                                                </div>
+                                                            </div>
+                                                            <table class="border-collapse border-2 border-gray-400 w-full">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th class="p-3 border border-gray-400 w-[25%]">
+                                                                            <strong>CROP / COMMODITY</strong>
+                                                                            <p class="m-0">
+                                                                                <small class="italic">( Rice / Corn / HVC / Livestock / Poultry /agri-fishery )</small>
+                                                                            </p>
+    
+                                                                            <strong>For Livestock & Poultry</strong>
+                                                                            <p class="m-0">
+                                                                                <small>( Specify type of animal) </small>
+                                                                            </p>
+                                                                        </th>
+                                                                        <th class="p-3 border border-gray-400 w-[11%]">SIZE (ha)</th>
+                                                                        <th class="p-3 border border-gray-400 w-[11%]">
+                                                                            <strong>NO. OF HEAD</strong>
+                                                                            <p class="m-0">
+                                                                                <small class="italic">( For livestock and poultry)</small>
+                                                                            </p>
+                                                                        </th>
+                                                                        <th class="p-3 border border-gray-400 w-[24%]">FARM TYPE</th>
+                                                                        <th class="p-3 border border-gray-400 w-[18%]">ORGANIC PRACTITIONER</th>
+                                                                        <th class="p-3 border border-gray-400 w-[18%]">REMARKS</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr v-for="(v, i) in item.farm_parcel_informations" :key="i" style="vertical-align: top;">
+                                                                        <td class="p-3 border border-gray-400">
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ !isNaN(parseFloat(v.farming_type)) && isFinite(v.farming_type) ? farmCommodity(v.farming_type) : v.farming_type }}</p>
+                                                                        </td>
+                                                                        <td class="p-3 border border-gray-400">
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
+                                                                        </td>
+                                                                        <td class="p-3 border border-gray-400">
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.head_no > 0 ? v.head_no : 0 }}</p>
+                                                                        </td>
+                                                                        <td class="p-3 border border-gray-400">
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.farm_type ? formatFarmType(v.farm_type) : '&nbsp;' }}</p>
+                                                                        </td>
+                                                                        <td class="p-3 border border-gray-400">
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">
+                                                                            {{ v.is_organic_practitioner == 1 ? 'Yes' : 'No' }}
+                                                                            </p>
+                                                                        </td>
+                                                                        <td class="p-3 border border-gray-400">
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.remarks ? v.remarks : '&nbsp;' }}</p>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
                                                         </div>
-                                                        <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
-                                                            <div class="w-3/12">
-                                                                <InputLabel for="ownership_doc" value="Ownership Document No" />
-                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.ownership_document_no ? item.ownership_document_no : '&nbsp;' }}</p>
-                                                            </div>
-                                                            <div class="w-3/12">
-                                                                <InputLabel for="ownership_type" value="Type of Ownership" />
-                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.ownership_type ? item.ownership_type : '&nbsp;' }}</p>
-                                                            </div>
-                                                            <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
-                                                                <InputLabel for="Name of Land Owner" value="Name of Land Owner" />
-                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.landowner_name ? item.landowner_name : '&nbsp;' }}</p>
-                                                            </div>
-                                                            <div class="w-4/12"v-if="item.ownership_type == 'Others'">
-                                                                <InputLabel for="specify-other" value="Specify" />
-                                                                <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.is_other ? item.is_other : '&nbsp;' }}</p>
-                                                            </div>
-                                                        </div>
-                                                        <table class="border-collapse border-2 border-gray-400 w-full">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th class="p-3 border border-gray-400 w-[25%]">
-                                                                        <strong>CROP / COMMODITY</strong>
-                                                                        <p class="m-0">
-                                                                            <small class="italic">( Rice / Corn / HVC / Livestock / Poultry /agri-fishery )</small>
-                                                                        </p>
-
-                                                                        <strong>For Livestock & Poultry</strong>
-                                                                        <p class="m-0">
-                                                                            <small>( Specify type of animal) </small>
-                                                                        </p>
-                                                                    </th>
-                                                                    <th class="p-3 border border-gray-400 w-[11%]">SIZE (ha)</th>
-                                                                    <th class="p-3 border border-gray-400 w-[11%]">
-                                                                        <strong>NO. OF HEAD</strong>
-                                                                        <p class="m-0">
-                                                                            <small class="italic">( For livestock and poultry)</small>
-                                                                        </p>
-                                                                    </th>
-                                                                    <th class="p-3 border border-gray-400 w-[24%]">FARM TYPE</th>
-                                                                    <th class="p-3 border border-gray-400 w-[18%]">ORGANIC PRACTITIONER</th>
-                                                                    <th class="p-3 border border-gray-400 w-[18%]">REMARKS</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <tr v-for="(v, i) in item.farm_parcel_informations" :key="i" style="vertical-align: top;">
-                                                                    <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ !isNaN(parseFloat(v.farming_type)) && isFinite(v.farming_type) ? farmCommodity(v.farming_type) : v.farming_type }}</p>
-                                                                    </td>
-                                                                    <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
-                                                                    </td>
-                                                                    <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.head_no > 0 ? v.head_no : 0 }}</p>
-                                                                    </td>
-                                                                    <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.farm_type ? formatFarmType(v.farm_type) : '&nbsp;' }}</p>
-                                                                    </td>
-                                                                    <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">
-                                                                        {{ v.is_organic_practitioner == 1 ? 'Yes' : 'No' }}
-                                                                        </p>
-                                                                    </td>
-                                                                    <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.remarks ? v.remarks : '&nbsp;' }}</p>
-                                                                    </td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
                                                     </div>
+                                                </template>
+                                            </template>
+                                            <template v-else>
+                                                <div class="text-center mt-4">
+                                                    No Farm Parcel Found.
                                                 </div>
                                             </template>
                                         </div>
