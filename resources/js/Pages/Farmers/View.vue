@@ -69,7 +69,7 @@
     });
 
     let mergeTypes = ref([]);
-    const nextTab = ref(null);
+    const activeTab = ref('Farmer Information');
 
     const back = () => {
         const url = route('farmers.index');
@@ -1035,21 +1035,35 @@
     }
 
     const handleTabChange = (tab) => {
-        if (tab.toLowerCase() == 'assistance') {
-            const url = new URL(window.location.href)
-            const params = url.searchParams;
-            if (props.history.current_page != 1) {
+        if (tab.toLowerCase() === 'assistance') {
+            if (props.history.current_page !== 1) {
                 router.visit(route(route().current(), props.farmer.id), {
                     preserveState: true,
                     replace: true,
                     only: ['history'],
                     onSuccess: () => {
-                        nextTab.value = 'Assistance';
-                        props.history = Object.assign({}, props.history, { current_page: 1 });
+                        activeTab.value = 'Assistance'
                     }
-                });
+                })
+                return
             }
         }
+
+        if (tab.toLowerCase() === 'other information') {
+            if (props.attachments.current_page !== 1) {
+                router.visit(route(route().current(), props.farmer.id), {
+                    preserveState: true,
+                    replace: true,
+                    only: ['attachments'],
+                    onSuccess: () => {
+                        activeTab.value = 'Other Information'
+                    }
+                })
+                return
+            }
+        }
+
+        activeTab.value = tab
     }
 </script>
 
@@ -1100,7 +1114,7 @@
                 </div>
                 <div class="w-[74%]">
                     <div class="bg-white rounded-sm shadow-xl sm:rounded-lg px-8 py-8">
-                        <FarmerTabs @tab-changed="handleTabChange" :switchToTab="nextTab" :active-tab="activeTab" >
+                        <FarmerTabs :modelValue="activeTab" @update:modelValue="handleTabChange" >
                             <template #farmer-profile>
                                 <div class="p-3">
                                     <div class="flex flex-wrap justify-between mb-4">
@@ -2007,7 +2021,7 @@
                                     <div class="w-full">
                                         <div class="flex flex-row justify-between align-center">
                                             <div class="md:w-1/6">
-                                                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white" @click="createAssistanceDialog = true" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <!-- <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white" @click="createAssistanceDialog = true" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
                                                     <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -2016,7 +2030,7 @@
                                                         </g>
                                                     </svg>
                                                     New
-                                                </PrimaryButton>
+                                                </PrimaryButton> -->
                                             </div>
                                             <div class="md:w-3/12">
                                                 <TextInput v-model="searchValue" type="text" class="block w-full h-10" placeholder="Search" autocomplete="off" />

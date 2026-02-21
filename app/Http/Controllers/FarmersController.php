@@ -523,8 +523,6 @@ class FarmersController extends Controller
             ->where('a.id', $id)
             ->first();
         
-        // dd($id);
-        
         $default = asset('images/male-farmer.png');
         if (isset($farmer->farmer_image) && $farmer?->farmer_image) {
             if (file_exists(public_path('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image))) {
@@ -533,7 +531,7 @@ class FarmersController extends Controller
                 $farmer->farmer_image = $default;
             }
         } else {
-            // $farmer->farmer_image = $default;
+            $farmer->farmer_image = $default;
         }
 
         $farmer->main_livelihood = @unserialize($farmer->main_livelihood) ? @unserialize($farmer->main_livelihood) : array();

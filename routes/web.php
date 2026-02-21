@@ -64,6 +64,11 @@ Route::middleware([
         'index', 'create', 'store', 'update', 'destroy'
     ])->parameters([ 'assistance'=>'id' ]);
 
+    // change to assistance masterfile that has a approval of assistance
+    Route::resource('/assistances', AssistanceController::class)->only([
+        'index', 'create', 'store', 'update', 'destroy'
+    ])->parameters([ 'assistances'=>'id' ]);
+
     Route::put('/types/archive_type/{id}', [FarmingTypeController::class, 'archive_type'])->name('types.archive_type');
     Route::put('/users/archive_user/{id}', [UsersController::class, 'archive_user'])->name('users.archive_user');
     Route::put('/farmers/archive_farmer/{id}', [FarmersController::class, 'archive_farmer'])->name('farmers.archive_farmer');
