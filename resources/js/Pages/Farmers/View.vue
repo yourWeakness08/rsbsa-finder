@@ -1,6 +1,6 @@
 <script setup>
     import useValidationHelpers from '@/Composables/useValidationHelpers'
-    import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate } from 'vue';
+    import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate, toRaw  } from 'vue';
     import useVuelidate from '@vuelidate/core';
     import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
     import AppLayout from '@/Layouts/AppLayout.vue';
@@ -541,6 +541,9 @@
         livelihoodForm.farming_gross = farmer.farming_gross;
         livelihoodForm.no_farming_gross = farmer.no_farming_gross;
         livelihoodForm.farmer = [];
+        livelihoodForm.crops = [];
+        livelihoodForm.livestock = [];
+        livelihoodForm.poultry = [];
         livelihoodForm.farm_worker = [];
         livelihoodForm.fisherfolks = [];
         livelihoodForm.agri_youth = [];
@@ -618,107 +621,45 @@
         if (livelihoodForm.farmer.includes(selectedValue)) {
             const index = livelihoodForm.farmer.indexOf(selectedValue);
             livelihoodForm.farmer = livelihoodForm.farmer.filter(val => val !== selectedValue);
-            if (selectedValue === 'rice' || selectedValue === 'corn') {
-                mergeTypes.value = mergeTypes.value.filter(
-                    item => item.text.toLowerCase() !== selectedValue
-                );
-            }
+
+            if (selectedValue === 'crops') { livelihoodForm.crops = []; }
+            if (selectedValue === 'livestock') { livelihoodForm.livestock = []; }
+            if (selectedValue === 'poultry') { livelihoodForm.poultry = []; }
         } else {
             livelihoodForm.farmer.push(selectedValue);
-
-            if (selectedValue === 'rice' || selectedValue === 'corn') {
-                const exists = mergeTypes.value.some(
-                    item => item.text.toLowerCase() === selectedValue
-                );
-
-                if (!exists) {
-                    mergeTypes.value.push({
-                        id: selectedValue,
-                        text: selectedValue.toUpperCase(),
-                        type: 'crops'
-                    });
-
-                    mergeTypes.value.sort((a, b) => a.text.localeCompare(b.text));
-                }
-            }
-
-            if (!$(e.target).is(':checked') && (selectedValue !== 'rice' && selectedValue !== 'corn')) {
-                mergeTypes.value = mergeTypes.value.filter(
-                    item => item.type.toLowerCase() !== selectedValue
-                );
-            }
         }
     }
 
     const handleCrops = (event) => {
-        let types = props.types.crops;
         const selectedValue = parseInt(event.id);
-        const crop = types.find(item => item.id == selectedValue);
 
         if (livelihoodForm.crops.includes(selectedValue)) {
             const index = livelihoodForm.crops.indexOf(selectedValue);
             livelihoodForm.crops.splice(index, 1);
-
-            if (crop) {
-                mergeTypes.value = mergeTypes.value.filter(item => item.id !== crop.id);
-            }
         } else {
             livelihoodForm.crops.push(selectedValue);
-
-            if (crop) {
-                mergeTypes.value = [
-                    ...mergeTypes.value,
-                    { id: crop.id, text: crop.text.toUpperCase(), type: 'crops' }
-                ].sort((a, b) => a.text.localeCompare(b.text));
-            }
         }
     }
     
     const handleLivestock = (event) => {
-        let types = props.types.livestock;
         const selectedValue = parseInt(event.id);
-        const livestock = types.find(item => item.id == selectedValue);
 
         if (livelihoodForm.livestock.includes(selectedValue)) {
             const index = livelihoodForm.livestock.indexOf(selectedValue);
             livelihoodForm.livestock.splice(index, 1);
-
-            if (livestock) {
-                mergeTypes.value = mergeTypes.value.filter(item => item.id !== livestock.id);
-            }
         } else {
             livelihoodForm.livestock.push(selectedValue);
-
-            if (livestock) {
-                mergeTypes.value = [
-                    ...mergeTypes.value,
-                    { id: livestock.id, text: livestock.text.toUpperCase(), type: 'livestock' }
-                ].sort((a, b) => a.text.localeCompare(b.text));
-            }
         }
     }
     
     const handlePoultry = (event) => {
-        let types = props.types.poultry;
         const selectedValue = parseInt(event.id);
-        const poultry = types.find(item => item.id == selectedValue);
 
         if (livelihoodForm.poultry.includes(selectedValue)) {
             const index = livelihoodForm.poultry.indexOf(selectedValue);
             livelihoodForm.poultry.splice(index, 1);
-
-            if (poultry) {
-                mergeTypes.value = mergeTypes.value.filter(item => item.id !== poultry.id);
-            }
         } else {
             livelihoodForm.poultry.push(selectedValue);
-
-            if (poultry) {
-                mergeTypes.value = [
-                    ...mergeTypes.value,
-                    { id: poultry.id, text: poultry.text.toUpperCase(), type: 'poultry' }
-                ].sort((a, b) => a.text.localeCompare(b.text));
-            }
         }
     }
 
@@ -736,29 +677,12 @@
     const handleFisherFolks = (e) => {
         let types = props.types.agri_fishery;
         const selectedValue = e.target.value;
-        const fishery = mergeTypes.value.find(item => item.type == 'agri-fishery');
 
         if (livelihoodForm.fisherfolks.includes(selectedValue)) {
             const index = livelihoodForm.fisherfolks.indexOf(selectedValue);
             livelihoodForm.fisherfolks.splice(index, 1);
         } else {
             livelihoodForm.fisherfolks.push(selectedValue);
-        }
-
-        if (selectedValue !== 'others') {
-            if (typeof fishery == 'undefined') {
-                $.each(types, function(index, value) {
-                    mergeTypes.value = [
-                        ...mergeTypes.value,
-                        { id: value.id, text: value.text.toUpperCase(), type: 'agri-fishery' }
-                    ];
-                });
-                mergeTypes.value = mergeTypes.value.sort((a, b) => a.text.localeCompare(b.text));
-            }
-        }
-
-        if (form.fisherfolks.length == 0 || (form.fisherfolks.length == 1 && form.fisherfolks.includes('others'))) {
-            mergeTypes.value = mergeTypes.value.filter(item => item.type !== 'agri-fishery');
         }
     }
     
@@ -1022,8 +946,102 @@
         return text;
     }
 
+    const validateParcel = ref(false);
+
     const setFarmParcel = (farmer) => {
-        editFarmParcelDialog = true;
+        validateParcel.value = false;
+        parcel$.value.$reset();
+        let types = props.types;
+        editFarmParcelDialog.value = true;
+        mergeTypes.value = [];
+
+        farmParcelForm.farm_parcel_no = farmer.farm_parcel_no;
+        farmParcelForm.is_arb = farmer.is_arb;
+
+        // Initialize farm_parcel with default values to prevent errors when mapping and adding default information if farmer has no farm parcels
+        farmParcelForm.farm_parcel = [{
+            city: null,
+            brgy: null,
+            total_farm_area: null,
+            document: null,
+            ownership_document_no: null,
+            ownership_type: null,
+            is_whithin_ancentral_domain: null,
+            is_agrarian_reform_beneficiary: null,
+            land_owner_name: null,
+            is_other: null,
+            farmer_in_rotation_name: null,
+            farm_parcel_informations: [
+                {
+                    farming_type: null,
+                    size: 0,
+                    head_no: 0,
+                    farm_type: null,
+                    is_organic_practitioner: null,
+                    remarks: null
+                }
+            ]
+        }];
+        
+        if (farmer.farm_parcel.length > 0) {
+            const rawParcels = toRaw(farmer.farm_parcel) || [];
+    
+            farmParcelForm.farm_parcel = rawParcels.map(parcel => ({
+                ...parcel,
+                farm_parcel_informations: (parcel.farm_parcel_informations || []).map(info => ({
+                    ...info
+                }))
+            }));
+        }
+
+        if (farmer.main_livelihood.includes('farmer')) {
+            $.each(farmer.main_livelihood_info.farmer, function(index, item) {
+                if (item.meta == 'rice' || item.meta == 'corn') {
+                    mergeTypes.value.push({ id: item.value, text: item.value.toUpperCase(), type: 'crop' });
+                }
+
+                if (item.meta == 'crops') {
+                    const crop = types.crops.find(i => i.id == item.value);
+                    mergeTypes.value = [
+                        ...mergeTypes.value,
+                        { id: crop.id, text: crop.text.toUpperCase(), type: 'crop' }
+                    ].sort((a, b) => a.text.localeCompare(b.text));
+                }
+
+                if (item.meta == 'livestock') {
+                    const livestock = types.livestock.find(i => i.id == item.value);
+                    mergeTypes.value = [
+                        ...mergeTypes.value,
+                        { id: livestock.id, text: livestock.text.toUpperCase(), type: 'livestock' }
+                    ].sort((a, b) => a.text.localeCompare(b.text));
+                }
+
+                if (item.meta == 'poultry') {
+                    const poultry = types.poultry.find(i => i.id == item.value);
+                    mergeTypes.value = [
+                        ...mergeTypes.value,
+                        { id: poultry.id, text: poultry.text.toUpperCase(), type: 'poultry' }
+                    ].sort((a, b) => a.text.localeCompare(b.text));
+                }
+
+
+            });
+        }
+
+        if (farmer.main_livelihood.includes('fisherfolks')) {
+
+            const hasOthers = farmer.main_livelihood_info.fisherfolks.some(item => 
+                item.meta?.toLowerCase() !== 'others'
+            );
+
+            if (farmer.main_livelihood_info.fisherfolks.length > 0 && hasOthers) {
+                const otherFishery = farmer.main_livelihood_info.fisherfolks.find(item => item.meta?.toLowerCase() === 'others');
+                mergeTypes.value = [
+                    ...mergeTypes.value,
+                    { id: otherFishery.value, text: otherFishery.value.toUpperCase(), type: 'agri-fishery' }
+                ].sort((a, b) => a.text.localeCompare(b.text));
+            }
+        }
     }
 
     function getPage(url) {
@@ -1110,7 +1128,7 @@
 
         attachment$.value.$touch();
         if (!attachment$.value.$invalid) {
-            attachmentForm.post(route('farmers.save_attachments'), {
+            attachmentForm.post(route('farmers.save_attachments', props.farmer.id), {
                 preserveScroll: true,
                 onProgress: () => processing.value = true,
                 onSuccess: () => {
@@ -1135,10 +1153,18 @@
                             attachmentForm.attachments = []
                             attachmentForm.user_id = 0
                             
+                            Swal.fire({
+                                icon: 'success',
+                                text: 'Successfully uploaded attachments.'
+                            });
                         }, 800);
                     } else {
-                        recentlyFailed.value = true;
-                        setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                        setTimeout(() => { processing.value = false; }, 1500);
+
+                        Swal.fire({
+                            icon: 'warning',
+                            text: 'Failed to upload attachments.'
+                        });
                     }
                 },
                 onError: (errors) => {
@@ -1148,6 +1174,200 @@
             });
         }
     }
+
+    const archiveAttachment = (id) => {
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Delete Attachment',
+            text: 'Are you sure you want to delete this attachment?',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'No, cancel!',
+            allowOutsideClick: () => !Swal.isLoading(),
+            preConfirm: async () => {
+                try {
+                    const response = await axios.put(
+                        route('farmers.archive_attachment', id),
+                        { user_id: props.farmer.id },
+                        { headers: { Accept: 'application/json' } }
+                    );
+
+                    const result = response.data;
+
+                    if (!result.state) {
+                        throw new Error(result.message || 'Failed to delete attachment.');
+                    }
+
+                    return result; // passes to .then()
+                } catch (error) {
+                    Swal.showValidationMessage(
+                        error.response?.data?.message || error.message
+                    );
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+
+                Swal.fire({
+                    icon: 'success',
+                    text: result.value.message
+                });
+
+                router.reload({
+                    only: ['attachments']
+                });
+            }
+        });
+    }
+
+    const closeEditFarmParcelModal = () => {
+        editFarmParcelDialog.value = false;
+    }
+    
+    const ownerType = ref(false);
+    const ownerOthers = ref(false);
+    
+    const farmParcelForm = useForm({
+        farm_parcel_no: 1,
+        is_arb: '',
+        farm_parcel: [
+            {
+                municipality: null,
+                brgy: null,
+                total_farm_area: null,
+                document: null,
+                ownership_document_no: null,
+                ownership_type: null,
+                is_whithin_ancentral_domain: null,
+                is_agrarian_reform_beneficiary: null,
+                land_owner_name: null,
+                is_other: null,
+                farmer_in_rotation_name: null,
+                farm_parcel_informations: [
+                    {
+                        farming_type: null,
+                        size: 0,
+                        head_no: 0,
+                        farm_type: null,
+                        is_organic_practitioner: null,
+                        remarks: null
+                    }
+                ]
+            }
+        ],
+        user_id: 0,
+    });
+
+    const FarmParcelRules = computed(() => {
+        return {
+            farm_parcel_no: { required, min: 1 },
+            is_arb: { required },
+            farm_parcel: {
+                $each: helpers.forEach({
+                    city: { required: requiredIf(() => validateParcel.value) }, //not done here
+                    brgy: { required },
+                    total_farm_area: { required },
+                    document: { required },
+                    ownership_document_no: { required },
+                    is_whithin_ancentral_domain: { required },
+                    is_agrarian_reform_beneficiary: { required },
+                    ownership_type: { required },
+                    land_owner_name: {},
+                    is_other: {
+                        required: requiredIf(ownerOthers)
+                    },
+                    farmer_in_rotation_name: { required },
+                    farm_parcel_informations: {
+                        $each: helpers.forEach({
+                            commodity: { required },
+                            size: { required },
+                            head_no: { required },
+                            farm_type: { required },
+                            is_organic_practitioner: { required },
+                            remarks: {}
+                        })
+                    }
+                })
+            },
+            user_id: {}
+        }
+    });
+
+    const parcel$ = useVuelidate(FarmParcelRules, farmParcelForm, {
+        $autoDirty: true
+    })
+
+    const addParcelInfo = (i) => {
+        farmParcelForm.farm_parcel[i].farm_parcel_informations.push({
+            farming_type: null,
+            size: 0,
+            head_no: 0,
+            farm_type: null,
+            is_organic_practitioner: null,
+            remarks: null
+        });
+    }
+
+    const removeParcelInfo = (index, farmIndex) => {
+        farmParcelForm.farm_parcel[farmIndex].farm_parcel_informations.splice(index, 1);
+    }
+
+    const addFarmParcel = () => {
+        farmParcelForm.farm_parcel.push({
+            municipality: null,
+            brgy: null,
+            total_farm_area: null,
+            document: null,
+            ownership_document_no: null,
+            ownership_type: null,
+            is_whithin_ancentral_domain: null,
+            is_agrarian_reform_beneficiary: null,
+            land_owner_name: null,
+            is_other: null,
+            farmer_in_rotation_name: null,
+            farm_parcel_informations: [
+                {
+                    farming_type: null,
+                    size: 0,
+                    head_no: 0,
+                    farm_type: null,
+                    is_organic_practitioner: null,
+                    remarks: null
+                }
+            ]
+        });
+    }
+
+    const removeFarmParcel = (index) => {
+        farmParcelForm.farm_parcel.splice(index, 1);
+        farmParcelForm.farm_parcel_no = farmParcelForm.farm_parcel.length;
+    }
+
+    const { hasError: hasParcelError, inputBorderClass : parcelInputBorderClass, getFieldState: parcelGetFieldState } = useValidationHelpers(parcel$, farmParcelForm, { autoTouch: true })
+
+    const handleOwnership = (index, event) => {
+        const selectedValue = event.id;
+
+        if (selectedValue == 'Tenant' || selectedValue == 'Lesse') {
+            ownerType.value = true;
+        } else {
+            ownerType.value = false;
+        }
+
+        if (selectedValue == 'Others') {
+            ownerOthers.value = true;
+        } else {
+            ownerOthers.value = false;
+        }
+    }
+
+    const ownership_type = ref([
+        { id: 'Registered Owner', text: 'Registered Owner' },
+        { id: 'Tenant', text: 'Tenant' },
+        { id: 'Lesse', text: 'Lesse' },
+        { id: 'Others', text: 'Others' },
+    ]);
 </script>
 
 <template>
@@ -1626,7 +1846,7 @@
                                                 <div class="p-4 lg:p-6 bg-white">
                                                     <h4 class="text-center font-bold italic text-lg mb-3">For Fisherfolk:</h4>
 
-                                                    <p class="mb-3">The Lending Conduit shall coordinate with the Bureau of Fisheries and Aquatic Resources (BFAR) in the issuance of a certification that the fisherfolk-borrower under PUNLA / PLEA is registered under the Municipal Fisherfolk Registration (FishR).</p>
+                                                    <p class="mb-3 text-sm">The Lending Conduit shall coordinate with the Bureau of Fisheries and Aquatic Resources (BFAR) in the issuance of a certification that the fisherfolk-borrower under PUNLA / PLEA is registered under the Municipal Fisherfolk Registration (FishR).</p>
 
                                                     <h5 class="font-bold text-md mb-2">Type if Fishing Activity</h5>
 
@@ -1692,7 +1912,7 @@
                                                 <div class="p-4 lg:p-6 bg-white">
                                                     <h4 class="text-center font-bold italic text-lg mb-3">For Agri Youth:</h4>
 
-                                                    <p class="mb-3">For the purposes of trainings, financial assistance, and either programs and catered to the youth with involvement to any agriculture activity.</p>
+                                                    <p class="mb-3 text-sm">For the purposes of trainings, financial assistance, and either programs and catered to the youth with involvement to any agriculture activity.</p>
 
                                                     <h5 class="font-bold text-md mb-2">Type of Involvement</h5>
 
@@ -1802,12 +2022,12 @@
                                                     <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-6/12 me-4" value="Agrarian Reform Beneficiary (ARB)" />
                                                     <div class="flex flex-wrap items-center lg:w-4/12 xl:w-4/12 2xl:w-5/12 space-x-3">
                                                         <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center space-x-2">
-                                                            <TextInput type="radio" name="is_arb" :checked="farmer.is_arb == 1" value="1" class="accent-blue-600" disabled />
+                                                            <TextInput type="radio" :checked="farmer.is_arb == 1" value="1" class="accent-blue-600" disabled />
                                                             <span class="text-gray-700">Yes</span>
                                                         </label>
 
                                                         <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center m-y-0 space-x-2">
-                                                            <TextInput type="radio" name="is_arb" :checked="farmer.is_arb == 0" value="0" class="accent-blue-600" disabled />
+                                                            <TextInput type="radio" :checked="farmer.is_arb == 0" value="0" class="accent-blue-600" disabled />
                                                             <span class="text-gray-700">No</span>
                                                         </label>
                                                     </div>
@@ -2023,14 +2243,25 @@
                                                             <tr class="bg-white border-b">
                                                                 <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.filename }}</td>
                                                                 <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap text-right">
-                                                                    <svg @click="viewAttachment('attachments', item.filepath)" class="cursor-pointer h-6 w-6 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                                                                        <g id="SVGRepo_iconCarrier"> 
-                                                                            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
-                                                                            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94291 16.4788 5 12.0012 5Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                                                                        </g>
-                                                                    </svg>
+                                                                    <PrimaryButton class="bg-info-500 hover:bg-info-700 text-white mr-1" @click="viewAttachment('attachments', item.filepath)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                                            <g id="SVGRepo_iconCarrier"> 
+                                                                                <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                                                <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94291 16.4788 5 12.0012 5Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                                            </g>
+                                                                        </svg>
+                                                                    </PrimaryButton>
+                                                                    <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAttachment(item.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                                        <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                                            <g id="SVGRepo_iconCarrier"> 
+                                                                                <path d="M18 6L17.1991 18.0129C17.129 19.065 17.0939 19.5911 16.8667 19.99C16.6666 20.3412 16.3648 20.6235 16.0011 20.7998C15.588 21 15.0607 21 14.0062 21H9.99377C8.93927 21 8.41202 21 7.99889 20.7998C7.63517 20.6235 7.33339 20.3412 7.13332 19.99C6.90607 19.5911 6.871 19.065 6.80086 18.0129L6 6M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M14 10V17M10 10V17" stroke="#ffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                                            </g>
+                                                                        </svg>
+                                                                    </PrimaryButton>
                                                                 </td>
                                                             </tr>
                                                         </template>
@@ -2045,7 +2276,7 @@
                                             <div class="mt-6">
                                                 <div class="flex flex-row justify-between items-center">
                                                     <div class="md:w-[10%] lg:w-[10%] xl:w-[10%] 2xl:w-[9%]">
-                                                        <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
+                                                        <!-- <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" /> -->
                                                     </div>
                                                     <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
                                                         <div class="flex items-center justify-end -space-x-px h-8 text-sm" v-if="attachments.total > 0">
@@ -2054,7 +2285,7 @@
                                                                     <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {}, { preserveState: true })"  class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
                                                                 </template>
                                                                 <template v-else-if="index == attachments.links.length - 1">
-                                                                    <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {'page': 'assistance'}, { preserveState: true })"  class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
+                                                                    <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {'page': 'attachments'}, { preserveState: true })"  class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
                                                                 </template>
                                                                 <template v-else>
                                                                     <button :key="link.label" v-html="link.label" @click="link.url && router.get(link.url, {}, { preserveState: true })" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700" :class="{ 'text-gray-500 pointer-events-none': !link.url }" />
@@ -2623,7 +2854,7 @@
             </template>
         </DialogModal>
 
-        <DialogModal id="editMainLivelihood" :show="editMainLivelihoodDialog" :max-width="'5xl'" @close="closeLivelihoodEditModal">
+        <DialogModal id="editMainLivelihood" :show="editMainLivelihoodDialog" :max-width="'7xl'" @close="closeLivelihoodEditModal">
             <template #title>
                 Edit Main Livelihood
             </template>
@@ -2698,13 +2929,13 @@
                                                     <Select2 class="uppercase" v-model="livelihoodForm.livestock" :options="types.livestock" :settings="{ placeholder: 'Select An Option', width: '100%', multiple: true, dropdownParent: $('#editMainLivelihood') }" />
                                                 </div>
                                                 <p v-if="hasLivelihoodError('livestock')" class="text-red-500 text-sm">
-                                                    <span class="text-red-500 text-sm" v-if="y$.livestock.required?.$invalid">Crops is required. Please select atleast 1 livestock.</span>
+                                                    <span class="text-red-500 text-sm" v-if="y$.livestock.required?.$invalid">Livestock is required. Please select atleast 1 livestock.</span>
                                                 </p>
                                             </div>
                                         </div>
                                         <div class="w-full">
                                             <div class="inline-flex items-center space-x-2">
-                                                <TextInput type="checkbox" id="poultry" v-model="livelihoodForm.poultry" :checked="livelihoodForm.farmer.includes('poultry')" value="poultry" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 cursor-pointer" @click="handleFarmer" />
+                                                <TextInput type="checkbox" id="poultry" :checked="livelihoodForm.farmer.includes('poultry')" value="poultry" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 cursor-pointer" @click="handleFarmer" />
                                                 <InputLabel for="poultry" value="Poultry" class="text-sm text-gray-700 cursor-pointer" />
                                             </div>
 
@@ -2798,7 +3029,7 @@
                                 <div class="p-4 lg:p-6 bg-white">
                                     <h4 class="text-center font-bold italic text-lg mb-3">For Fisherfolk:</h4>
 
-                                    <p class="mb-3">The Lending Conduit shall coordinate with the Bureau of Fisheries and Aquatic Resources (BFAR) in the issuance of a certification that the fisherfolk-borrower under PUNLA / PLEA is registered under the Municipal Fisherfolk Registration (FishR).</p>
+                                    <p class="mb-3 font-sm">The Lending Conduit shall coordinate with the Bureau of Fisheries and Aquatic Resources (BFAR) in the issuance of a certification that the fisherfolk-borrower under PUNLA / PLEA is registered under the Municipal Fisherfolk Registration (FishR).</p>
 
                                     <h5 class="font-bold text-md mb-2">Type if Fishing Activity</h5>
 
@@ -2875,7 +3106,7 @@
                                 <div class="p-4 lg:p-6 bg-white">
                                     <h4 class="text-center font-bold italic text-lg mb-3">For Agri Youth:</h4>
 
-                                    <p class="mb-3">For the purposes of trainings, financial assistance, and either programs and catered to the youth with involvement to any agriculture activity.</p>
+                                    <p class="mb-3 font-sm">For the purposes of trainings, financial assistance, and either programs and catered to the youth with involvement to any agriculture activity.</p>
 
                                     <h5 class="font-bold text-md mb-2">Type of Involvement</h5>
 
@@ -3059,6 +3290,308 @@
             <template #footer>
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" @click="submitAttachments">Save</PrimaryButton>
                 <SecondaryButton @click="closeUploadModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <DialogModal id="editFarmParcel" :show="editFarmParcelDialog" :max-width="'6xl'" @close="closeEditFarmParcelModal" :closeable="true">
+            <template #title>
+                Edit Farm Parcel
+            </template>
+            <template #content>
+                <div class="bg-white">
+                    <div class="mb-6">
+                        <div class="flex flex-wrap items-center justify-between">
+                            <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-6/12">
+                                <div class="flex flex-wrap items-center">
+                                    <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12" value="No. of Farm Parcels" :required="true" />
+                                    <TextInput type="text" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" min="1" readonly autocomplete="off" v-model="farmParcelForm.farm_parcel_no"
+                                        @blur="parcel$.farm_parcel_no.$touch()"
+                                        :class="parcelInputBorderClass('farm_parcel_no')"
+                                    />
+                                </div>
+                                <p v-if="hasParcelError('farm_parcel_no')" class="text-red-500 text-sm">
+                                    <span class="text-red-500 text-sm" v-if="parcel$.farm_parcel_no.required?.$invalid">Farming Parcel No. is required.</span>
+                                </p>
+                            </div>
+                            <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-6/12">
+                                <div class="flex flex-wrap items-center">
+                                    <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12 me-4" value="Agrarian Reform Beneficiary (ARB)" :required="true" />
+                                    <div class="flex flex-wrap items-center lg:w-4/12 xl:w-4/12 2xl:w-5/12 space-x-3">
+                                        <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center space-x-2 cursor-pointer">
+                                            <TextInput type="radio" name="is_arb" v-model="farmParcelForm.is_arb" value="1" class="accent-blue-600" :checked="farmParcelForm.is_arb == 1" />
+                                            <span class="text-gray-700">Yes</span>
+                                        </label>
+
+                                        <label class="lg:w-[40%] xl:w-[25%] 2xl:w-[20%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                            <TextInput type="radio" name="is_arb" v-model="farmParcelForm.is_arb" value="0" class="accent-blue-600" :checked="farmParcelForm.is_arb == 0" />
+                                            <span class="text-gray-700">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <p v-if="hasParcelError('is_arb')" class="text-red-500 text-sm">
+                                    <span class="text-red-500 text-sm" v-if="parcel$.is_arb.required?.$invalid">ARB is required.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-auto w-full">
+                        <template v-for="(item, index) in farmParcelForm.farm_parcel" :key="index">
+                            <div :class="farmParcelForm.farm_parcel.length > 0 ? 'mb-4' : 'mb-0'">
+                                <div class="p-6 lg:p-8 bg-white border shadow-3xl rounded-lg border-gray-300">
+                                    <div class="flex flex-wrap justify-between items-center mb-4">
+                                        <div class="w-3/12 md:order-2 lg:order-1 xl:order-1 2xl:order-1">
+                                            <h4 class="text-MD font-semibold">FARM PARCEL NO: {{ index+1 }}</h4>
+                                        </div>
+                                        <div class="w-5/12 md:order-1 lg:order-2 xl:order-2 2xl:order-2">
+                                            <div class="flex flex-wrap gap-x-2 justify-end">
+                                                <button button="button" @click="addFarmParcel" class="bg-green-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-green-600 flex items-center">
+                                                    <span class="text-sm leading-none">Add Farm Parcel</span>
+                                                </button>
+                                                <button button="button" v-if="index != 0" @click="removeFarmParcel(index)" class="bg-red-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-red-600 flex items-center">
+                                                    <span class="text-sm leading-none">Remove Farm Parcel</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap justify-between mb-4">
+                                        <div class="w-full">
+                                            <div class="flex flex-wrap mb-4">
+                                                <div class="w-6/12">
+                                                    <InputLabel for="rotation" value="Name of Farmer(s) in Rotation" :required="true" />
+                                                    <TextInput type="text" v-model="item.farmer_in_rotation_name" class="mt-1 block w-full uppercase" autocomplete="off"
+                                                        :class="{
+                                                            'border-gray-300': item.farmer_in_rotation_name == null,
+                                                            'border-red-500' : item.farmer_in_rotation_name != null && parcel$.farm_parcel.$each.$response.$errors[index].farmer_in_rotation_name.length == 1,
+                                                            'border-green-500' : item.farmer_in_rotation_name && parcel$.farm_parcel.$each.$response.$errors[index].farmer_in_rotation_name.length == 0
+                                                        }"
+                                                    />
+                                                    <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farmer_in_rotation_name" :key="error">Name of Farmer(s) in Rotation is Required</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-wrap justify-between gap-x-1">
+                                                <div class="w-[40%]">
+                                                    <InputLabel for="farm_municipal" value="Municipality" :required="true" />
+                                                    <TextInput type="text" v-model="item.city" class="mt-1 block w-full uppercase" autocomplete="off"
+
+                                                        :class="{
+                                                            'border-gray-300': item.city == null,
+                                                            'border-red-500' : item.city != null && parcel$.farm_parcel.$each.$response.$errors[index].city.length == 1,
+                                                            'border-green-500' : item.city && parcel$.farm_parcel.$each.$response.$errors[index].city.length == 0
+                                                        }"
+                                                    />
+                                                    <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].city" :key="error">Municipality is Required</span>
+                                                </div>
+                                                <div class="w-[40%]">
+                                                    <InputLabel for="farm_brgy" value="Barangay" :required="true" />
+                                                    <TextInput type="text" v-model="item.brgy" class="mt-1 block w-full uppercase" autocomplete="off" :class="{
+                                                            'border-gray-300': item.brgy == null,
+                                                            'border-red-500' : item.brgy != null && parcel$.farm_parcel.$each.$response.$errors[index].brgy.length == 1,
+                                                            'border-green-500' : item.brgy && parcel$.farm_parcel.$each.$response.$errors[index].brgy.length == 0
+                                                        }"
+                                                    />
+                                                    <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].brgy" :key="error">Barangay is Required</span>
+                                                </div>
+                                                <div class="w-2/12">
+                                                    <InputLabel for="total_farm_area" value="Total Farm Area" :required="true" />
+                                                        <div class="mt-1 flex rounded-md shadow-sm">
+                                                            <TextInput type="number" v-model="item.total_farm_area" min="0" class="flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off" style="height: 41px" :class="{
+                                                                'border-gray-300': item.total_farm_area == null,
+                                                                'border-red-500' : item.total_farm_area != null && parcel$.farm_parcel.$each.$response.$errors[index].total_farm_area.length == 1,
+                                                                'border-green-500' : item.total_farm_area && parcel$.farm_parcel.$each.$response.$errors[index].total_farm_area.length == 0
+                                                            }"
+                                                        />
+                                                        <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"> ha </span>
+                                                    </div>
+                                                    <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].total_farm_area" :key="error">Farm Area is Required</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
+                                        <div class="w-5/12">
+                                            <InputLabel for="Ansentral" value="Within Ancentral Domain" :required="true" />
+                                            <div class="flex flex-wrap items-center mt-3">
+                                                <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2 cursor-pointer">
+                                                    <TextInput type="radio" name="is_whithin_ancentral_domain" v-model="item.is_whithin_ancentral_domain" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1" />
+                                                    <span class="text-gray-700">Yes</span>
+                                                </label>
+
+                                                <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                    <TextInput type="radio" name="is_whithin_ancentral_domain" v-model="item.is_whithin_ancentral_domain" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0" />
+                                                    <span class="text-gray-700">No</span>
+                                                </label>
+                                            </div>
+                                            <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].is_whithin_ancentral_domain" :key="error">Ancentral Domain is Required</span>
+                                        </div>
+                                        <div class="w-5/12">
+                                            <InputLabel for="Agrarian" value="Agrarian Reform Beneficiary" :required="true" />
+                                            <div class="flex flex-wrap items-center mt-3">
+                                                <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2 cursor-pointer">
+                                                    <TextInput type="radio" name="is_agrarian_reform_beneficiary" v-model="item.is_agrarian_reform_beneficiary" value="1" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 1" />
+                                                    <span class="text-gray-700">Yes</span>
+                                                </label>
+
+                                                <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
+                                                    <TextInput type="radio" name="is_agrarian_reform_beneficiary" v-model="item.is_agrarian_reform_beneficiary" value="0" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 0" />
+                                                    <span class="text-gray-700">No</span>
+                                                </label>
+                                            </div>
+                                            <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].is_agrarian_reform_beneficiary" :key="error">Agrarian Refom Beneficiary is Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap justify-center mb-5">
+                                        <div class="w-6/12" id="iterated-dropzone">
+                                            <InputLabel for="owner-document" value="Ownership Document" :required="true" />
+                                            <Dropzone @fileSelected="handleOwnerUpload($event, index)" :uploadedSingleFile="farmParcelForm.farm_parcel[index].document" :maxFile="1" :currentStep="step"  />
+                                            <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].document" :key="error">Ownership Document is Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap justify-center items-start gap-x-5 mb-5">
+                                        <div class="w-3/12">
+                                            <InputLabel for="ownership_doc" value="Ownership Document No" :required="true" />
+                                            <TextInput type="text" v-model="item.ownership_document_no" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                            :class="{
+                                                    'border-gray-300': item.ownership_document_no == null,
+                                                    'border-red-500' : item.ownership_document_no != null && parcel$.farm_parcel.$each.$response.$errors[index].ownership_document_no.length == 1,
+                                                    'border-green-500' : item.ownership_document_no && parcel$.farm_parcel.$each.$response.$errors[index].ownership_document_no.length == 0
+                                                }"
+                                            />
+                                            <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].ownership_document_no" :key="error">Owner Doc No. is Required</span>
+                                        </div>
+                                        <div class="w-3/12">
+                                            <InputLabel for="ownership_type" value="Type of Ownership" :required="true" />
+                                            <div class="rounded-md block w-full mt-1">
+                                                <Select2 class="uppercase" :options="ownership_type" v-model="item.ownership_type" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#editFarmParcel') }" @select="handleOwnership(index, $event)" />
+                                            </div>
+                                            <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].ownership_type" :key="error">Type of Ownership is Required</span>
+                                        </div>
+                                        <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
+                                            <InputLabel for="Name of Land Owner" value="Name of Land Owner" :required="true" />
+                                            <input type="text" class="mt-1 block w-full uppercase" v-model="item.land_owner_name" autocomplete="off" required="true" :class="{
+                                                    'border-gray-300': item.land_owner_name == null,
+                                                    'border-red-500' : item.land_owner_name != null && item.land_owner_name == '',
+                                                    'border-green-500' : item.land_owner_name
+                                                }"
+                                            />
+                                            <span class="text-red-500 text-sm" v-if="item.land_owner_name != null && item.land_owner_name == ''">Name of Land Owner is Required</span>
+                                        </div>
+                                        <div class="w-4/12"v-if="item.ownership_type == 'Others'">
+                                            <InputLabel for="specify-other" value="Specify" :required="true" />
+                                            <input type="text" class="mt-1 block w-full uppercase" v-model="item.is_other" autocomplete="off" required="true" :class="{
+                                                    'border-gray-300': item.is_other == null,
+                                                    'border-red-500' : item.is_other != null && item.is_other == '',
+                                                    'border-green-500' : item.is_other
+                                                }"
+                                            />
+                                            <span class="text-red-500 text-sm" v-if="item.is_other != null && item.is_other == ''">Name of Land Owner is Required</span>
+                                        </div>
+                                    </div>
+
+                                    <table class="border-collapse border-2 border-gray-400 w-full">
+                                        <thead>
+                                            <tr>
+                                                <th class="p-3 border border-gray-400 w-[17%]">
+                                                    <strong>CROP / COMMODITY</strong>
+                                                    <p class="m-0">
+                                                        <small class="italic">( Rice / Corn / HVC / Livestock / Poultry /agri-fishery )</small>
+                                                    </p>
+
+                                                    <strong>For Livestock & Poultry</strong>
+                                                    <p class="m-0">
+                                                        <small>( Specify type of animal) </small>
+                                                    </p>
+                                                </th>
+                                                <th class="p-3 border border-gray-400 w-[11%]">SIZE (ha)</th>
+                                                <th class="p-3 border border-gray-400 w-[8%]">
+                                                    <strong>NO. OF HEAD</strong>
+                                                    <p class="m-0">
+                                                        <small class="italic">( For livestock and poultry)</small>
+                                                    </p>
+                                                </th>
+                                                <th class="p-3 border border-gray-400 w-[24%]">FARM TYPE</th>
+                                                <th class="p-3 border border-gray-400 w-[18%]">ORGANIC PRACTITIONER</th>
+                                                <th class="p-3 border border-gray-400 w-[18%]">REMARKS</th>
+                                                <th class="p-3 border border-gray-400 w-[10%]"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(v, i) in item.farm_parcel_informations" :key="i" style="vertical-align: top;">
+                                                <td class="p-3 border border-gray-400">
+                                                    <div class="rounded-md block w-full">
+                                                        <Select2 class="h-10 uppercase" :key="mergeTypes.length" v-model="v.farming_type" :options="mergeTypes" :settings="{ placeholder: 'Select An Option', width: '200px', dropdownParent: $('#editFarmParcel') }" />
+                                                    </div>
+                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                        <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].farming_type.length == 1">
+                                                            Value is required
+                                                        </span>
+                                                    </template>
+                                                </td>
+                                                <td class="p-3 border border-gray-400">
+                                                    <TextInput type="number" class="block w-full uppercase" v-model="v.size" min="0" />
+                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                        <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].size.length == 1">
+                                                            Value is required
+                                                        </span>
+                                                    </template>
+                                                </td>
+                                                <td class="p-3 border border-gray-400">
+                                                    <TextInput type="number" class="block w-full uppercase" v-model="v.head_no" min="0" />
+                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                        <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].head_no.length == 1">
+                                                            Value is required
+                                                        </span>
+                                                    </template>
+                                                </td>
+                                                <td class="p-3 border border-gray-400">
+                                                    <div class="rounded-md block w-full">
+                                                        <Select2 class="h-10 uppercase" v-model="v.farm_type" :options="farm_type" :settings="{ placeholder: 'Select Option', width: '100%' }" />
+                                                        <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                            <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].farm_type.length == 1">
+                                                                Value is required
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </td>
+                                                <td class="p-3 border border-gray-400">
+                                                    <div class="rounded-md block w-full">
+                                                        <Select2 class="h-10 uppercase" v-model="v.is_organic_practitioner" :options="[{id: 1, text: 'Yes' }, {id: 0, text: 'No'}]" :settings="{ placeholder: 'Select', width: '100%' }" />
+                                                        <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                            <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].is_organic_practitioner.length == 1">
+                                                                Value is required
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </td>
+                                                <td class="p-3 border border-gray-400">
+                                                    <TextInput type="text" class="block w-full uppercase" v-model="v.remarks" autocomplete="off" />
+                                                </td>
+                                                <td class="p-3 border border-gray-400">
+                                                    <div class="flex flex-wrap gap-x-1 justify-center mt-2">
+                                                        <button button="button" @click="addParcelInfo(index)" class="bg-green-500 text-white px-2 py-1 rounded-full text-sm hover:bg-green-600 flex items-center mb-1">
+                                                            <span class="text-lg leading-none">+</span>
+                                                        </button>
+                                                        <button button="button" v-if="i != 0" @click="removeParcelInfo(i, index)" class="bg-red-500 text-white px-2 py-1 rounded-full text-sm hover:bg-red-600 flex items-center mb-1">
+                                                            <span class="text-lg leading-none">−</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <ActionMessage :on="recentlySuccessful" class="me-3">
+                    Farm Parcel Information successfully updated.
+                </ActionMessage>
+                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
+                    :disabled="processing" @click="submitEditFarmParcel">Save</PrimaryButton>
+                <SecondaryButton @click="closeEditFarmParcelModal">Close</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>

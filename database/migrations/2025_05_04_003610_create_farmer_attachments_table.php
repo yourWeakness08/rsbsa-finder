@@ -16,6 +16,9 @@ return new class extends Migration
             $table->integer('farmer_id')->default(0);
             $table->string('filename')->nullable();
             $table->string('filepath')->nullable();
+            $table->integer('is_archived')->default(0);
+            $table->integer('archived_by')->default(0);
+            $table->string('archived_at')->nullable();
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });

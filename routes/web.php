@@ -77,6 +77,8 @@ Route::middleware([
     Route::post('/assistance/save_assistance', [AssistanceController::class, 'save_assistance'])->name('assistance.save_assistance');
     Route::get('farmers/view/{id}', [FarmersController::class, 'view'])->name('farmers.view');
     Route::get('/search', [FarmersController::class, 'search'])->name('farmers.search');
+    Route::post('/farmers/save_attachments/{id}', [FarmersController::class, 'save_attachments'])->name('farmers.save_attachments');
+    Route::put('/farmers/archive_attachment/{id}', [FarmersController::class, 'archive_attachment'])->name('farmers.archive_attachment');
 
     Route::prefix('reports')->name('reports.')->group( function() {
         Route::match(['get', 'post'], '/assistance', [AssistanceController::class, 'reports'])->name('assistance');

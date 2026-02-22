@@ -1691,7 +1691,7 @@
                                             <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-5/12">
                                                 <div class="flex flex-wrap items-center">
                                                     <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12" value="No. of Farm Parcels" :required="true" />
-                                                    <TextInput type="number" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" min="1" readonly autocomplete="off" v-model="form.farm_parcel_no"
+                                                    <TextInput type="text" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" min="1" readonly autocomplete="off" v-model="form.farm_parcel_no"
                                                         @blur="v$.farm_parcel_no.$touch()"
                                                         :class="inputBorderClass('farm_parcel_no')"
                                                     />

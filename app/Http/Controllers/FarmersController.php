@@ -547,7 +547,9 @@ class FarmersController extends Controller
         $farmer->farm_parcel = $parcelCollection;
 
         //here
-        $attachments = Attachments::where('farmer_id', $farmer->id)->orderBy('created_at', 'desc')
+        $attachments = Attachments::where('farmer_id', $farmer->id)
+            ->where('is_archived', 0)
+            ->orderBy('created_at', 'desc')
             ->paginate(10, '*', 'attachments_page');
 
         $attachments->transform(function ($attachment) {
@@ -970,5 +972,78 @@ class FarmersController extends Controller
         if ($request->wantsJson()) {
             return response()->json($resultset);
         }
+    }
+
+    public function save_attachments(Request $request, $id, FarmerInformation $farmerInformation) {
+        $state = false;
+
+        if ($request->file('attachments')) {
+            $attachment = $request->file('attachments');
+
+            $attachments = (object) $request->file('attachments');
+            foreach($attachments as $attachment) {
+                $_filename = $attachment->getClientOriginalName();
+                $_destinationPath = "uploads/farmers/farmer_".$id."/attachments";
+
+                if(!file_exists(public_path($_destinationPath))){ 
+                    File::makeDirectory(public_path($_destinationPath), 0777, true);
+                }
+
+                $originalName = $attachment->getClientOriginalName();
+                $nameOnly = pathinfo($originalName, PATHINFO_FILENAME);
+                $ext = $attachment->getClientOriginalExtension();
+
+                $_tempFilePath = $_destinationPath."/".$_filename;
+
+                $finalName = $originalName;
+                $counter = 1;
+
+                while (File::exists($_tempFilePath)) {
+                    $counter++;
+                    $finalName = "{$nameOnly}-{$counter}." . $ext;
+                    $_tempFilePath = $_destinationPath."/".$finalName;
+                }
+
+                $_fileMoved = $attachment->move($_destinationPath, $finalName);
+
+                if($_fileMoved) {
+                    Attachments::create([
+                        'farmer_id' => $id,
+                        'filename' => $finalName,
+                        'filepath' => $_destinationPath,
+                        'uuid' => Str::random(12)
+                    ]);
+
+                    $state = true;
+                }
+            }
+        }
+
+        return redirect()
+            ->route('farmers.view', $id)
+            ->with([
+                'response' => [
+                    'state' => $state
+                ]
+            ]);
+    }
+
+    public function archive_attachment(Request $request, $id, FarmerInformation $farmerInformation) {
+        if ($id) {
+            $toArchive = Attachments::where('id', $id)->first();
+            $toArchive->is_archived = 1;
+            $toArchive->archived_by = $request->user_id;
+            $toArchive->archived_at = date('Y-m-d H:i:s');
+            $toArchive->save();
+
+            $resultset["state"] = true;
+            $resultset["updated"] = $toArchive;
+            $resultset['message'] = 'Attachment successfully archived!';
+        } else {
+            $resultset["state"] = false;
+            $resultset['message'] = 'Failed to archive attachment';
+        }
+
+        return response()->json($resultset);
     }
 }
