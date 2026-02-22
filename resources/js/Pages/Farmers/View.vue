@@ -1,5 +1,5 @@
 <script setup>
-    import useValidationHelpers from '@/composables/useValidationHelpers'
+    import useValidationHelpers from '@/Composables/useValidationHelpers'
     import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate } from 'vue';
     import useVuelidate from '@vuelidate/core';
     import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
@@ -19,7 +19,7 @@
 
     import Stepper from '@/Components/StepperNavigation.vue';
     import DropzoneInput from '@/Components/DropzoneProfileInput.vue';
-    import Dropzone from '@/Components/Dropzone.vue';
+    import Dropzone from '@/Components/DropZone.vue';
     import FarmerTabs from '@/Components/FarmerTabs.vue';
     import TablePagination from '@/Components/TablePagination.vue';
 
@@ -876,6 +876,7 @@
     const history_main_livelihood = ref([]);
     const availableAssistance = ref([]);
     const isCashAssist = ref(false)
+    const uploadAttachmentsDialog = ref(false);
 
     const historyForm = useForm({
         farmer_id: 0,
@@ -1064,6 +1065,88 @@
         }
 
         activeTab.value = tab
+    }
+
+    const dropzoneKey = ref(0);
+    const closeUploadModal = () => {
+        uploadAttachmentsDialog.value = false;
+        processing.value = false;
+        dropzoneKey.value++;
+        attachment$.value.$reset();
+        attachmentForm.attachments = [];
+    }
+
+    const attachmentForm = useForm({
+        farmer_id: props.farmer.id,
+        attachments: [],
+        user_id: 0
+    });
+
+    const attachmentRules = computed(() => {
+        return {
+            attachments : { required },
+            user_id: {}
+        }
+    });
+
+    const attachment$ = useVuelidate(attachmentRules, attachmentForm, {
+        $autoDirty: false
+    })
+    
+    const handleUploadSuccess = (fileData) => {
+        attachmentForm.attachments.splice(
+            0,
+            attachmentForm.attachments.length,
+            ...(Array.isArray(fileData) ? fileData : [])
+        );
+    };
+
+    const { hasError: attachmentError, inputBorderClass: attachmentInputBorderClass } = useValidationHelpers(attachment$, attachmentForm, { autoTouch: true })
+
+    const submitAttachments = () => {
+        const { id } = props.auth.user;
+
+        attachmentForm.user_id = id;
+
+        attachment$.value.$touch();
+        if (!attachment$.value.$invalid) {
+            attachmentForm.post(route('farmers.save_attachments'), {
+                preserveScroll: true,
+                onProgress: () => processing.value = true,
+                onSuccess: () => {
+                    const page = usePage();
+                    const response = page.props.flash?.response;
+                    processing.value = false;
+
+                    setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                    setTimeout(() => { closeUploadModal(); form.reset(); }, 800);
+
+                    if (response.state) {
+                        recentlySuccessful.value = true;
+
+                        setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                        setTimeout(() => { 
+                            closeUploadModal(); 
+
+                            attachmentForm.reset(); 
+                            attachment$.value.$reset();
+
+                            attachmentForm.farmer_id = props.farmer.id
+                            attachmentForm.attachments = []
+                            attachmentForm.user_id = 0
+                            
+                        }, 800);
+                    } else {
+                        recentlyFailed.value = true;
+                        setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                    }
+                },
+                onError: (errors) => {
+                    processing.value = false;
+                    console.log(errors);
+                }
+            });
+        }
     }
 </script>
 
@@ -1914,7 +1997,7 @@
                                                 <h3 class="font-bold text-md">Uploaded Files</h3>
                                             </div>
                                             <div class="w-6/12 text-right">
-                                                <PrimaryButton class=" hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white" @click="addAttachments(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <PrimaryButton class=" hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-blue-500 hover:bg-blue-700 text-white" @click="uploadAttachmentsDialog = true" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
                                                     <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -2952,6 +3035,30 @@
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitNewAssistance">Save</PrimaryButton>
                 <SecondaryButton @click="closeAssistanceModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+        
+        <DialogModal id="uploadAttachments" :show="uploadAttachmentsDialog" :max-width="'md'" @close="closeUploadModal" :closeable="true">
+            <template #title>
+                Upload Attachments
+            </template>
+            <template #content>
+                <div class="bg-white">
+                    <div class="mb-4">
+                        <InputLabel for="attachments" value="Attachments" :required="true" />
+                        <div class="rounded-md block w-full">
+                            <Dropzone @fileSelected="handleUploadSuccess" :uploadedFiles="attachmentForm.attachments" :max-file-size="5000000" :max-files="5" :key="dropzoneKey" :isMultiple="true" />
+                        </div>
+                    </div>
+                </div>
+                
+                <p v-if="attachmentError('attachments')" class="text-red-500 text-sm mt-1">
+                    <span class="text-red-500 text-sm" v-if="attachment$.attachments.required?.$invalid">Attachments is required. Add atleast one attachment.</span>
+                </p>
+            </template>
+            <template #footer>
+                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" @click="submitAttachments">Save</PrimaryButton>
+                <SecondaryButton @click="closeUploadModal">Close</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>

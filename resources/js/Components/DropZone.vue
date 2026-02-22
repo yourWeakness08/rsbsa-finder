@@ -19,6 +19,10 @@ const props = defineProps({
   currentStep: {
     type: Number,
     default: 0
+  },
+  isMultiple: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -42,14 +46,21 @@ onMounted(() => {
     x.on("addedfile", file => {
       selectedFile.value = file;
 
-      if (props.currentStep == 2){
+      if (props.currentStep == 2) {
         emit('fileSelected', [...x.files]);  
       }
 
       if (props.currentStep == 1) {
         emit('fileSelected', file);
       }
-      
+
+      if (props.currentStep == 0) {
+        if (props.isMultiple) {
+          emit('fileSelected', [...x.files]);
+        } else {
+          emit('fileSelected', file);
+        }
+      }
 
       file.previewElement.classList.add('dz-success');
       x.emit('success', file, {});

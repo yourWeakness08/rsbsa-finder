@@ -1,5 +1,5 @@
 <script setup>
-    import useValidationHelpers from '@/composables/useValidationHelpers';
+    import useValidationHelpers from '@/Composables/useValidationHelpers';
     import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate } from 'vue';
     import useVuelidate from '@vuelidate/core';
     import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
@@ -19,7 +19,7 @@
 
     import Stepper from '@/Components/StepperNavigation.vue';
     import DropzoneInput from '@/Components/DropzoneProfileInput.vue';
-    import Dropzone from '@/Components/Dropzone.vue';
+    import Dropzone from '@/Components/DropZone.vue';
 
     import Select2 from 'vue3-select2-component';
 
@@ -356,17 +356,16 @@
     }
 
     const goToNext = (event) => {
-        step.value++
-        // v$.value.$touch();
-        // if (step.value < stepLabels.length - 1) {
-        //     if (!v$.value.$invalid) {
-        //         step.value++
-        //     }
-        //     // localStorage.removeItem(STORAGE_KEY)
-        //     // localStorage.removeItem(image_key)
-        //     // localStorage.setItem(STORAGE_KEY, JSON.stringify(form.data()))
-        //     // localStorage.setItem(image_key, JSON.stringify(uploadedImage.value))
-        // }
+        v$.value.$touch();
+        if (step.value < stepLabels.length - 1) {
+            if (!v$.value.$invalid) {
+                step.value++
+            }
+            // localStorage.removeItem(STORAGE_KEY)
+            // localStorage.removeItem(image_key)
+            // localStorage.setItem(STORAGE_KEY, JSON.stringify(form.data()))
+            // localStorage.setItem(image_key, JSON.stringify(uploadedImage.value))
+        }
     }
 
     const goToPrevious = () => {
@@ -549,8 +548,7 @@
             );
         }
     }
-    
-    //here in farmworker
+
     const handleFarmWorker = (e) => {
         const selectedValue = e.target.value.toLowerCase();
 
