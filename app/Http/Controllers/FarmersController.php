@@ -466,6 +466,8 @@ class FarmersController extends Controller
             $state = $this->updatePersonal($request, $id);
         } else if ($request->submit_type == 'livelihood') {
             $state = $this->updateLivelihood($request, $id);
+        } else if ($request->submit_type == 'farm-parcel') {
+            $state = $this->updateFarmParcel($request, $id);
         }
 
         return redirect()
@@ -1045,5 +1047,9 @@ class FarmersController extends Controller
         }
 
         return response()->json($resultset);
+    }
+
+    public function updateFarmParcel ($request, $id) {
+        dd($request);
     }
 }

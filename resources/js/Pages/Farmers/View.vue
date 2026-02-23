@@ -2,7 +2,7 @@
     import useValidationHelpers from '@/Composables/useValidationHelpers'
     import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate, toRaw  } from 'vue';
     import useVuelidate from '@vuelidate/core';
-    import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
+    import { required, email, minLength, requiredIf, numeric, helpers, minValue  } from '@vuelidate/validators';
     import AppLayout from '@/Layouts/AppLayout.vue';
     import DialogModal from '@/Components/DialogModal.vue';
 
@@ -948,9 +948,8 @@
 
     const validateParcel = ref(false);
 
-    const setFarmParcel = (farmer) => {
+    const setFarmParcel = async (farmer) => {
         validateParcel.value = false;
-        parcel$.value.$reset();
         let types = props.types;
         editFarmParcelDialog.value = true;
         mergeTypes.value = [];
@@ -960,6 +959,7 @@
 
         // Initialize farm_parcel with default values to prevent errors when mapping and adding default information if farmer has no farm parcels
         farmParcelForm.farm_parcel = [{
+            id: 0,
             city: null,
             brgy: null,
             total_farm_area: null,
@@ -973,6 +973,7 @@
             farmer_in_rotation_name: null,
             farm_parcel_informations: [
                 {
+                    id: 0,
                     farming_type: null,
                     size: 0,
                     head_no: 0,
@@ -1042,6 +1043,10 @@
                 ].sort((a, b) => a.text.localeCompare(b.text));
             }
         }
+
+        await nextTick()
+
+        parcel$.value.$reset();
     }
 
     function getPage(url) {
@@ -1233,7 +1238,8 @@
         is_arb: '',
         farm_parcel: [
             {
-                municipality: null,
+                id: 0,
+                city: null,
                 brgy: null,
                 total_farm_area: null,
                 document: null,
@@ -1246,9 +1252,10 @@
                 farmer_in_rotation_name: null,
                 farm_parcel_informations: [
                     {
+                        id: 0,
                         farming_type: null,
                         size: 0,
-                        head_no: 0,
+                        no_of_head: 0,
                         farm_type: null,
                         is_organic_practitioner: null,
                         remarks: null
@@ -1257,15 +1264,17 @@
             }
         ],
         user_id: 0,
+        submit_type: ''
     });
 
     const FarmParcelRules = computed(() => {
         return {
-            farm_parcel_no: { required, min: 1 },
+            farm_parcel_no: { required, minValue: minValue(1) },
             is_arb: { required },
             farm_parcel: {
                 $each: helpers.forEach({
-                    city: { required: requiredIf(() => validateParcel.value) }, //not done here
+                    id: {},
+                    city: { required }, //not done here
                     brgy: { required },
                     total_farm_area: { required },
                     document: { required },
@@ -1280,9 +1289,10 @@
                     farmer_in_rotation_name: { required },
                     farm_parcel_informations: {
                         $each: helpers.forEach({
-                            commodity: { required },
+                            id: {},
+                            farming_type: { required },
                             size: { required },
-                            head_no: { required },
+                            no_of_head: { required },
                             farm_type: { required },
                             is_organic_practitioner: { required },
                             remarks: {}
@@ -1290,19 +1300,20 @@
                     }
                 })
             },
-            user_id: {}
+            user_id: {},
         }
     });
 
     const parcel$ = useVuelidate(FarmParcelRules, farmParcelForm, {
-        $autoDirty: true
+        $autoDirty: false
     })
 
     const addParcelInfo = (i) => {
         farmParcelForm.farm_parcel[i].farm_parcel_informations.push({
+            id: 0,
             farming_type: null,
             size: 0,
-            head_no: 0,
+            no_of_head: 0,
             farm_type: null,
             is_organic_practitioner: null,
             remarks: null
@@ -1315,7 +1326,8 @@
 
     const addFarmParcel = () => {
         farmParcelForm.farm_parcel.push({
-            municipality: null,
+            id: 0,
+            city: null,
             brgy: null,
             total_farm_area: null,
             document: null,
@@ -1330,7 +1342,7 @@
                 {
                     farming_type: null,
                     size: 0,
-                    head_no: 0,
+                    no_of_head: 0,
                     farm_type: null,
                     is_organic_practitioner: null,
                     remarks: null
@@ -1368,6 +1380,48 @@
         { id: 'Lesse', text: 'Lesse' },
         { id: 'Others', text: 'Others' },
     ]);
+
+    const submitEditFarmParcel = () => {
+        const { id } = props.auth.user;
+
+        processing.value = false;
+        farmParcelForm.user_id = id;
+        farmParcelForm.submit_type = 'farm-parcel';
+
+        parcel$.value.$touch();
+        if (!parcel$.value.$invalid) {
+            farmParcelForm.put(route('farmers.update', props.farmer.id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    const page = usePage();
+                    const response = page.props.flash?.response;
+                    processing.value = false;
+
+                    setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                    setTimeout(() => { closeLivelihoodEditModal(); form.reset(); }, 800);
+
+                    if (response.state) {
+                        recentlySuccessful.value = true;
+
+                        setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                        setTimeout(() => { closeLivelihoodEditModal(); farmParcelForm.reset(); y$.value.$reset(); }, 800);
+                    } else {
+                        recentlyFailed.value = true;
+                        setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                    }
+                },
+                onError: (errors) => {
+                    console.log(errors);
+                }
+            });
+        } else {
+            processing.value = false;
+        }
+    }
+
+    const handleOwnerUpload = (fileData, index) => {
+        farmParcelForm.farm_parcel[index].document = fileData ? fileData : null;
+    }
 </script>
 
 <template>
@@ -3293,7 +3347,7 @@
             </template>
         </DialogModal>
 
-        <DialogModal id="editFarmParcel" :show="editFarmParcelDialog" :max-width="'6xl'" @close="closeEditFarmParcelModal" :closeable="true">
+        <DialogModal id="editFarmParcel" :show="editFarmParcelDialog" :max-width="'7xl'" @close="closeEditFarmParcelModal" :closeable="true">
             <template #title>
                 Edit Farm Parcel
             </template>
@@ -3443,7 +3497,7 @@
                                     <div class="flex flex-wrap justify-center mb-5">
                                         <div class="w-6/12" id="iterated-dropzone">
                                             <InputLabel for="owner-document" value="Ownership Document" :required="true" />
-                                            <Dropzone @fileSelected="handleOwnerUpload($event, index)" :uploadedSingleFile="farmParcelForm.farm_parcel[index].document" :maxFile="1" :currentStep="step"  />
+                                            <Dropzone @fileSelected="handleOwnerUpload($event, index)" :uploadedSingleFile="farmParcelForm.farm_parcel[index].document_path" :maxFile="1" :isMultiple="false"  />
                                             <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].document" :key="error">Ownership Document is Required</span>
                                         </div>
                                     </div>
@@ -3521,7 +3575,7 @@
                                                     <div class="rounded-md block w-full">
                                                         <Select2 class="h-10 uppercase" :key="mergeTypes.length" v-model="v.farming_type" :options="mergeTypes" :settings="{ placeholder: 'Select An Option', width: '200px', dropdownParent: $('#editFarmParcel') }" />
                                                     </div>
-                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_informations" :key="error">
                                                         <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].farming_type.length == 1">
                                                             Value is required
                                                         </span>
@@ -3529,24 +3583,24 @@
                                                 </td>
                                                 <td class="p-3 border border-gray-400">
                                                     <TextInput type="number" class="block w-full uppercase" v-model="v.size" min="0" />
-                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_informations" :key="error">
                                                         <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].size.length == 1">
                                                             Value is required
                                                         </span>
                                                     </template>
                                                 </td>
                                                 <td class="p-3 border border-gray-400">
-                                                    <TextInput type="number" class="block w-full uppercase" v-model="v.head_no" min="0" />
-                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
-                                                        <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].head_no.length == 1">
+                                                    <TextInput type="number" class="block w-full uppercase" v-model="v.no_of_head" min="0" />
+                                                    <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_informations" :key="error">
+                                                        <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].no_of_head.length == 1">
                                                             Value is required
                                                         </span>
                                                     </template>
                                                 </td>
                                                 <td class="p-3 border border-gray-400">
                                                     <div class="rounded-md block w-full">
-                                                        <Select2 class="h-10 uppercase" v-model="v.farm_type" :options="farm_type" :settings="{ placeholder: 'Select Option', width: '100%' }" />
-                                                        <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                        <Select2 class="h-10 uppercase" v-model="v.farm_type" :options="farm_type" :settings="{ placeholder: 'Select Option', width: '100%', dropdownParent: $('#editFarmParcel') }" />
+                                                        <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_informations" :key="error">
                                                             <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].farm_type.length == 1">
                                                                 Value is required
                                                             </span>
@@ -3555,8 +3609,8 @@
                                                 </td>
                                                 <td class="p-3 border border-gray-400">
                                                     <div class="rounded-md block w-full">
-                                                        <Select2 class="h-10 uppercase" v-model="v.is_organic_practitioner" :options="[{id: 1, text: 'Yes' }, {id: 0, text: 'No'}]" :settings="{ placeholder: 'Select', width: '100%' }" />
-                                                        <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
+                                                        <Select2 class="h-10 uppercase" v-model="v.is_organic_practitioner" :options="[{id: 1, text: 'Yes' }, {id: 0, text: 'No'}]" :settings="{ placeholder: 'Select', width: '100%', dropdownParent: $('#editFarmParcel') }" />
+                                                        <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_informations" :key="error">
                                                             <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].is_organic_practitioner.length == 1">
                                                                 Value is required
                                                             </span>

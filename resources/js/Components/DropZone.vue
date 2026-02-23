@@ -6,7 +6,7 @@ import 'dropzone/dist/dropzone.css';
 const props = defineProps({
   uploadedSingleFile: {
     type: Object,
-    default: () => ({})
+    default: null
   },
   uploadedFiles: {
     type: Object,
@@ -29,7 +29,8 @@ const props = defineProps({
 const emit = defineEmits(['fileSelected']);
 
 const _dropzoneRef = ref(null);
-  let selectedFile = ref([])
+let selectedFile = ref([])
+const dz = ref(null);
 
 onMounted(() => {
   nextTick(() => {
@@ -108,6 +109,39 @@ onMounted(() => {
           });
 
           emit('fileSelected', [...props.uploadedFiles]);  
+        }
+      }
+
+      if (props.currentStep == 0) {
+        if (props.isMultiple == false) {
+          if (props.uploadedSingleFile !== null) {
+            const url = encodeURI(props.uploadedSingleFile);
+            const filename = decodeURIComponent(url.split('/').pop());
+
+            fetch(url)
+              .then(async (res) => {
+                if (!res.ok) throw new Error("Failed to fetch file: " + res.status);
+                return await res.blob();
+              })
+              .then((blob) => {
+                const file = new File([blob], filename, {
+                  type: blob.type || "application/pdf",
+                });
+
+                file.url = url;
+
+                x.addFile(file);
+
+                file.previewElement?.classList.add("dz-success");
+                x.emit("success", file, {});
+                x.emit("complete", file);
+
+                emit("fileSelected", file);
+              })
+              .catch((err) => {
+                console.error(err);
+              });
+          }
         }
       }
     }

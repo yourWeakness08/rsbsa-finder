@@ -33,9 +33,6 @@
     <div>
     <!-- Tabs -->
         <div class="flex border-b border-gray-200">
-            <!-- <button v-for="(tab, index) in tabs" :key="index" @click="changeTab(tab)" :class="[ 'px-4 py-2 font-medium text-sm focus:outline-none', activeTab === tab ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-indigo-600' ]" class="uppercase">
-                {{ tab }}
-            </button> -->
             <button v-for="(tab, index) in tabs" :key="index" @click="changeTab(tab)" :class="[ 'px-4 py-2 font-medium text-sm focus:outline-none', modelValue === tab ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-indigo-600' ]" class="uppercase">
                 {{ tab }}
             </button>

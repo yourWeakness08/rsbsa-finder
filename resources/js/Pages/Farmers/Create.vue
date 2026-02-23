@@ -2571,7 +2571,7 @@
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.farmer_in_rotation_name ? item.farmer_in_rotation_name : '&nbsp;' }}</p>
                                                                     </div>
                                                                 </div>
-                                                                <div class="flex flex-wrap justify-between gap-x-1">
+                                                                <div class="flex flex-wrap justify-between gap-x-1 mt-5">
                                                                     <div class="w-[40%]">
                                                                         <InputLabel for="farm_municipal" value="Municipality" :required="true" />
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.municipality ? item.municipality : '&nbsp;' }}</p>
