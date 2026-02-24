@@ -466,7 +466,7 @@ class FarmersController extends Controller
             $state = $this->updatePersonal($request, $id);
         } else if ($request->submit_type == 'livelihood') {
             $state = $this->updateLivelihood($request, $id);
-        } else if ($request->submit_type == 'farm-parcel') {
+        } else if ($request->submit_type == 'farm_parcel') {
             $state = $this->updateFarmParcel($request, $id);
         }
 
@@ -542,6 +542,7 @@ class FarmersController extends Controller
         $parcelCollection = collect($parcel);
 
         foreach ($parcelCollection as $parcels) {
+            $parcels->filename = $parcels->document;
             $parcels->document_path = file_exists(public_path('uploads/farmers/farmer_'.$farmer->id.'/farmParcelDocuments'.'/'.$parcels->document)) ? asset('uploads/farmers/farmer_'.$farmer->id.'/farmParcelDocuments'.'/'.$parcels->document) : 'Document not found.';
             $parcels->farm_parcel_informations = FarmParcelInformation::where('farm_parcels_id', $parcels->id)->get();
         }

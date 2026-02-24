@@ -853,8 +853,7 @@
     const farmCommodity = (item) => {
         let text = '';
         const val = typeof item === 'string' ? item.toLowerCase() : parseInt(item);
-
-        $.each(mergeTypes, function(index, value) {
+        $.each(mergeTypes.value, function(index, value) {
             const temp = value.id;
             const _val = typeof temp === 'string' ? temp.toLowerCase() : parseInt(temp);
             

@@ -426,6 +426,7 @@
 
     let processing = ref(false);
     let recentlySuccessful = ref(false);
+    let recentlyFailed = ref(false);
 
     const submitEditPersonal = () => {
         const { id } = props.auth.user;
@@ -1264,7 +1265,7 @@
             }
         ],
         user_id: 0,
-        submit_type: ''
+        submit_type: 'farm_parcel'
     });
 
     const FarmParcelRules = computed(() => {
@@ -1349,6 +1350,8 @@
                 }
             ]
         });
+
+        farmParcelForm.farm_parcel_no = farmParcelForm.farm_parcel.length;
     }
 
     const removeFarmParcel = (index) => {
@@ -1386,11 +1389,14 @@
 
         processing.value = false;
         farmParcelForm.user_id = id;
-        farmParcelForm.submit_type = 'farm-parcel';
 
         parcel$.value.$touch();
         if (!parcel$.value.$invalid) {
-            farmParcelForm.put(route('farmers.update', props.farmer.id), {
+
+            farmParcelForm.transform((data) => ({
+                ...data,
+                _method: 'put',
+            })).post(route('farmers.update', props.farmer.id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     const page = usePage();
@@ -3467,12 +3473,12 @@
                                             <InputLabel for="Ansentral" value="Within Ancentral Domain" :required="true" />
                                             <div class="flex flex-wrap items-center mt-3">
                                                 <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2 cursor-pointer">
-                                                    <TextInput type="radio" name="is_whithin_ancentral_domain" v-model="item.is_whithin_ancentral_domain" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1" />
+                                                    <TextInput type="radio" v-model="item.is_whithin_ancentral_domain" value="1" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 1" />
                                                     <span class="text-gray-700">Yes</span>
                                                 </label>
 
                                                 <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
-                                                    <TextInput type="radio" name="is_whithin_ancentral_domain" v-model="item.is_whithin_ancentral_domain" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0" />
+                                                    <TextInput type="radio" v-model="item.is_whithin_ancentral_domain" value="0" class="accent-blue-600" :checked="item.is_whithin_ancentral_domain == 0" />
                                                     <span class="text-gray-700">No</span>
                                                 </label>
                                             </div>
@@ -3482,12 +3488,12 @@
                                             <InputLabel for="Agrarian" value="Agrarian Reform Beneficiary" :required="true" />
                                             <div class="flex flex-wrap items-center mt-3">
                                                 <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center space-x-2 cursor-pointer">
-                                                    <TextInput type="radio" name="is_agrarian_reform_beneficiary" v-model="item.is_agrarian_reform_beneficiary" value="1" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 1" />
+                                                    <TextInput type="radio" v-model="item.is_agrarian_reform_beneficiary" value="1" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 1" />
                                                     <span class="text-gray-700">Yes</span>
                                                 </label>
 
                                                 <label class="sm:w-[49%] md:w-[49%] lg:w-[40%] 2xl:w-[28%] flex items-center m-y-0 space-x-2 cursor-pointer">
-                                                    <TextInput type="radio" name="is_agrarian_reform_beneficiary" v-model="item.is_agrarian_reform_beneficiary" value="0" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 0" />
+                                                    <TextInput type="radio" v-model="item.is_agrarian_reform_beneficiary" value="0" class="accent-blue-600" :checked="item.is_agrarian_reform_beneficiary == 0" />
                                                     <span class="text-gray-700">No</span>
                                                 </label>
                                             </div>
