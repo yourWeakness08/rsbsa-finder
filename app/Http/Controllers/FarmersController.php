@@ -510,7 +510,7 @@ class FarmersController extends Controller
         return response()->json($resultset);
     }
 
-    public function view($id, FarmerInformation $farmerInformation) {
+    public function view(Request $request, $id, FarmerInformation $farmerInformation) {
         $select = "a.*, IFNULL(farmer_image, 'images/male-farmer.png') AS farmer_image, CONCAT(
             a.firstname, ' ',
             IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
@@ -593,12 +593,40 @@ class FarmersController extends Controller
             ];
         });
 
+        $paginate = $request->paginate ? intval($request->paginate): 10;
         $assistanceHistory = AssistanceHistory::from('assistance_history as a')
             ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
             ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
+            ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
             ->where('a.farmer_id', $farmer->id)
+            ->where( function($query) use ($request) {
+                if ($request->search) {
+                    $query->where('a.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('c.name', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.remarks', 'like', '%'.$request->search.'%');
+                }
+            })
             ->orderBy('created_at', 'desc')
-            ->paginate(3, '*', 'history_page');
+            ->paginate($paginate, '*', 'history_page');
+        $assistanceHistory->appends(['paginate' => $paginate]);
+
+        if($request->paginate == 'All'){
+            $assistanceHistory = AssistanceHistory::from('assistance_history as a')
+                ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
+                ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
+                ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
+                ->where('a.farmer_id', $farmer->id)
+                ->where( function($query) use ($request) {
+                    if ($request->search) {
+                        $query->where('a.livelihood', 'like', '%'.$request->search.'%')
+                        ->orWhere('c.name', 'like', '%'.$request->search.'%')
+                        ->orWhere('a.remarks', 'like', '%'.$request->search.'%');
+                    }
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+            $assistanceHistory->all();
+        }
 
         $assistance = Assistance::select(DB::raw('livelihoods, id, name'))->where('is_archived', 0)->get();
         $assistanceCollection = collect($assistance);

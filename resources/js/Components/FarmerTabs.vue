@@ -20,12 +20,16 @@
                 params.delete(key);
             }
 
+            if (key.includes('search')) {
+                params.delete(key);
+            }
+
             if (key.includes('paginate')) {
                 params.delete(key);
             }
         }
 
-        window.history.replaceState({}, '', url.pathname + url.search)
+        window.history.replaceState({}, '', url.pathname)
     }
 </script>
 

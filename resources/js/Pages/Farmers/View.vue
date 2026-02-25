@@ -771,15 +771,21 @@
         debouncedSearch.value = val;
         let formData = {};
         if (value) { formData.paginate = value };
-        formData.search = debouncedSearch.value ? val : '';
-        searchValue.value = debouncedSearch.value ? val : '';
-        
-        // router.visit('/farmers', {
-        //     method: 'get',
-        //     data: formData,
-        //     preserveState: true,
-        //     only: ['farmer', 'filter']
-        // });
+        formData.search = debouncedSearch.value ? val : null;
+        searchValue.value = debouncedSearch.value ? val : null;
+
+        if (!formData.search) {
+            delete formData.search
+        }
+
+        if (formData.search) {
+            router.visit(route('farmers.view', props.farmer.id), {
+                method: 'get',
+                data: formData,
+                preserveState: true,
+                only: ['history']
+            });
+        }
     }, 1000);
 
     watch(searchValue, (val) => {
@@ -793,12 +799,12 @@
         if (value) { formData.paginate = value };
         if (searchValue.value) { formData.search = searchValue.value; }
 
-        // router.visit('/farmers', {
-        //     method: 'get',
-        //     data: formData,
-        //     preserveState: true,
-        //     only: ['farmer', 'filter']
-        // });
+        router.visit(route('farmers.view', props.farmer.id), {
+            method: 'get',
+            data: formData,
+            preserveState: true,
+            only: ['history']
+        });
     }
 
     const createAssistanceDialog = ref(false);
@@ -1078,13 +1084,18 @@
 
     const handleTabChange = (tab) => {
         if (tab.toLowerCase() === 'assistance') {
-            if (props.history.current_page !== 1) {
+            const hasSearch = searchValue.value !== null && searchValue.value !== undefined && String(searchValue.value).trim() !== '';
+            const hasPage = pageValue.value = null && pageValue.value == null != undefined && String(pageValue.value).trim() !== '';
+
+            if (props.history.current_page !== 1 || hasSearch || hasPage) {
                 router.visit(route(route().current(), props.farmer.id), {
                     preserveState: true,
                     replace: true,
                     only: ['history'],
                     onSuccess: () => {
                         activeTab.value = 'Assistance'
+                        searchValue.value = null
+                        pageValue.value = null
                     }
                 })
                 return
@@ -1105,7 +1116,7 @@
             }
         }
 
-        activeTab.value = tab
+        activeTab.value = tab;
     }
 
     const dropzoneKey = ref(0);
