@@ -64,6 +64,11 @@ Route::middleware([
         'index', 'create', 'store', 'update', 'destroy'
     ])->parameters([ 'assistance'=>'id' ]);
 
+    // change to assistance masterfile that has a approval of assistance
+    Route::resource('/assistances', AssistanceController::class)->only([
+        'index', 'create', 'store', 'update', 'destroy'
+    ])->parameters([ 'assistances'=>'id' ]);
+
     Route::put('/types/archive_type/{id}', [FarmingTypeController::class, 'archive_type'])->name('types.archive_type');
     Route::put('/users/archive_user/{id}', [UsersController::class, 'archive_user'])->name('users.archive_user');
     Route::put('/farmers/archive_farmer/{id}', [FarmersController::class, 'archive_farmer'])->name('farmers.archive_farmer');
@@ -72,6 +77,8 @@ Route::middleware([
     Route::post('/assistance/save_assistance', [AssistanceController::class, 'save_assistance'])->name('assistance.save_assistance');
     Route::get('farmers/view/{id}', [FarmersController::class, 'view'])->name('farmers.view');
     Route::get('/search', [FarmersController::class, 'search'])->name('farmers.search');
+    Route::post('/farmers/save_attachments/{id}', [FarmersController::class, 'save_attachments'])->name('farmers.save_attachments');
+    Route::put('/farmers/archive_attachment/{id}', [FarmersController::class, 'archive_attachment'])->name('farmers.archive_attachment');
 
     Route::prefix('reports')->name('reports.')->group( function() {
         Route::match(['get', 'post'], '/assistance', [AssistanceController::class, 'reports'])->name('assistance');

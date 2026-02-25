@@ -99,6 +99,7 @@ class FarmersController extends Controller
             1 => 'crops',
             2 => 'livestock',
             3 => 'poultry',
+            4 => 'agri_fishery'
         ];
 
         // Group by numeric type and map to labels
@@ -465,6 +466,8 @@ class FarmersController extends Controller
             $state = $this->updatePersonal($request, $id);
         } else if ($request->submit_type == 'livelihood') {
             $state = $this->updateLivelihood($request, $id);
+        } else if ($request->submit_type == 'farm_parcel') {
+            $state = $this->updateFarmParcel($request, $id);
         }
 
         return redirect()
@@ -507,8 +510,8 @@ class FarmersController extends Controller
         return response()->json($resultset);
     }
 
-    public function view($id, FarmerInformation $farmerInformation) {
-        $select = "a.*,  CONCAT(
+    public function view(Request $request, $id, FarmerInformation $farmerInformation) {
+        $select = "a.*, IFNULL(farmer_image, 'images/male-farmer.png') AS farmer_image, CONCAT(
             a.firstname, ' ',
             IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
             a.lastname,
@@ -521,28 +524,43 @@ class FarmersController extends Controller
             ->leftJoin('corrected_and_verified as d', 'd.farmer_id', '=', 'a.id')
             ->where('a.id', $id)
             ->first();
+        
+        $default = asset('images/male-farmer.png');
+        if (isset($farmer->farmer_image) && $farmer?->farmer_image) {
+            if (file_exists(public_path('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image))) {
+                $farmer->farmer_image = asset('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image);
+            } else {
+                $farmer->farmer_image = $default;
+            }
+        } else {
+            $farmer->farmer_image = $default;
+        }
 
-        // $farmer->farmer_image = asset('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image);
-        $farmer->farmer_image = $farmer->farmer_image && file_exists((public_path('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image))) ? asset('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image) : asset('images/male-farmer.png');
         $farmer->main_livelihood = @unserialize($farmer->main_livelihood) ? @unserialize($farmer->main_livelihood) : array();
 
         $parcel = FarmParcel::where('farmer_profile_id', $farmer->farm_id)->get();
         $parcelCollection = collect($parcel);
 
         foreach ($parcelCollection as $parcels) {
+            $parcels->filename = $parcels->document;
             $parcels->document_path = file_exists(public_path('uploads/farmers/farmer_'.$farmer->id.'/farmParcelDocuments'.'/'.$parcels->document)) ? asset('uploads/farmers/farmer_'.$farmer->id.'/farmParcelDocuments'.'/'.$parcels->document) : 'Document not found.';
             $parcels->farm_parcel_informations = FarmParcelInformation::where('farm_parcels_id', $parcels->id)->get();
         }
 
         $farmer->farm_parcel = $parcelCollection;
-        $attachments = Attachments::where('farmer_id', $farmer->id)->get();
-        $attachmentCollection = collect($attachments);
 
-        foreach ($attachmentCollection as $file) {
-            $file->filepath = file_exists((public_path($file->filepath.'/'.$file->filename))) ? asset($file->filepath.'/'.$file->filename) : 'Document not found.';
-        }
+        //here
+        $attachments = Attachments::where('farmer_id', $farmer->id)
+            ->where('is_archived', 0)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, '*', 'attachments_page');
 
-        $farmer->attachments = $attachmentCollection;
+        $attachments->transform(function ($attachment) {
+            $attachment->filepath = file_exists((public_path($attachment->filepath.'/'.$attachment->filename))) ? asset($attachment->filepath.'/'.$attachment->filename) : 'Document not found.';
+            
+            return $attachment;   
+        });
+
         $farming = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'farmer')->get();
         $farmworker = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'farm_worker')->get();
         $fisherfolks = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'fisherfolks')->get();
@@ -560,6 +578,7 @@ class FarmersController extends Controller
             1 => 'crops',
             2 => 'livestock',
             3 => 'poultry',
+            4 => 'agri_fishery'
         ];
 
         // Group by numeric type and map to labels
@@ -574,12 +593,40 @@ class FarmersController extends Controller
             ];
         });
 
+        $paginate = $request->paginate ? intval($request->paginate): 10;
         $assistanceHistory = AssistanceHistory::from('assistance_history as a')
             ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
             ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
+            ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
             ->where('a.farmer_id', $farmer->id)
+            ->where( function($query) use ($request) {
+                if ($request->search) {
+                    $query->where('a.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('c.name', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.remarks', 'like', '%'.$request->search.'%');
+                }
+            })
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate($paginate, '*', 'history_page');
+        $assistanceHistory->appends(['paginate' => $paginate]);
+
+        if($request->paginate == 'All'){
+            $assistanceHistory = AssistanceHistory::from('assistance_history as a')
+                ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
+                ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
+                ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
+                ->where('a.farmer_id', $farmer->id)
+                ->where( function($query) use ($request) {
+                    if ($request->search) {
+                        $query->where('a.livelihood', 'like', '%'.$request->search.'%')
+                        ->orWhere('c.name', 'like', '%'.$request->search.'%')
+                        ->orWhere('a.remarks', 'like', '%'.$request->search.'%');
+                    }
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+            $assistanceHistory->all();
+        }
 
         $assistance = Assistance::select(DB::raw('livelihoods, id, name'))->where('is_archived', 0)->get();
         $assistanceCollection = collect($assistance);
@@ -598,7 +645,7 @@ class FarmersController extends Controller
         }
 
         return Inertia::render(
-            'Farmers/View', ['farmer' => $farmer, 'types' => $grouped, 'history' => $assistanceHistory, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
+            'Farmers/View', ['farmer' => $farmer, 'types' => $grouped, 'history' => $assistanceHistory, 'attachments' => $attachments, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
         );
     }
 
@@ -956,5 +1003,160 @@ class FarmersController extends Controller
         if ($request->wantsJson()) {
             return response()->json($resultset);
         }
+    }
+
+    public function save_attachments(Request $request, $id, FarmerInformation $farmerInformation) {
+        $state = false;
+
+        if ($request->file('attachments')) {
+            $attachment = $request->file('attachments');
+
+            $attachments = (object) $request->file('attachments');
+            foreach($attachments as $attachment) {
+                $_filename = $attachment->getClientOriginalName();
+                $_destinationPath = "uploads/farmers/farmer_".$id."/attachments";
+
+                if(!file_exists(public_path($_destinationPath))){ 
+                    File::makeDirectory(public_path($_destinationPath), 0777, true);
+                }
+
+                $originalName = $attachment->getClientOriginalName();
+                $nameOnly = pathinfo($originalName, PATHINFO_FILENAME);
+                $ext = $attachment->getClientOriginalExtension();
+
+                $_tempFilePath = $_destinationPath."/".$_filename;
+
+                $finalName = $originalName;
+                $counter = 1;
+
+                while (File::exists($_tempFilePath)) {
+                    $counter++;
+                    $finalName = "{$nameOnly}-{$counter}." . $ext;
+                    $_tempFilePath = $_destinationPath."/".$finalName;
+                }
+
+                $_fileMoved = $attachment->move($_destinationPath, $finalName);
+
+                if($_fileMoved) {
+                    Attachments::create([
+                        'farmer_id' => $id,
+                        'filename' => $finalName,
+                        'filepath' => $_destinationPath,
+                        'uuid' => Str::random(12)
+                    ]);
+
+                    $state = true;
+                }
+            }
+        }
+
+        return redirect()
+            ->route('farmers.view', $id)
+            ->with([
+                'response' => [
+                    'state' => $state
+                ]
+            ]);
+    }
+
+    public function archive_attachment(Request $request, $id, FarmerInformation $farmerInformation) {
+        if ($id) {
+            $toArchive = Attachments::where('id', $id)->first();
+            $toArchive->is_archived = 1;
+            $toArchive->archived_by = $request->user_id;
+            $toArchive->archived_at = date('Y-m-d H:i:s');
+            $toArchive->save();
+
+            $resultset["state"] = true;
+            $resultset["updated"] = $toArchive;
+            $resultset['message'] = 'Attachment successfully archived!';
+        } else {
+            $resultset["state"] = false;
+            $resultset['message'] = 'Failed to archive attachment';
+        }
+
+        return response()->json($resultset);
+    }
+
+    public function updateFarmParcel ($request, $id) {
+        $state = true;
+        if ($id) {
+            $farmParcelId = 0;
+            if (count($request->farm_parcel) > 0) {
+                $farm_profile = FarmProfile::where('farmer_id', $id)->first();
+
+                $farmParcel = FarmParcel::where('farmer_profile_id', $farm_profile->id)->first();
+                FarmParcel::where('farmer_profile_id', $farm_profile->id)->delete();
+
+                if ($farmParcel) {
+                    FarmParcelInformation::where('farm_parcels_id', $farmParcel->id)->delete();
+                }
+
+                foreach($request->farm_parcel as $parcel) {
+                    $document = $parcel['document'];
+                    $docFilename = $document->getClientOriginalName();
+
+                    $state = FarmParcel::create([
+                        'farmer_profile_id' => $farm_profile->id, 
+                        'brgy' => trim(strtolower($parcel['brgy'])), 
+                        'city'=> trim(strtolower($parcel['city'])),
+                        'document' => $docFilename,
+                        'total_farm_area' => $parcel['total_farm_area'], 
+                        'is_whithin_ancentral_domain' => $parcel['is_whithin_ancentral_domain'], 
+                        'is_agrarian_reform_beneficiary' => $parcel['is_agrarian_reform_beneficiary'], 
+                        'ownership_document_no' => trim(strtolower($parcel['ownership_document_no'])),
+                        'ownership_type' => $parcel['ownership_type'], 
+                        'landowner_name' => $parcel['landowner_name'] ? trim(strtolower($parcel['landowner_name'])) : null, 
+                        'is_other' => $parcel['is_other'] ? trim(strtolower($parcel['is_other'])) : null,
+                        'farmer_in_rotation_name' => trim(strtolower($parcel['farmer_in_rotation_name'])),
+                        'uuid' => Str::random(12)
+                    ]);
+
+                    $farmParcelId = $state->id;
+
+                    if ($state) {
+                        if($parcel['document'] !== null) {
+                            $docDestinationPath = "uploads/farmers/farmer_".$id.'/farmParcelDocuments';
+
+                            if(!file_exists(public_path($docDestinationPath))){ 
+                                File::makeDirectory(public_path($docDestinationPath), 0777, true);
+                            }
+
+                            $DoctempFilePath = $docDestinationPath."/".$docFilename;
+
+                            if(file_exists(public_path($DoctempFilePath))){
+                                unlink(public_path($DoctempFilePath));
+                            }
+
+                            if(!file_exists(public_path($DoctempFilePath))){
+                                $docFileMoved = $document->move($docDestinationPath, $docFilename);
+                            }
+                        }
+
+                        if (isset($parcel['farm_parcel_informations']) && count($parcel['farm_parcel_informations']) > 0) {
+                            foreach ($parcel['farm_parcel_informations'] as $info) {
+                                FarmParcelInformation::create([
+                                    'farm_parcels_id' => $farmParcelId, 
+                                    'farming_type' => $info['farming_type'], 
+                                    'farming_type_name' => $info['farming_type_name'],
+                                    'size' => $info['size'], 
+                                    'no_of_head' => $info['no_of_head'], 
+                                    'farm_type' => $info['farm_type'], 
+                                    'is_organic_practitioner' => $info['is_organic_practitioner'] , 
+                                    'remarks' => $info['remarks'] ? trim(strtolower($info['remarks'])) : null, 
+                                    'uuid' => Str::random(12)
+                                ]);
+                            }
+                        }
+                    }
+
+                    $farm_profile->farm_parcel_no = $request->farm_parcel_no;
+                    $farm_profile->is_arb = $request->is_arb;
+                    $farm_profile->save();
+                }
+            }
+        }
+
+        return $state ? true : false;
     }
 }

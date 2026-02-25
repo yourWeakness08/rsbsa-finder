@@ -5,9 +5,13 @@
   import NavLink from '@/Components/NavLink.vue';
 
   const showReports = ref(false);
+  const showMasterfile = ref(false);
 
   watchEffect(() => {
     showReports.value = route().current('reports.assistance') || route().current('reports.activities') || route().current('reports.registered') || route().current('reports.farming') || route().current('reports.livelihood') ? true : false;
+
+    showMasterfile.value = route().current('types.index') || route().current('assistance.index') ? true : false;
+    
   })
 </script>
 
@@ -42,7 +46,8 @@
           FARMERS
         </NavLink>
 
-        <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'types'" :href="route('types.index')" :active="route().current('types.index')" style="border-bottom: 0 !important">
+        <!-- changed to dropdown -->
+        <!-- <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'types'" :href="route('types.index')" :active="route().current('types.index')" style="border-bottom: 0 !important">
           <svg fill="#000000" class="w-5 h-5" viewBox="0 0 96 96" id="Layer_1_1_" version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
             <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -110,7 +115,49 @@
           </svg>
           
           ASSISTANCE
+        </NavLink> -->
+
+        <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'assistances'" :href="route('assistances.index')" :active="route().current('assistances.index')" style="border-bottom: 0 !important">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+            <g id="SVGRepo_iconCarrier"> 
+              <path d="M10.1497 8.80219L9.70794 9.40825L10.1497 8.80219ZM12 3.10615L11.4925 3.65833C11.7794 3.9221 12.2206 3.9221 12.5075 3.65833L12 3.10615ZM13.8503 8.8022L14.2921 9.40826L13.8503 8.8022ZM12 9.67598L12 10.426H12L12 9.67598ZM10.5915 8.19612C9.90132 7.69298 9.16512 7.08112 8.60883 6.43627C8.03452 5.77053 7.75 5.18233 7.75 4.71476H6.25C6.25 5.73229 6.82845 6.66885 7.47305 7.41607C8.13569 8.18419 8.97435 8.87349 9.70794 9.40825L10.5915 8.19612ZM7.75 4.71476C7.75 3.65612 8.27002 3.05231 8.8955 2.84182C9.54754 2.62238 10.5199 2.76435 11.4925 3.65833L12.5075 2.55398C11.2302 1.37988 9.70254 0.987559 8.41707 1.42016C7.10502 1.8617 6.25 3.09623 6.25 4.71476H7.75ZM14.2921 9.40826C15.0257 8.8735 15.8643 8.18421 16.527 7.41608C17.1716 6.66886 17.75 5.73229 17.75 4.71475H16.25C16.25 5.18234 15.9655 5.77055 15.3912 6.43629C14.8349 7.08113 14.0987 7.69299 13.4085 8.19613L14.2921 9.40826ZM17.75 4.71475C17.75 3.09622 16.895 1.8617 15.5829 1.42016C14.2975 0.987559 12.7698 1.37988 11.4925 2.55398L12.5075 3.65833C13.4801 2.76435 14.4525 2.62238 15.1045 2.84181C15.73 3.0523 16.25 3.65612 16.25 4.71475H17.75ZM9.70794 9.40825C10.463 9.95869 11.0618 10.426 12 10.426L12 8.92598C11.635 8.92598 11.4347 8.81074 10.5915 8.19612L9.70794 9.40825ZM13.4085 8.19613C12.5653 8.81074 12.365 8.92598 12 8.92598L12 10.426C12.9382 10.426 13.537 9.9587 14.2921 9.40826L13.4085 8.19613Z" fill="#1C274C"></path> 
+              <path d="M4 21.3884H6.25993C7.27079 21.3884 8.29253 21.4937 9.27633 21.6964C11.0166 22.0549 12.8488 22.0983 14.6069 21.8138M13.6764 18.5172C13.7962 18.5033 13.911 18.4874 14.0206 18.4699C14.932 18.3245 15.697 17.8375 16.3974 17.3084L18.2046 15.9433C18.8417 15.462 19.7873 15.4619 20.4245 15.943C20.9982 16.3762 21.1736 17.0894 20.8109 17.6707C20.388 18.3487 19.7921 19.216 19.2199 19.7459M13.6764 18.5172C13.6403 18.5214 13.6038 18.5254 13.5668 18.5292M13.6764 18.5172C13.8222 18.486 13.9669 18.396 14.1028 18.2775C14.746 17.7161 14.7866 16.77 14.2285 16.1431C14.0991 15.9977 13.9475 15.8764 13.7791 15.7759C10.9817 14.1074 6.62942 15.3782 4 17.2429M13.6764 18.5172C13.6399 18.525 13.6033 18.5292 13.5668 18.5292M13.5668 18.5292C13.0434 18.5829 12.4312 18.5968 11.7518 18.5326" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> 
+            </g>
+          </svg>
+          
+          ASSISTANCE
         </NavLink>
+
+        <div class="w-full px-6 pt-3 py-3">
+          <button @click="showMasterfile = !showMasterfile" class="flex items-center justify-between w-full text-left focus:outline-none text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out duration-200">
+            <div class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier"> 
+                  <path d="M18 6V10.8528C18 11.1429 18 11.2879 17.9051 11.3465C17.8103 11.4051 17.6806 11.3403 17.4211 11.2106L16.1789 10.5894C16.0911 10.5456 16.0472 10.5236 16 10.5236C15.9528 10.5236 15.9089 10.5456 15.8211 10.5894L14.5789 11.2106C14.3194 11.3403 14.1897 11.4051 14.0949 11.3465C14 11.2879 14 11.1429 14 10.8528V6" stroke="#1C274C" stroke-width="1.5"></path> 
+                  <path d="M22 11.7979C22 9.16554 22 7.84935 21.2305 6.99383C21.1598 6.91514 21.0849 6.84024 21.0062 6.76946C20.1506 6 18.8345 6 16.2021 6H15.8284C14.6747 6 14.0979 6 13.5604 5.84678C13.2651 5.7626 12.9804 5.64471 12.7121 5.49543C12.2237 5.22367 11.8158 4.81578 11 4L10.4497 3.44975C10.1763 3.17633 10.0396 3.03961 9.89594 2.92051C9.27652 2.40704 8.51665 2.09229 7.71557 2.01738C7.52976 2 7.33642 2 6.94975 2C6.06722 2 5.62595 2 5.25839 2.06935C3.64031 2.37464 2.37464 3.64031 2.06935 5.25839C2 5.62595 2 6.06722 2 6.94975M21.9913 16C21.9554 18.4796 21.7715 19.8853 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V11" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"></path> 
+                </g>
+              </svg>
+              MASTERFILE
+            </div>
+            <svg :class="{'rotate-180': showMasterfile}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div v-show="showMasterfile" class="pl-6 mt-2 border-b-0">
+            <NavLink class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" :key="'types'" :href="route('types.index')" :active="route().current('types.index')" style="border-bottom: 0 !important">
+              FARMING TYPES
+            </NavLink>
+
+            <NavLink class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" :key="'assistance'" :href="route('assistance.index')" :active="route().current('assistance.index')" style="border-bottom: 0 !important">
+              ASSISTANCE
+            </NavLink>
+          </div>
+        </div>
 
         <!-- Report Menu with Submenus -->
         <div class="w-full px-6 pt-3 py-3">

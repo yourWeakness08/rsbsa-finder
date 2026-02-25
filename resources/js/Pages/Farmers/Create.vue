@@ -1,5 +1,5 @@
 <script setup>
-    import useValidationHelpers from '@/composables/useValidationHelpers';
+    import useValidationHelpers from '@/Composables/useValidationHelpers';
     import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate } from 'vue';
     import useVuelidate from '@vuelidate/core';
     import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
@@ -19,7 +19,7 @@
 
     import Stepper from '@/Components/StepperNavigation.vue';
     import DropzoneInput from '@/Components/DropzoneProfileInput.vue';
-    import Dropzone from '@/Components/Dropzone.vue';
+    import Dropzone from '@/Components/DropZone.vue';
 
     import Select2 from 'vue3-select2-component';
 
@@ -55,8 +55,8 @@
     });
 
     let mergeTypes = ref([]);
-    mergeTypes = Object.values(props.types).flat();
-    mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
+    // mergeTypes = Object.values({}).flat();
+    // mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
 
     const pageValue = ref(null);
     const searchValue = ref(null);
@@ -424,19 +424,19 @@
 
         ref_no = new Inputmask({
             mask: "99-99-99-999-999999",
-	        alias: 'reference_no'
+            alias: 'reference_no'
         })
         ref_no.mask($("#ref_no"));
 
         contact = new Inputmask({
             mask: "(0\\9) 9999-99999",
-	        alias: 'phonenumber'
+            alias: 'phonenumber'
         })
         contact.mask($("#contact"));
 
         emergency = new Inputmask({
             mask: "(0\\9) 9999-99999",
-	        alias: 'phonenumber'
+            alias: 'phonenumber'
         })
         emergency.mask($("#contact-emergency"));
 
@@ -453,7 +453,6 @@
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
-            // maxDate: moment()
         }).on('apply.daterangepicker', function(ev, picker){
             $(this).val(picker.startDate.format('MM/DD/YYYY'))
 
@@ -470,7 +469,6 @@
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
-            // maxDate: moment()
         }).on('apply.daterangepicker', function(ev, picker){
             $(this).val(picker.startDate.format('MM/DD/YYYY'))
             form.paper_date = moment(picker.startDate.format('MM/DD/YYYY')).format('MM/DD/YYYY');
@@ -516,28 +514,43 @@
     }
 
     const handleFarmer = (e) => {
-        const selectedValue = e.target.value;
+        const selectedValue = e.target.value.toLowerCase();
 
         if (form.farmer.includes(selectedValue)) {
-            const index = form.farmer.indexOf(selectedValue);
-            form.farmer.splice(index, 1);
-
-            const _index = mergeTypes.findIndex(item => item.text.toLowerCase() == 'rice' || item.text.toLowerCase() == 'corn');
-            if (_index !== -1) {
-                mergeTypes.splice(_index, 1);
+            form.farmer = form.farmer.filter(val => val !== selectedValue);
+            if (selectedValue === 'rice' || selectedValue === 'corn') {
+                mergeTypes.value = mergeTypes.value.filter(
+                    item => item.text.toLowerCase() !== selectedValue
+                );
             }
         } else {
             form.farmer.push(selectedValue);
+            if (selectedValue === 'rice' || selectedValue === 'corn') {
+                const exists = mergeTypes.value.some(
+                    item => item.text.toLowerCase() === selectedValue
+                );
 
-            if(selectedValue.toLowerCase() == 'rice' || selectedValue.toLowerCase() == 'corn') {
-                mergeTypes.push({ id: selectedValue, text: selectedValue.toUpperCase() })
-                mergeTypes.sort((a, b) => a.text.localeCompare(b.text));
+                if (!exists) {
+                    mergeTypes.value.push({
+                        id: selectedValue,
+                        text: selectedValue.toUpperCase(),
+                        type: 'crops'
+                    });
+
+                    mergeTypes.value.sort((a, b) => a.text.localeCompare(b.text));
+                }
             }
         }
+
+        if (!$(e.target).is(':checked') && (selectedValue !== 'rice' && selectedValue !== 'corn')) {
+            mergeTypes.value = mergeTypes.value.filter(
+                item => item.type.toLowerCase() !== selectedValue
+            );
+        }
     }
-    
+
     const handleFarmWorker = (e) => {
-        const selectedValue = e.target.value;
+        const selectedValue = e.target.value.toLowerCase();
 
         if (form.farm_worker.includes(selectedValue)) {
             const index = form.farm_worker.indexOf(selectedValue);
@@ -548,13 +561,32 @@
     }
 
     const handleFisherFolks = (e) => {
-        const selectedValue = e.target.value;
+        let types = props.types.agri_fishery;
+        const selectedValue = e.target.value.toLowerCase();
+        const fishery = mergeTypes.value.find(item => item.type == 'agri-fishery');
 
         if (form.fisherfolks.includes(selectedValue)) {
             const index = form.fisherfolks.indexOf(selectedValue);
             form.fisherfolks.splice(index, 1);
         } else {
             form.fisherfolks.push(selectedValue);
+
+        }
+
+        if (selectedValue !== 'others') {
+            if (typeof fishery == 'undefined') {
+                $.each(types, function(index, value) {
+                    mergeTypes.value = [
+                        ...mergeTypes.value,
+                        { id: value.id, text: value.text.toUpperCase(), type: 'agri-fishery' }
+                    ];
+                });
+                mergeTypes.value = mergeTypes.value.sort((a, b) => a.text.localeCompare(b.text));
+            }
+        }
+
+        if (form.fisherfolks.length == 0 || (form.fisherfolks.length == 1 && form.fisherfolks.includes('others'))) {
+            mergeTypes.value = mergeTypes.value.filter(item => item.type !== 'agri-fishery');
         }
     }
     
@@ -713,35 +745,74 @@
     }
 
     const handleCrops = (event) => {
+        let types = props.types.crops;
         const selectedValue = parseInt(event.id);
+        const crop = types.find(item => item.id == selectedValue);
 
         if (form.crops.includes(selectedValue)) {
             const index = form.crops.indexOf(selectedValue);
             form.crops.splice(index, 1);
+
+            if (crop) {
+                mergeTypes.value = mergeTypes.value.filter(item => item.id !== crop.id);
+            }
         } else {
             form.crops.push(selectedValue);
+
+            if (crop) {
+                mergeTypes.value = [
+                    ...mergeTypes.value,
+                    { id: crop.id, text: crop.text.toUpperCase(), type: 'crops' }
+                ].sort((a, b) => a.text.localeCompare(b.text));
+            }
         }
     }
     
     const handleLivestock = (event) => {
+        let types = props.types.livestock;
         const selectedValue = parseInt(event.id);
+        const livestock = types.find(item => item.id == selectedValue);
 
         if (form.livestock.includes(selectedValue)) {
             const index = form.livestock.indexOf(selectedValue);
             form.livestock.splice(index, 1);
+
+            if (livestock) {
+                mergeTypes.value = mergeTypes.value.filter(item => item.id !== livestock.id);
+            }
         } else {
             form.livestock.push(selectedValue);
+
+            if (livestock) {
+                mergeTypes.value = [
+                    ...mergeTypes.value,
+                    { id: livestock.id, text: livestock.text.toUpperCase(), type: 'livestock' }
+                ].sort((a, b) => a.text.localeCompare(b.text));
+            }
         }
     }
     
     const handlePoultry = (event) => {
+        let types = props.types.poultry;
         const selectedValue = parseInt(event.id);
+        const poultry = types.find(item => item.id == selectedValue);
 
         if (form.poultry.includes(selectedValue)) {
             const index = form.poultry.indexOf(selectedValue);
             form.poultry.splice(index, 1);
+
+            if (poultry) {
+                mergeTypes.value = mergeTypes.value.filter(item => item.id !== poultry.id);
+            }
         } else {
             form.poultry.push(selectedValue);
+
+            if (poultry) {
+                mergeTypes.value = [
+                    ...mergeTypes.value,
+                    { id: poultry.id, text: poultry.text.toUpperCase(), type: 'poultry' }
+                ].sort((a, b) => a.text.localeCompare(b.text));
+            }
         }
     }
 
@@ -782,8 +853,7 @@
     const farmCommodity = (item) => {
         let text = '';
         const val = typeof item === 'string' ? item.toLowerCase() : parseInt(item);
-
-        $.each(mergeTypes, function(index, value) {
+        $.each(mergeTypes.value, function(index, value) {
             const temp = value.id;
             const _val = typeof temp === 'string' ? temp.toLowerCase() : parseInt(temp);
             
@@ -1436,7 +1506,7 @@
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="form.main_livelihood.includes('fisherfolks')"
+                                            <div id="fisherfolks-section" class="bg-white shadow-xl sm:w-full rounded-md md:mb-4 lg:mb-0 xl:mb-4 2xl:mb-0" v-if="form.main_livelihood.includes('fisherfolks')"
                                                 :class="{
                                                     'md:w-[49%] lg:w-[49%] xl:w-[49%] 2xl:w-[49%]' : form.main_livelihood.length >= 1 && form.main_livelihood.length <= 2,
                                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : form.main_livelihood.length == 3,
@@ -1620,7 +1690,7 @@
                                             <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-5/12">
                                                 <div class="flex flex-wrap items-center">
                                                     <InputLabel for="farm-parcels" class="lg:w-[36%] xl:w-4/12 2xl:w-4/12" value="No. of Farm Parcels" :required="true" />
-                                                    <TextInput type="number" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" min="1" readonly autocomplete="off" v-model="form.farm_parcel_no"
+                                                    <TextInput type="text" class="block uppercase lg:w-2/12 xl:w-2/12 2xl:w-2/12" min="1" readonly autocomplete="off" v-model="form.farm_parcel_no"
                                                         @blur="v$.farm_parcel_no.$touch()"
                                                         :class="inputBorderClass('farm_parcel_no')"
                                                     />
@@ -1677,7 +1747,6 @@
                                                                     <div class="w-6/12">
                                                                         <InputLabel for="rotation" value="Name of Farmer(s) in Rotation" :required="true" />
                                                                         <TextInput type="text" v-model="item.farmer_in_rotation_name" class="mt-1 block w-full uppercase" autocomplete="off"
-
                                                                             :class="{
                                                                                 'border-gray-300': item.farmer_in_rotation_name == null,
                                                                                 'border-red-500' : item.farmer_in_rotation_name != NULL && v$.farm_parcel.$each.$response.$errors[index].farmer_in_rotation_name.length == 1,
@@ -2501,7 +2570,7 @@
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.farmer_in_rotation_name ? item.farmer_in_rotation_name : '&nbsp;' }}</p>
                                                                     </div>
                                                                 </div>
-                                                                <div class="flex flex-wrap justify-between gap-x-1">
+                                                                <div class="flex flex-wrap justify-between gap-x-1 mt-5">
                                                                     <div class="w-[40%]">
                                                                         <InputLabel for="farm_municipal" value="Municipality" :required="true" />
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.municipality ? item.municipality : '&nbsp;' }}</p>
