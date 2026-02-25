@@ -8,4 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Assistances extends Model
 {
     use HasFactory;
+
+    protected $table = 'assistances';
+    protected $fillable = ['farmer_id', 'livelihood', 'assistance_id', 'amount', 'remarks', 'created_by', 'uuid'];
 }

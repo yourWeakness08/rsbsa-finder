@@ -13,6 +13,7 @@ use App\Http\Controllers\FarmingTypeController;
 use App\Http\Controllers\PublicPostController;
 use App\Http\Controllers\AssistanceController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AssistancesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +66,7 @@ Route::middleware([
     ])->parameters([ 'assistance'=>'id' ]);
 
     // change to assistance masterfile that has a approval of assistance
-    Route::resource('/assistances', AssistanceController::class)->only([
+    Route::resource('/assistances', AssistancesController::class)->only([
         'index', 'create', 'store', 'update', 'destroy'
     ])->parameters([ 'assistances'=>'id' ]);
 

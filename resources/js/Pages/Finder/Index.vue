@@ -143,12 +143,12 @@
     <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
         <div class="flex flex-wrap items-center justify-between gap-x-5">
             <div>
-                <img src="/images/DA-LOGO-1024x1024.png" alt="logo" class="h-36 w-36 mx-auto">
+                <img src="/images/rrs logo.png" alt="logo" class="h-36 w-50 mx-auto">
             </div>
 
             <div>
-                <h4 class="font-semibold uppercase text-center">Registry System for Basic Sectors <br> in Agriculture</h4>
-                <h3 class="font-bold uppercase mt-3 text-2xl text-center">RSBSA - Finder</h3>
+                <h4 class="font-semibold uppercase text-center">Hinigaran RRS Farmers and Fisherfolks <br> Information System</h4>
+                <h3 class="font-bold uppercase mt-3 text-2xl text-center">RRS - Finder</h3>
             </div>
         </div>
 

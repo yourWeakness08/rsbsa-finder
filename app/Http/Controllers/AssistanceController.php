@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assistance;
-use App\Models\AssistanceHistory;
+use App\Models\Assistances;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -196,7 +196,7 @@ class AssistanceController extends Controller
     public function save_assistance(Request $request, Assistance $assistance) {
         $id = $request->farmer_id;
 
-        $query = AssistanceHistory::create([
+        $query = Assistances::create([
             'farmer_id' => $id,
             'livelihood' => trim(strtolower($request->livelihood)),
             'assistance_id' => $request->assistance,
@@ -217,10 +217,8 @@ class AssistanceController extends Controller
     }
 
     public function reports(Request $request) {
-
-        // dd($request->from);
         $paginate = $request->paginate ? intval($request->paginate): 10;
-        $assistanceHistory = AssistanceHistory::from('assistance_history as a')
+        $assistances = Assistances::from('assistances as a')
             ->select(DB::raw("a.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
                     c.firstname, ' ',
                     IF(c.middlename IS NOT NULL AND c.middlename != '', CONCAT(LEFT(c.middlename, 1), '. '), ''),
@@ -257,10 +255,10 @@ class AssistanceController extends Controller
                 }
             })->paginate($paginate);
         
-        $assistanceHistory->appends(['paginate' => $paginate]);
+        $assistances->appends(['paginate' => $paginate]);
 
         if($request->paginate == 'All'){
-            $assistanceHistory = AssistanceHistory::from('assistance_history as a')
+            $assistances = Assistances::from('assistances as a')
             ->select(DB::raw("a.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
                     c.firstname, ' ',
                     IF(c.middlename IS NOT NULL AND c.middlename != '', CONCAT(LEFT(c.middlename, 1), '. '), ''),
@@ -296,7 +294,7 @@ class AssistanceController extends Controller
                     $query->limit(0);
                 }
             })->get();
-            $assistanceHistory->all();
+            $assistances->all();
         }
 
         $assistance = Assistance::select(DB::raw('livelihoods, id, name'))->where('is_archived', 0)->get();
@@ -316,7 +314,7 @@ class AssistanceController extends Controller
         }
 
         return Inertia::render(
-            'Reports/Assistance', ['reports' => $assistanceHistory, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
+            'Reports/Assistance', ['reports' => $assistances, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
         );
     }
 }
