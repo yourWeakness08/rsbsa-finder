@@ -1051,6 +1051,84 @@ class FarmersController extends Controller
     }
 
     public function updateFarmParcel ($request, $id) {
-        dd($request);
+        $state = true;
+        if ($id) {
+            $farmParcelId = 0;
+            if (count($request->farm_parcel) > 0) {
+                $farm_profile = FarmProfile::where('farmer_id', $id)->first();
+
+                $farmParcel = FarmParcel::where('farmer_profile_id', $farm_profile->id)->first();
+                FarmParcel::where('farmer_profile_id', $farm_profile->id)->delete();
+
+                if ($farmParcel) {
+                    FarmParcelInformation::where('farm_parcels_id', $farmParcel->id)->delete();
+                }
+
+                foreach($request->farm_parcel as $parcel) {
+                    $document = $parcel['document'];
+                    $docFilename = $document->getClientOriginalName();
+
+                    $state = FarmParcel::create([
+                        'farmer_profile_id' => $farm_profile->id, 
+                        'brgy' => trim(strtolower($parcel['brgy'])), 
+                        'city'=> trim(strtolower($parcel['city'])),
+                        'document' => $docFilename,
+                        'total_farm_area' => $parcel['total_farm_area'], 
+                        'is_whithin_ancentral_domain' => $parcel['is_whithin_ancentral_domain'], 
+                        'is_agrarian_reform_beneficiary' => $parcel['is_agrarian_reform_beneficiary'], 
+                        'ownership_document_no' => trim(strtolower($parcel['ownership_document_no'])),
+                        'ownership_type' => $parcel['ownership_type'], 
+                        'landowner_name' => $parcel['landowner_name'] ? trim(strtolower($parcel['landowner_name'])) : null, 
+                        'is_other' => $parcel['is_other'] ? trim(strtolower($parcel['is_other'])) : null,
+                        'farmer_in_rotation_name' => trim(strtolower($parcel['farmer_in_rotation_name'])),
+                        'uuid' => Str::random(12)
+                    ]);
+
+                    $farmParcelId = $state->id;
+
+                    if ($state) {
+                        if($parcel['document'] !== null) {
+                            $docDestinationPath = "uploads/farmers/farmer_".$id.'/farmParcelDocuments';
+
+                            if(!file_exists(public_path($docDestinationPath))){ 
+                                File::makeDirectory(public_path($docDestinationPath), 0777, true);
+                            }
+
+                            $DoctempFilePath = $docDestinationPath."/".$docFilename;
+
+                            if(file_exists(public_path($DoctempFilePath))){
+                                unlink(public_path($DoctempFilePath));
+                            }
+
+                            if(!file_exists(public_path($DoctempFilePath))){
+                                $docFileMoved = $document->move($docDestinationPath, $docFilename);
+                            }
+                        }
+
+                        if (isset($parcel['farm_parcel_informations']) && count($parcel['farm_parcel_informations']) > 0) {
+                            foreach ($parcel['farm_parcel_informations'] as $info) {
+                                FarmParcelInformation::create([
+                                    'farm_parcels_id' => $farmParcelId, 
+                                    'farming_type' => $info['farming_type'], 
+                                    'farming_type_name' => $info['farming_type_name'],
+                                    'size' => $info['size'], 
+                                    'no_of_head' => $info['no_of_head'], 
+                                    'farm_type' => $info['farm_type'], 
+                                    'is_organic_practitioner' => $info['is_organic_practitioner'] , 
+                                    'remarks' => $info['remarks'] ? trim(strtolower($info['remarks'])) : null, 
+                                    'uuid' => Str::random(12)
+                                ]);
+                            }
+                        }
+                    }
+
+                    $farm_profile->farm_parcel_no = $request->farm_parcel_no;
+                    $farm_profile->is_arb = $request->is_arb;
+                    $farm_profile->save();
+                }
+            }
+        }
+
+        return $state ? true : false;
     }
 }

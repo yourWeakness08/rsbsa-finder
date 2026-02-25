@@ -94,14 +94,18 @@
         let text = '';
         const val = typeof item === 'string' ? item.toLowerCase() : parseInt(item);
 
-        $.each(mergeTypes, function(index, value) {
-            const temp = value.id;
-            const _val = typeof temp === 'string' ? temp.toLowerCase() : parseInt(temp);
+        console.log(val);
+        // console.log(props.types);
+
+        // $.each(mergeTypes.value, function(index, value) {
+        //     const temp = value.id;
+        //     console.log(value);
+        //     const _val = typeof temp === 'string' ? temp.toLowerCase() : parseInt(temp);
             
-            if (_val == val){
-                text = value.text;
-            }
-        })
+        //     if (_val == val){
+        //         text = value.text;
+        //     }
+        // })
 
         return text.toUpperCase();
     }
@@ -969,15 +973,16 @@
             ownership_type: null,
             is_whithin_ancentral_domain: null,
             is_agrarian_reform_beneficiary: null,
-            land_owner_name: null,
+            landowner_name: null,
             is_other: null,
             farmer_in_rotation_name: null,
             farm_parcel_informations: [
                 {
                     id: 0,
                     farming_type: null,
+                    farming_type_name: null,
                     size: 0,
-                    head_no: 0,
+                    no_of_head: 0,
                     farm_type: null,
                     is_organic_practitioner: null,
                     remarks: null
@@ -990,10 +995,24 @@
     
             farmParcelForm.farm_parcel = rawParcels.map(parcel => ({
                 ...parcel,
-                farm_parcel_informations: (parcel.farm_parcel_informations || []).map(info => ({
-                    ...info
+                farm_parcel_informations:
+                    parcel.farm_parcel_informations && parcel.farm_parcel_informations.length > 0 ? 
+                    parcel.farm_parcel_informations.map(info => ({
+                        ...info,
+                        }))
+                    : [
+                        {
+                            id: 0,
+                            farming_type: null,
+                            farming_type_name: null,
+                            size: 0,
+                            no_of_head: 0,
+                            farm_type: null,
+                            is_organic_practitioner: null,
+                            remarks: null
+                        }
+                    ]
                 }))
-            }));
         }
 
         if (farmer.main_livelihood.includes('farmer')) {
@@ -1025,8 +1044,6 @@
                         { id: poultry.id, text: poultry.text.toUpperCase(), type: 'poultry' }
                     ].sort((a, b) => a.text.localeCompare(b.text));
                 }
-
-
             });
         }
 
@@ -1248,13 +1265,14 @@
                 ownership_type: null,
                 is_whithin_ancentral_domain: null,
                 is_agrarian_reform_beneficiary: null,
-                land_owner_name: null,
+                landowner_name: null,
                 is_other: null,
                 farmer_in_rotation_name: null,
                 farm_parcel_informations: [
                     {
                         id: 0,
                         farming_type: null,
+                        farming_type_name: null,
                         size: 0,
                         no_of_head: 0,
                         farm_type: null,
@@ -1292,6 +1310,7 @@
                         $each: helpers.forEach({
                             id: {},
                             farming_type: { required },
+                            farming_type_name: { },
                             size: { required },
                             no_of_head: { required },
                             farm_type: { required },
@@ -1336,12 +1355,13 @@
             ownership_type: null,
             is_whithin_ancentral_domain: null,
             is_agrarian_reform_beneficiary: null,
-            land_owner_name: null,
+            landowner_name: null,
             is_other: null,
             farmer_in_rotation_name: null,
             farm_parcel_informations: [
                 {
                     farming_type: null,
+                    farming_type_name: null,
                     size: 0,
                     no_of_head: 0,
                     farm_type: null,
@@ -1403,14 +1423,11 @@
                     const response = page.props.flash?.response;
                     processing.value = false;
 
-                    setTimeout(() => { recentlySuccessful.value = false; }, 1500);
-                    setTimeout(() => { closeLivelihoodEditModal(); form.reset(); }, 800);
-
                     if (response.state) {
                         recentlySuccessful.value = true;
 
                         setTimeout(() => { recentlySuccessful.value = false; }, 1500);
-                        setTimeout(() => { closeLivelihoodEditModal(); farmParcelForm.reset(); y$.value.$reset(); }, 800);
+                        setTimeout(() => { closeEditFarmParcelModal(); farmParcelForm.reset(); parcel$.value.$reset(); }, 800);
                     } else {
                         recentlyFailed.value = true;
                         setTimeout(() => { recentlyFailed.value = false; }, 1500);
@@ -1428,6 +1445,34 @@
     const handleOwnerUpload = (fileData, index) => {
         farmParcelForm.farm_parcel[index].document = fileData ? fileData : null;
     }
+
+    const handleFarmingTypeSelect = (data, pIndex, iIndex) => {
+        farmParcelForm.farm_parcel[pIndex].farm_parcel_informations[iIndex].farming_type_name = data.text
+    }
+
+    const ensureOptionExists = (id, text = null) => {
+        if (!id) return
+
+        const exists = mergeTypes.value.some(o => o.id == id)
+
+        if (!exists) {
+            mergeTypes.value.push({ id: id, text: text ?? id, disabled: true})
+        }
+    }
+
+    watch(
+        () => farmParcelForm.farm_parcel,
+        (parcels) => {
+            parcels.forEach(parcel => {
+                parcel.farm_parcel_informations?.forEach(info => {
+                    ensureOptionExists(info.farming_type, info.farming_type_name)
+                })
+            })
+        },
+        { deep: true, immediate: true }
+    )
+
+    
 </script>
 
 <template>
@@ -2233,7 +2278,9 @@
                                                                 <tbody>
                                                                     <tr v-for="(v, i) in item.farm_parcel_informations" :key="i" style="vertical-align: top;">
                                                                         <td class="p-3 border border-gray-400">
-                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ !isNaN(parseFloat(v.farming_type)) && isFinite(v.farming_type) ? farmCommodity(v.farming_type) : v.farming_type }}</p>
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">
+                                                                                {{ v.farming_type_name ?? '&nbsp;' }}
+                                                                            </p>
                                                                         </td>
                                                                         <td class="p-3 border border-gray-400">
                                                                             <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
@@ -3579,7 +3626,7 @@
                                             <tr v-for="(v, i) in item.farm_parcel_informations" :key="i" style="vertical-align: top;">
                                                 <td class="p-3 border border-gray-400">
                                                     <div class="rounded-md block w-full">
-                                                        <Select2 class="h-10 uppercase" :key="mergeTypes.length" v-model="v.farming_type" :options="mergeTypes" :settings="{ placeholder: 'Select An Option', width: '200px', dropdownParent: $('#editFarmParcel') }" />
+                                                        <Select2 class="h-10 uppercase" :key="mergeTypes.length" v-model="v.farming_type" :options="mergeTypes" :settings="{ placeholder: 'Select An Option', width: '200px', dropdownParent: $('#editFarmParcel') }" @select="(data) => handleFarmingTypeSelect(data, index, i)" />
                                                     </div>
                                                     <template v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].farm_parcel_informations" :key="error">
                                                         <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].farming_type.length == 1">
