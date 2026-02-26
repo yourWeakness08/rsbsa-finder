@@ -1,5 +1,5 @@
 <script setup>
-    import useValidationHelpers from '@/composables/useValidationHelpers';
+    import useValidationHelpers from '@/Composables/useValidationHelpers';
     import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate } from 'vue';
     import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
     import useVuelidate from '@vuelidate/core';

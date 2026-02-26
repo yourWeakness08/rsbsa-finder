@@ -140,7 +140,7 @@ class AssistancesController extends Controller
 
             if (is_array($meta) && $meta) {
                 $main_livelihood = array(
-                    'main_livelihood' => $meta,
+                    'livelihood' => $meta,
                     'contents' => $this->get_main_livelihood_content($farmer->farmer_profile_id, $meta)
                 );
 

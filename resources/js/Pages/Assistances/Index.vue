@@ -1,5 +1,6 @@
 <script setup>
     import { ref, reactive, computed, getCurrentInstance, watch } from 'vue';
+    import useValidationHelpers from '@/Composables/useValidationHelpers'
     import AppLayout from '@/Layouts/AppLayout.vue';
     import DialogModal from '@/Components/DialogModal.vue';
 
@@ -22,6 +23,8 @@
     import axios from 'axios';
     import moment from 'moment';
     import Swal from 'sweetalert2';
+    import useVuelidate from '@vuelidate/core';
+    import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
     
     import $ from 'jquery';
 
@@ -54,8 +57,8 @@
     const searchValue = ref(null);
     const page = ref(1);
     const debouncedSearch = ref('');
-
-    console.log(props.farmer);
+    let availableAssistance = ref(null);
+    let livelihood = ref(null);
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
@@ -106,7 +109,29 @@
     const createDialog = ref(false);
     const editDialog = ref(false);
 
-    const form = useForm({});
+    const form = useForm({
+        farmer: null,
+        assistance: null,
+        remarks: null,
+        attachments: [],
+        user_id: 0
+    })
+
+    const formRules = computed(() => {
+        return {
+            farmer: { required },
+            assistance: { required },
+            remarks: { required },
+            attachments: { required, minLength: minLength(1) },
+            user_id: {}
+        }
+    })
+
+    const v$ = useVuelidate(formRules, form, {
+        $autoDirty: false
+    })
+
+    const { hasError, inputBorderClass, getFieldState } = useValidationHelpers(v$, form, { autoTouch: true })
 
     const closeModal = () => {
         form.reset();
@@ -125,6 +150,57 @@
     const handleUploadSuccess = (fileData) => {
         form.attachments = fileData;
     };
+
+    const handleFarmer = (event) => {
+        const selectedValue = event;
+        const mainlivelihood = selectedValue.main_livelihood;
+
+        availableAssistance.value = props.assistance.filter(item =>
+            item.livelihoods.some(livelihood =>
+                mainlivelihood.livelihood.includes(livelihood)
+            )
+        );
+
+        livelihood.value = (mainlivelihood.livelihood || []).map(l => l.replace(/_/g, ' ').toUpperCase()).join(', ');
+    }
+
+    const submitForm = () => {
+        const { id } = props.auth.user;
+
+        processing.value = true;
+        form.user_id = id;
+
+        v$.value.$touch();
+
+        if (!v$.value.$invalid) {
+            // form.put(route('assistance.update', livelihoodForm.farmer_id), {
+            //     preserveScroll: true,
+            //     onSuccess: () => {
+            //         const page = usePage();
+            //         const response = page.props.flash?.response;
+            //         processing.value = false;
+
+            //         setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+            //         setTimeout(() => { closeLivelihoodEditModal(); form.reset(); }, 800);
+
+            //         if (response.state) {
+            //             recentlySuccessful.value = true;
+
+            //             setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+            //             setTimeout(() => { closeLivelihoodEditModal(); livelihoodForm.reset(); y$.value.$reset(); }, 800);
+            //         } else {
+            //             recentlyFailed.value = true;
+            //             setTimeout(() => { recentlyFailed.value = false; }, 1500);
+            //         }
+            //     },
+            //     onError: (errors) => {
+            //         console.log(errors);
+            //     }
+            // });
+        } else {
+            processing.value = false;
+        }
+    }
 </script>
 
 <template>
@@ -187,20 +263,39 @@
                                 <div class="form-group mb-5">
                                     <InputLabel for="type" value="Name" :required="true" />
                                     <div class="w-80">
-                                        <Select2 class="uppercase mt-1" :options="props.farmer" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }"  />
+                                        <Select2 class="uppercase mt-1" v-model="form.farmer" :options="props.farmer" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }" @select="handleFarmer" />
                                     </div>
+                                    <p v-if="hasError('farmer')" class="text-red-500 text-sm mb-1">
+                                        <span class="text-red-500 text-sm" v-if="v$.farmer.required?.$invalid">Farmer is required!</span>
+                                    </p>
+
+                                    <template v-if="livelihood">
+                                        <div class="mt-1">
+                                            <b>MAIN LIVELIHOOD:</b> {{ livelihood }}
+                                        </div>
+                                    </template>
+
                                 </div>
 
                                 <div class="form-group mb-2">
                                     <InputLabel for="type" value="Type of Assistance" :required="true" />
                                     <div class="w-80">
-                                        <Select2 class="uppercase mt-1" :options="props.assistance" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#newAssistance') }" />
+                                        <Select2 class="uppercase mt-1" v-model="form.assistance" :options="availableAssistance" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#newAssistance') }" />
                                     </div>
+                                    <p v-if="hasError('assistance')" class="text-red-500 text-sm mb-1">
+                                        <span class="text-red-500 text-sm" v-if="v$.farmer.required?.$invalid">Farmer is required!</span>
+                                    </p>
                                 </div>
                             </div>
                             <div class="w-6/12">
                                 <InputLabel for="type" value="Purpose" :required="true" />
-                                <TextAreaInput class="uppercase mt-1 block w-full uppercase"  />
+                                <TextAreaInput v-model="form.remarks" class="uppercase mt-1 block w-full uppercase" 
+                                    @blur="v$.remarks.$touch()"
+                                    :class="!v$.remarks.$dirty && form.remarks ? 'border-gray-300' : inputBorderClass('remarks')"
+                                />
+                                <p v-if="hasError('remarks')" class="text-red-500 text-sm mb-1">
+                                    <span class="text-red-500 text-sm" v-if="v$.remarks.required?.$invalid">Purpose is required!</span>
+                                </p>
                             </div>
                         </div>
 
@@ -210,6 +305,9 @@
                             <div class="w-full">
                                 <InputLabel for="attachments" value="Attachments" :required="true" />
                                 <Dropzone @fileSelected="handleUploadSuccess" :isMultiple="false" :accepted-files="'.pdf, .jpg, .png'"  />
+                                <p v-if="hasError('attachments')" class="text-red-500 text-sm mt-1">
+                                    <span class="text-red-500 text-sm" v-if="v$.attachments.required?.$invalid">Attachments is required. Add atleast one attachment.</span>
+                                </p>
                             </div>
                         </div>
                     </div>
