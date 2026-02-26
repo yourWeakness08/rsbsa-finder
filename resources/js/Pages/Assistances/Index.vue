@@ -209,7 +209,7 @@
                         <div class="flex flex-row">
                             <div class="w-full">
                                 <InputLabel for="attachments" value="Attachments" :required="true" />
-                                <Dropzone @fileSelected="handleUploadSuccess" :isMultiple="false"  />
+                                <Dropzone @fileSelected="handleUploadSuccess" :isMultiple="false" :accepted-files="'.pdf, .jpg, .png'"  />
                             </div>
                         </div>
                     </div>

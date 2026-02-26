@@ -23,6 +23,10 @@ const props = defineProps({
   isMultiple: {
     type: Boolean,
     default: false
+  },
+  acceptedFiles: {
+    type: String,
+    default: '.pdf'
   }
 })
 
@@ -38,7 +42,7 @@ onMounted(() => {
       url: '/upload', // change to your upload endpoint
       paramName: 'file',
       maxFilesize: 2, // MB
-      acceptedFiles: '.pdf',
+      acceptedFiles: props.acceptedFiles,
       clickable: true,
       autoProcessQueue: false,
       maxFiles: props.maxFile
