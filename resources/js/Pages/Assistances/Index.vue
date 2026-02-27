@@ -94,11 +94,11 @@
         if (value) { formData.paginate = value };
         if (searchValue.value) { formData.search = searchValue.value; }
 
-        router.visit('/assistance', {
+        router.visit('/assistances', {
             method: 'get',
             data: formData,
             preserveState: true,
-            only: ['assistance', 'filter']
+            only: ['assistances', 'filter']
         });
     }
 
@@ -123,7 +123,7 @@
             farmer: { required },
             assistance: { required },
             remarks: { required },
-            livelihood: {},
+            livelihood: { required },
             attachments: { required, minLength: minLength(1) },
             user_id: {}
         }
@@ -158,14 +158,18 @@
         const selectedValue = event;
         const mainlivelihood = selectedValue.main_livelihood;
 
-        availableAssistance.value = props.assistance.filter(item =>
-            item.livelihoods.some(livelihood =>
-                mainlivelihood.livelihood.includes(livelihood)
-            )
+        const filteredLivelihoods = main_livelihood.value.filter(item =>
+            mainlivelihood.livelihood.includes(item.id)
         );
 
-        livelihood.value = (mainlivelihood.livelihood || []).map(l => l.replace(/_/g, ' ').toUpperCase()).join(', ');
-        form.livelihood = livelihood.value;
+        livelihood.value = filteredLivelihoods;
+        // availableAssistance.value = props.assistance.filter(item =>
+        //     item.livelihoods.some(livelihood =>
+        //         mainlivelihood.livelihood.includes(livelihood)
+        //     )
+        // );
+
+        // livelihood.value = (mainlivelihood.livelihood || []).map(l => l.replace(/_/g, ' ').toUpperCase()).join(', ');
     }
 
     const submitForm = () => {
@@ -192,6 +196,7 @@
                         form.reset();
                         v$.value.$reset();
                         livelihood.value = null;
+                        availableAssistance.value = null;
                     } else {
                         recentlyFailed.value = true;
                         processing.value = false;
@@ -203,6 +208,27 @@
         } else {
             processing.value = false;
         }
+    }
+
+    const main_livelihood = ref([
+        { id: 'farmer', text: 'Farmer' },
+        { id: 'farm_worker', text: 'Farm Worker / Laborer' },
+        { id: 'fisherfolks', text: 'Fisherfolk' },
+        { id: 'agri_youth', text: 'Agri Youth' },
+    ]);
+
+    const handleLivelihood = (event) => {
+        const selectedValue = event;
+
+        const filteredAssistance = props.assistance.filter(item =>
+            item.livelihoods.includes(selectedValue.id)
+        );
+
+        availableAssistance.value = filteredAssistance;
+    }
+
+    const viewAssistance = () => {
+        
     }
 </script>
 
@@ -241,18 +267,159 @@
                                 <thead
                                     class="text-xs text-gray-700 uppercase">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 w-3/12">Name</th>
-                                        <th scope="col" class="px-6 py-3 w-4/12">Assistance</th>
-                                        <th scope="col" class="px-6 py-3 w-4/12">Purpose</th>
-                                        <th scope="col" class="px-6 py-3 w-3/12">Created By</th>
-                                        <th scope="col" class="px-6 py-3">&nbsp;</th>
+                                        <th scope="col" class="px-6 py-3 w-1/12">Ref No.</th>
+                                        <th scope="col" class="px-6 py-3 w-1/12">Status</th>
+                                        <th scope="col" class="px-6 py-3 w-2/12">Name</th>
+                                        <th scope="col" class="px-6 py-3 w-2/12">Assistance</th>
+                                        <th scope="col" class="px-6 py-3 w-3/12">Purpose</th>
+                                        <th scope="col" class="px-6 py-3 w-2/12">Created By</th>
+                                        <th scope="col" class="px-6 py-3 w-3/12">&nbsp;</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <template v-if="assistances.total > 0">
-
+                                        <tr class="bg-white border-b" v-for="(item, index) in assistances.data" :key="item.id">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.reference_no }}
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium inset-ring inset-ring-yellow-400/20"
+                                                    :class="{
+                                                        'bg-yellow-500 text-white' : item.status.toLowerCase() == 'pending',
+                                                        'bg-green-500 text-white' : item.status.toLowerCase() == 'success',
+                                                        'bg-red-500 text-white' : item.status.toLowerCase() == 'disapproved',
+                                                        'bg-zinc-500' : item.status.toLowerCase() == 'cancelled',
+                                                    }">
+                                                    {{ item.status }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.name }}
+                                                <p class="m-0">
+                                                    <small>Applied Livelihood: <b>{{ item.livelihood.toUpperCase() }}</b> </small>
+                                                </p>
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.assistance_name }}
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.purpose }}
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <p class="font-semibold">{{ item.created_name }}</p>
+                                                <small>{{ dateFormat(item.created_at) }}</small>
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormEditData(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;" v-if="item.status.toLowerCase() == 'pending'">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <title></title> 
+                                                            <g id="Complete"> 
+                                                                <g id="edit">
+                                                                    <g> 
+                                                                        <path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8" fill="none" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path> 
+                                                                        <polygon fill="none" points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon> 
+                                                                    </g> 
+                                                                </g> 
+                                                            </g> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                                <PrimaryButton class="bg-gray-800 hover:bg-gray-700 text-white mr-1" @click="viewAssistance(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M9 4.45962C9.91153 4.16968 10.9104 4 12 4C16.1819 4 19.028 6.49956 20.7251 8.70433C21.575 9.80853 22 10.3606 22 12C22 13.6394 21.575 14.1915 20.7251 15.2957C19.028 17.5004 16.1819 20 12 20C7.81811 20 4.97196 17.5004 3.27489 15.2957C2.42496 14.1915 2 13.6394 2 12C2 10.3606 2.42496 9.80853 3.27489 8.70433C3.75612 8.07914 4.32973 7.43025 5 6.82137" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"></path>
+                                                            <path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z" stroke="#ffffff" stroke-width="1.5"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(item.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M18 6L17.1991 18.0129C17.129 19.065 17.0939 19.5911 16.8667 19.99C16.6666 20.3412 16.3648 20.6235 16.0011 20.7998C15.588 21 15.0607 21 14.0062 21H9.99377C8.93927 21 8.41202 21 7.99889 20.7998C7.63517 20.6235 7.33339 20.3412 7.13332 19.99C6.90607 19.5911 6.871 19.065 6.80086 18.0129L6 6M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M14 10V17M10 10V17" stroke="#ffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                            </td>
+                                        </tr>
                                     </template>
-                                    <template v-else-if="filter.paginate == 'All' && assistance.length > 0">
+                                    <template v-else-if="filter.paginate == 'All' && assistances.length > 0">
+                                        <tr class="bg-white border-b" v-for="(item, index) in assistances" :key="item.id">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.reference_no }}
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium inset-ring inset-ring-yellow-400/20"
+                                                    :class="{
+                                                        'bg-yellow-500 text-white' : item.status.toLowerCase() == 'pending',
+                                                        'bg-green-500 text-white' : item.status.toLowerCase() == 'success',
+                                                        'bg-red-500 text-white' : item.status.toLowerCase() == 'disapproved',
+                                                        'bg-zinc-500' : item.status.toLowerCase() == 'cancelled',
+                                                    }">
+                                                    {{ item.status }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.name }}
+                                                <p class="m-0">
+                                                    <small>Applied Livelihood: <b>{{ item.livelihood.toUpperCase() }}</b> </small>
+                                                </p>
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.assistance_name }}
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.purpose }}
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <p class="font-semibold">{{ item.created_name }}</p>
+                                                <small>{{ dateFormat(item.created_at) }}</small>
+                                            </td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormEditData(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;" v-if="item.status.toLowerCase() == 'pending'">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <title></title> 
+                                                            <g id="Complete"> 
+                                                                <g id="edit">
+                                                                    <g> 
+                                                                        <path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8" fill="none" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path> 
+                                                                        <polygon fill="none" points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon> 
+                                                                    </g> 
+                                                                </g> 
+                                                            </g> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                                <PrimaryButton class="bg-gray-800 hover:bg-gray-700 text-white mr-1" @click="viewAssistance(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M9 4.45962C9.91153 4.16968 10.9104 4 12 4C16.1819 4 19.028 6.49956 20.7251 8.70433C21.575 9.80853 22 10.3606 22 12C22 13.6394 21.575 14.1915 20.7251 15.2957C19.028 17.5004 16.1819 20 12 20C7.81811 20 4.97196 17.5004 3.27489 15.2957C2.42496 14.1915 2 13.6394 2 12C2 10.3606 2.42496 9.80853 3.27489 8.70433C3.75612 8.07914 4.32973 7.43025 5 6.82137" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"></path>
+                                                            <path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z" stroke="#ffffff" stroke-width="1.5"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(item.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M18 6L17.1991 18.0129C17.129 19.065 17.0939 19.5911 16.8667 19.99C16.6666 20.3412 16.3648 20.6235 16.0011 20.7998C15.588 21 15.0607 21 14.0062 21H9.99377C8.93927 21 8.41202 21 7.99889 20.7998C7.63517 20.6235 7.33339 20.3412 7.13332 19.99C6.90607 19.5911 6.871 19.065 6.80086 18.0129L6 6M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M14 10V17M10 10V17" stroke="#ffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                            </td>
+                                        </tr>
                                     </template>
                                     <template v-else>
                                         <tr>
@@ -291,24 +458,28 @@
                                     <div class="w-80">
                                         <Select2 class="uppercase mt-1" v-model="form.farmer" :options="props.farmer" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }" @select="handleFarmer" />
                                     </div>
-                                    <p v-if="hasError('farmer')" class="text-red-500 text-sm mb-1">
+                                    <p v-if="hasError('farmer')" class="text-red-500 text-sm">
                                         <span class="text-red-500 text-sm" v-if="v$.farmer.required?.$invalid">Farmer is required!</span>
                                     </p>
+                                </div>
 
-                                    <template v-if="livelihood">
-                                        <div class="mt-1">
-                                            <b>MAIN LIVELIHOOD:</b> {{ livelihood }}
-                                        </div>
-                                    </template>
+                                <div class="form-group mb-5">
+                                    <InputLabel for="type" value="Livelihood" :required="true" />
+                                    <div class="w-80">
+                                        <Select2 class="uppercase mt-1" v-model="form.livelihood" :options="livelihood" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }" @select="handleLivelihood" :disabled="livelihood ? false : 'disabled'" />
+                                    </div>
 
+                                    <p v-if="hasError('livelihood')" class="text-red-500 text-sm">
+                                        <span class="text-red-500 text-sm" v-if="v$.livelihood.required?.$invalid">Livelihood is required!</span>
+                                    </p>
                                 </div>
 
                                 <div class="form-group mb-2">
                                     <InputLabel for="type" value="Type of Assistance" :required="true" />
                                     <div class="w-80">
-                                        <Select2 class="uppercase mt-1" v-model="form.assistance" :options="availableAssistance" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#newAssistance') }" />
+                                        <Select2 class="uppercase mt-1" v-model="form.assistance" :options="availableAssistance" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#newAssistance') }" :disabled="availableAssistance ? false : 'disabled'" />
                                     </div>
-                                    <p v-if="hasError('assistance')" class="text-red-500 text-sm mb-1">
+                                    <p v-if="hasError('assistance')" class="text-red-500 text-sm">
                                         <span class="text-red-500 text-sm" v-if="v$.farmer.required?.$invalid">Farmer is required!</span>
                                     </p>
                                 </div>

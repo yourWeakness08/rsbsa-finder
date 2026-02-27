@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('farmer_id')->default(0);
             $table->integer('assistance_id')->default(0);
+            $table->string('reference_no')->nullable();
             $table->text('livelihood')->nullable();
             $table->integer('amount')->default(0);
             $table->text('purpose')->nullable();

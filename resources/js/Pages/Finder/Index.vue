@@ -143,7 +143,7 @@
     <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
         <div class="flex flex-wrap items-center justify-between gap-x-5">
             <div>
-                <img src="/images/rrs logo.png" alt="logo" class="h-36 w-50 mx-auto">
+                <img src="/images/rrs-logo.png" alt="logo" class="h-36 w-50 mx-auto">
             </div>
 
             <div>

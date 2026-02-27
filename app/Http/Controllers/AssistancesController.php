@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -26,16 +27,17 @@ class AssistancesController extends Controller
      */
     public function index(Request $request){
         $paginate = $request->paginate ? intval($request->paginate): 10;
-        $assistances = Assistances::from('assistances as a')
-            ->select(DB::raw("a.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
+
+        $assistances = Assistances::leftJoin('users as b', 'b.id', '=', 'assistances.created_by')
+            ->select(DB::raw("assistances.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
                     c.firstname, ' ',
                     IF(c.middlename IS NOT NULL AND c.middlename != '', CONCAT(LEFT(c.middlename, 1), '. '), ''),
                     c.lastname,
                     IF(c.suffix IS NOT NULL AND c.suffix != '', CONCAT(' ', c.suffix), '')
-                ) AS name"))
-            ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
-            ->leftJoin('farmer_information as c', 'c.id', '=', 'a.farmer_id')
-            ->orderBy('created_at', 'desc')
+                ) AS name, d.name as assistance_name"))
+            ->leftJoin('farmer_information as c', 'c.id', '=', 'assistances.farmer_id')
+            ->leftJoin('assistance as d', 'd.id', '=', 'assistances.assistance_id')
+            ->orderBy('assistances.created_at', 'desc')
             ->where( function($query) use ($request) {
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
@@ -43,27 +45,27 @@ class AssistancesController extends Controller
                     ->orWhere('c.middlename', 'like', '%'.$request->search.'%');
                 }
             })->paginate($paginate);
-        
         $assistances->appends(['paginate' => $paginate]);
 
         if($request->paginate == 'All'){
-            $assistances = Assistances::from('assistances as a')
-            ->select(DB::raw("a.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
+            $assistances = Assistances::LeftJoin('users as b', 'b.id', '=', 'assistances.created_by')
+            ->select(DB::raw("assistances.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
                     c.firstname, ' ',
                     IF(c.middlename IS NOT NULL AND c.middlename != '', CONCAT(LEFT(c.middlename, 1), '. '), ''),
                     c.lastname,
                     IF(c.suffix IS NOT NULL AND c.suffix != '', CONCAT(' ', c.suffix), '')
-                ) AS name"))
-            ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
-            ->leftJoin('farmer_information as c', 'c.id', '=', 'a.farmer_id')
-            ->orderBy('created_at', 'desc')
-            ->where( function($query) use ($request) {
+                ) AS name, d.name as assistance_name"))
+            ->leftJoin('farmer_information as c', 'c.id', '=', 'assistances.farmer_id')
+            ->leftJoin('assistance as d', 'd.id', '=', 'assistances.assistance_id')
+            ->where(function($query) use($request){
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.lastname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.middlename', 'like', '%'.$request->search.'%');
                 }
-            })->get();
+            })
+            ->orderBy('assistances.created_at', 'desc')
+            ->get();
             $assistances->all();
         }
         
@@ -91,9 +93,12 @@ class AssistancesController extends Controller
         $state = false;
 
         if ($request->farmer && $request->assistance && $request->remarks) {
+            $reference = $this->generateReferenceNo();
+
             $created = Assistances::create([
                 'farmer_id' => $request->farmer,
                 'assistance_id' => $request->assistance,
+                'reference_no' => $reference,
                 'purpose' => trim($request->remarks),
                 'livelihood' => $request->livelihood,
                 'created_by'=>$user_id,
@@ -231,5 +236,27 @@ class AssistancesController extends Controller
         }
 
         return $allassistanceCollection;
+    }
+
+    function generateReferenceNo() {
+        return DB::transaction(function () {
+
+            $year = Carbon::now()->format('y');
+            $lastRecord = DB::table('assistances')
+                ->whereYear('created_at', Carbon::now()->year)
+                ->lockForUpdate()
+                ->orderByDesc('id')
+                ->first();
+
+            if ($lastRecord && preg_match('/RSS-\d{2}-(\d+)/', $lastRecord->reference_no, $matches)) {
+                $nextNumber = (int)$matches[1] + 1;
+            } else {
+                $nextNumber = 1;
+            }
+
+            $sequence = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+            return "RSS-$year-$sequence";
+        });
     }
 }
