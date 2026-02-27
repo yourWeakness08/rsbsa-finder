@@ -113,6 +113,7 @@
         farmer: null,
         assistance: null,
         remarks: null,
+        livelihood: null,
         attachments: [],
         user_id: 0
     })
@@ -122,6 +123,7 @@
             farmer: { required },
             assistance: { required },
             remarks: { required },
+            livelihood: {},
             attachments: { required, minLength: minLength(1) },
             user_id: {}
         }
@@ -135,6 +137,7 @@
 
     const closeModal = () => {
         form.reset();
+        v$.value.$reset();
 
         createDialog.value = false;
     }
@@ -162,6 +165,7 @@
         );
 
         livelihood.value = (mainlivelihood.livelihood || []).map(l => l.replace(/_/g, ' ').toUpperCase()).join(', ');
+        form.livelihood = livelihood.value;
     }
 
     const submitForm = () => {
@@ -173,30 +177,29 @@
         v$.value.$touch();
 
         if (!v$.value.$invalid) {
-            // form.put(route('assistance.update', livelihoodForm.farmer_id), {
-            //     preserveScroll: true,
-            //     onSuccess: () => {
-            //         const page = usePage();
-            //         const response = page.props.flash?.response;
-            //         processing.value = false;
+            form.post(route('assistances.store'), {
+                onProgress: () => processing.value = true,
+                onSuccess: () => {
+                    const page = usePage();
+                    const response = page.props.flash?.response;
 
-            //         setTimeout(() => { recentlySuccessful.value = false; }, 1500);
-            //         setTimeout(() => { closeLivelihoodEditModal(); form.reset(); }, 800);
+                    if (response.state) {
+                        recentlySuccessful.value = true;
+                        processing.value = false;
 
-            //         if (response.state) {
-            //             recentlySuccessful.value = true;
+                        setTimeout(() => { closeModal(); }, 800);
+                        setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                        form.reset();
+                        v$.value.$reset();
+                        livelihood.value = null;
+                    } else {
+                        recentlyFailed.value = true;
+                        processing.value = false;
 
-            //             setTimeout(() => { recentlySuccessful.value = false; }, 1500);
-            //             setTimeout(() => { closeLivelihoodEditModal(); livelihoodForm.reset(); y$.value.$reset(); }, 800);
-            //         } else {
-            //             recentlyFailed.value = true;
-            //             setTimeout(() => { recentlyFailed.value = false; }, 1500);
-            //         }
-            //     },
-            //     onError: (errors) => {
-            //         console.log(errors);
-            //     }
-            // });
+                        setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                    }
+                }
+            });
         } else {
             processing.value = false;
         }
@@ -234,7 +237,30 @@
                         </div>
 
                         <div class="mt-6">
-                            <table class="w-full text-sm text-left text-gray-500"></table>
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead
+                                    class="text-xs text-gray-700 uppercase">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 w-3/12">Name</th>
+                                        <th scope="col" class="px-6 py-3 w-4/12">Assistance</th>
+                                        <th scope="col" class="px-6 py-3 w-4/12">Purpose</th>
+                                        <th scope="col" class="px-6 py-3 w-3/12">Created By</th>
+                                        <th scope="col" class="px-6 py-3">&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template v-if="assistances.total > 0">
+
+                                    </template>
+                                    <template v-else-if="filter.paginate == 'All' && assistance.length > 0">
+                                    </template>
+                                    <template v-else>
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-4 text-center">No assistance found.</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
                             <div class="mt-6">
                                 <div class="flex flex-row justify-between items-center">
                                     <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-1/12">
@@ -304,7 +330,7 @@
                         <div class="flex flex-row">
                             <div class="w-full">
                                 <InputLabel for="attachments" value="Attachments" :required="true" />
-                                <Dropzone @fileSelected="handleUploadSuccess" :isMultiple="false" :accepted-files="'.pdf, .jpg, .png'"  />
+                                <Dropzone @fileSelected="handleUploadSuccess" :isMultiple="true" :accepted-files="'.pdf, .jpg, .png'"  />
                                 <p v-if="hasError('attachments')" class="text-red-500 text-sm mt-1">
                                     <span class="text-red-500 text-sm" v-if="v$.attachments.required?.$invalid">Attachments is required. Add atleast one attachment.</span>
                                 </p>
@@ -316,6 +342,9 @@
             <template #footer>
                 <ActionMessage :on="recentlySuccessful" class="me-3">
                     Assistance successfully added.
+                </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to add assistance.
                 </ActionMessage>
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitForm">Save</PrimaryButton>

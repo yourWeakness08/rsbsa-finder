@@ -2966,6 +2966,9 @@
                 <ActionMessage :on="recentlySuccessful" class="me-3">
                     Personal Information successfully updated.
                 </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update personal information.
+                </ActionMessage>
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitEditPersonal">Save</PrimaryButton>
                 <SecondaryButton @click="closePersonalEditModal">Close</SecondaryButton>
@@ -3318,6 +3321,9 @@
                 <ActionMessage :on="recentlySuccessful" class="me-3">
                     Main Livelihood successfully updated.
                 </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update main livelihood.
+                </ActionMessage>
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitEditLivelihood">Save</PrimaryButton>
                 <SecondaryButton @click="closeLivelihoodEditModal">Close</SecondaryButton>
@@ -3381,6 +3387,9 @@
                 <ActionMessage :on="recentlySuccessful" class="me-3">
                     Farming Type successfully added.
                 </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update assistance.
+                </ActionMessage>
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitNewAssistance">Save</PrimaryButton>
                 <SecondaryButton @click="closeAssistanceModal">Close</SecondaryButton>
@@ -3406,6 +3415,12 @@
                 </p>
             </template>
             <template #footer>
+                <ActionMessage :on="recentlySuccessful" class="me-3">
+                    Attachment(s) successfully added.
+                </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update assistance attachments.
+                </ActionMessage>
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" @click="submitAttachments">Save</PrimaryButton>
                 <SecondaryButton @click="closeUploadModal">Close</SecondaryButton>
             </template>
@@ -3706,6 +3721,9 @@
             <template #footer>
                 <ActionMessage :on="recentlySuccessful" class="me-3">
                     Farm Parcel Information successfully updated.
+                </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update farm parcel.
                 </ActionMessage>
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitEditFarmParcel">Save</PrimaryButton>

@@ -10,5 +10,5 @@ class Assistances extends Model
     use HasFactory;
 
     protected $table = 'assistances';
-    protected $fillable = ['farmer_id', 'livelihood', 'assistance_id', 'amount', 'remarks', 'created_by', 'uuid'];
+    protected $fillable = ['farmer_id', 'livelihood', 'assistance_id', 'livelihood', 'amount', 'remarks', 'created_by', 'uuid'];
 }

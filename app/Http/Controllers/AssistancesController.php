@@ -6,11 +6,13 @@ use App\Models\Assistances;
 use App\Models\Assistance;
 use App\Models\FarmerInformation;
 use App\Models\MainLivelihood;
+use App\Models\AssistancesAttachments as Attachments;
 use App\Models\FarmingType;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
 
@@ -84,9 +86,61 @@ class AssistancesController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        //
+    public function store(Request $request, Assistances $assistances) {
+        $user_id = $request->user_id;
+        $state = false;
+
+        if ($request->farmer && $request->assistance && $request->remarks) {
+            $created = Assistances::create([
+                'farmer_id' => $request->farmer,
+                'assistance_id' => $request->assistance,
+                'purpose' => trim($request->remarks),
+                'livelihood' => $request->livelihood,
+                'created_by'=>$user_id,
+                'uuid'=>Str::random(12)
+            ]);
+
+            if ($created) {
+                $id = $created->id;
+                $state = true;
+
+                if ($request->file('attachments') !== null) {
+                    $attachments = (object) $request->file('attachments');
+
+                    foreach($attachments as $attachment) {
+                        $_filename = $attachment->getClientOriginalName();
+                        $_destinationPath = "uploads/assistances/assistance_".$id;
+
+                        if(!file_exists(public_path($_destinationPath))){ 
+                            File::makeDirectory(public_path($_destinationPath), 0777, true);
+                        }
+
+                        $_tempFilePath = $_destinationPath."/".$_filename;
+
+                        if(file_exists(public_path($_tempFilePath))){
+                            unlink(public_path($_tempFilePath));
+                        }
+
+                        if(!file_exists(public_path($_tempFilePath))){
+                            $_fileMoved = $attachment->move($_destinationPath, $_filename);
+
+                            if($_fileMoved) {
+                                Attachments::create([
+                                    'farmer_id' => $id,
+                                    'filename' => $_filename,
+                                    'filepath' => $_destinationPath,
+                                    'uuid' => Str::random(12)
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return redirect()->back()->with('response', [
+            'state' => $state
+        ]);
     }
 
     /**

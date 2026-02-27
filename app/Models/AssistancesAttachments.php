@@ -11,5 +11,5 @@ class AssistancesAttachments extends Model
 
 
     protected $table = 'assistance_attachments';
-    protected $fillable = ['farmer_id', 'attachment', 'uuid'];
+    protected $fillable = ['farmer_id', 'filename', 'uuid'];
 }

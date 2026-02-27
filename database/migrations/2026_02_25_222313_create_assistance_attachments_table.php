@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('assistance_attachments', function (Blueprint $table) {
             $table->id();
             $table->integer('farmer_id')->default(0);
-            $table->text('attachment')->nullable();
+            $table->text('filename')->nullable();
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });
