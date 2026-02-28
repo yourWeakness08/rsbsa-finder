@@ -1,5 +1,5 @@
 <script setup>
-    import { ref, reactive, computed, getCurrentInstance, watch } from 'vue';
+    import { ref, reactive, computed, getCurrentInstance, watch, onMounted } from 'vue';
     import useValidationHelpers from '@/Composables/useValidationHelpers'
     import AppLayout from '@/Layouts/AppLayout.vue';
     import DialogModal from '@/Components/DialogModal.vue';
@@ -154,7 +154,18 @@
         form.attachments = fileData;
     };
 
-    const handleFarmer = (event) => {
+    const handleFarmer = (event, type = 'add') => {
+        livelihood.value = [];
+        availableAssistance.value = [];
+
+        if (type == 'add') {
+            form.livelihood = '';
+            form.assistance = '';
+        } else {
+            editForm.livelihood = '';
+            editForm.assistance = '';
+        }
+
         const selectedValue = event;
         const mainlivelihood = selectedValue.main_livelihood;
 
@@ -217,7 +228,15 @@
         { id: 'agri_youth', text: 'Agri Youth' },
     ]);
 
-    const handleLivelihood = (event) => {
+    const handleLivelihood = (event, type = 'add') => {
+        availableAssistance.value = [];
+
+        if (type == 'add') {
+            form.assistance = '';
+        } else {
+            editForm.assistance = '';
+        }
+
         const selectedValue = event;
 
         const filteredAssistance = props.assistance.filter(item =>
@@ -229,18 +248,290 @@
 
     const viewDialog = ref(false);
     const _viewAssistance = ref([]);
+    let status = null;
 
     const viewAssistance = (val) => {
         _viewAssistance.value = val;
         viewDialog.value = true;
+        status = computed(() => (_viewAssistance.value.status || '').toLowerCase())
     }
+
 
     const closeViewModal = () => {
         viewDialog.value = false;
+        processing.value = false;
 
         setTimeout(() => {
             _viewAssistance.value = [];
         }, 500);
+    }
+
+    const viewAttachment = (path) => {
+        if (path) {
+            window.open(path);
+        } else {
+            Swal.fire({
+                target: document.getElementById('viewAssistance'),
+                icon: 'warning',
+                title: 'View Attacment',
+                text: 'Attachment not found!'
+            })
+        }
+    }
+
+    const actions = computed(() => ({
+        approve: {
+            show: status.value === 'pending' || status.value === 'approved',
+            nextStatus: status.value === 'pending' ? 'approved' : 'pending',
+            label: status.value === 'pending' ? 'Approve' : 'Undo Approved',
+            classes: 'bg-blue-500 hover:bg-blue-700',
+        },
+        disapprove: {
+            show: status.value === 'pending' || status.value === 'disapproved',
+            nextStatus: status.value === 'pending' ? 'disapproved' : 'pending',
+            label: status.value === 'pending' ? 'Disapprove' : 'Undo Disapproved',
+            classes: 'bg-red-500 hover:bg-red-700',
+        },
+        cancel: {
+            show: status.value === 'pending' || status.value === 'cancelled',
+            nextStatus: status.value === 'pending' ? 'cancelled' : 'pending',
+            label: status.value === 'pending' ? 'Cancel' : 'Undo Cancel',
+            classes: 'bg-zinc-500 hover:bg-zinc-700',
+        },
+    }))
+
+    const updateStatus = (type) => {
+        if (processing.value) return
+
+        processing.value = true
+        const action = actions.value[type]
+        const nextStatus = action.nextStatus;
+
+        Swal.fire({
+            target: document.getElementById('viewAssistance'),
+            icon: 'question',
+            title: action.label + ' Assistance',
+            html: `Are you sure you want to <b>${action.label}</b>?`,
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'No',
+            allowOutsideClick: false,
+            customClass: {
+                popup: 'swal2-above-modal'
+            },
+            input: 'textarea',
+            inputLabel: 'Remarks',
+            preConfirm: (remarks) => {
+                if (!remarks || remarks.trim() === '') {
+                    Swal.showValidationMessage('Remarks is required.')
+                    return false
+                }
+                return remarks
+            },
+        }).then((result) => {
+            if (result.isConfirmed && typeof result.value != 'undefined' && result.value != '') {
+                router.put(`/assistances/update_status/${_viewAssistance.value.id}`, { 
+                    status: action.nextStatus,
+                    remarks: result.value
+                }, {
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                        _viewAssistance.value.status = action.nextStatus
+
+                        const newList = page?.props?.assistances;
+
+                        Swal.fire({
+                            target: document.getElementById('viewAssistance'),
+                            icon: 'success',
+                            title: 'Updated!',
+                            text: 'Status has been updated.',
+                            timer: 2500,
+                            showConfirmButton: true
+                        })
+
+                        const updated = newList.data.find(item =>
+                            item.id == _viewAssistance.value.id
+                        )
+
+                        _viewAssistance.value = {... updated}
+                    },
+                    onError: () => {
+                        Swal.fire({
+                            target: document.getElementById('viewAssistance'),
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Something went wrong.'
+                        })
+                    },
+                    onFinish: () => {
+                        processing.value = false
+                    }
+                })
+            } else {
+                processing.value = false
+            }
+        });
+    }
+
+    const archiveAssistance = (_id) => {
+        const { id } = props.auth.user;
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will be permanently deleted. You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.put(route('assistances.archive_assistance', _id), {id: id}, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        const page = usePage()
+                        const response = page.props.flash?.response
+
+                        if (response?.state) {
+                            Swal.fire({
+                                icon: 'success',
+                                text: 'Assistance succesfully deleted!'
+                            })
+                            } else {
+                            Swal.fire({
+                                icon: 'error',
+                                text: 'Failed to delete assistance!'
+                            })
+                        }
+                    },
+                    onError: () => {
+                        Swal.fire({
+                        icon: 'error',
+                        text: 'Failed to delete assistance!'
+                        })
+                    }
+                })
+            }
+        });
+    }
+
+    const closeEditModal = () => {
+        editDialog.value = false;
+        processing.value = false;
+    }
+
+    const editForm = useForm({
+        id: 0,
+        farmer: null,
+        assistance: null,
+        remarks: null,
+        livelihood: null,
+        attachments: [],
+        user_id: 0
+    })
+
+    const editFormRules = computed(() => {
+        return {
+            id: 0,
+            farmer: { required },
+            assistance: { required },
+            remarks: { required },
+            livelihood: { required },
+            attachments: { required, minLength: minLength(1) },
+            user_id: {}
+        }
+    })
+
+    const y$ = useVuelidate(editFormRules, editForm, {
+        $autoDirty: false
+    })
+
+    const { hasError: editHasError, inputBorderClass: editInputBorderClass, getFieldState: editGetFieldState } = useValidationHelpers(y$, editForm, { autoTouch: true })
+
+    const setFormEditData = (val) => {
+        editDialog.value = true;
+
+        const filterFarmer = props.farmer.filter(item => 
+            item.id == val.farmer_id
+        )
+
+        let mainlivelihood = filterFarmer[0].main_livelihood;
+        const filteredLivelihoods = main_livelihood.value.filter(item =>
+            mainlivelihood.livelihood.includes(item.id)
+        );
+
+        livelihood.value = filteredLivelihoods;
+
+        const filteredAssistance = props.assistance.filter(item =>
+            item.livelihoods.includes(val.livelihood)
+        );
+
+        availableAssistance.value = filteredAssistance;
+
+        editForm.id = val.id;
+        editForm.farmer = val.farmer_id;
+        editForm.assistance = val.assistance_id;
+        editForm.remarks = val.purpose;
+        editForm.livelihood = val.livelihood;
+        
+
+        let _uploaded = [];
+        $.each(val.attachments, function (index, item) {
+            if (item.url) {
+                _uploaded.push(item.url);
+            }
+        });
+        editForm.attachments = _uploaded;
+    }
+
+    const handleEditUploadSuccess = (fileData) => {
+        editForm.attachments = fileData;
+    }
+
+    const submitEditForm = () => {
+        const { id } = props.auth.user;
+
+        processing.value = true;
+        editForm.user_id = id;
+
+        y$.value.$touch();
+        if (!y$.value.$invalid) {
+            editForm.transform((data) => ({
+                ...data,
+                _method: 'put',
+            })).post(route('assistances.update', editForm.id), {
+                onProgress: () => processing.value = true,
+                onSuccess: () => {
+                    const page = usePage();
+                    const response = page.props.flash?.response;
+
+                    if (response.state) {
+                        recentlySuccessful.value = true;
+                        processing.value = false;
+
+                        setTimeout(() => { 
+                            closeEditModal();
+                            editForm.reset();
+                            y$.value.$reset();
+                            livelihood.value = null;
+                            availableAssistance.value = null;
+                        }, 800);
+                        setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                        processing.value = false;
+                    } else { 
+                        recentlyFailed.value = true;
+                        processing.value = false;
+
+                        setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                    }
+                }
+            });
+        } else {
+            processing.value = false;
+        }
     }
 </script>
 
@@ -298,9 +589,9 @@
                                                 <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium inset-ring inset-ring-yellow-400/20"
                                                     :class="{
                                                         'bg-yellow-500 text-white' : item.status.toLowerCase() == 'pending',
-                                                        'bg-green-500 text-white' : item.status.toLowerCase() == 'success',
+                                                        'bg-green-500 text-white' : item.status.toLowerCase() == 'approved',
                                                         'bg-red-500 text-white' : item.status.toLowerCase() == 'disapproved',
-                                                        'bg-zinc-500' : item.status.toLowerCase() == 'cancelled',
+                                                        'bg-zinc-500 text-white' : item.status.toLowerCase() == 'cancelled',
                                                     }">
                                                     {{ item.status }}
                                                 </span>
@@ -349,7 +640,7 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(item.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" v-if="item.status.toLowerCase() != 'approved'"  @click="archiveAssistance(item.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
                                                     <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -370,9 +661,9 @@
                                                 <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium inset-ring inset-ring-yellow-400/20"
                                                     :class="{
                                                         'bg-yellow-500 text-white' : item.status.toLowerCase() == 'pending',
-                                                        'bg-green-500 text-white' : item.status.toLowerCase() == 'success',
+                                                        'bg-green-500 text-white' : item.status.toLowerCase() == 'approved',
                                                         'bg-red-500 text-white' : item.status.toLowerCase() == 'disapproved',
-                                                        'bg-zinc-500' : item.status.toLowerCase() == 'cancelled',
+                                                        'bg-zinc-500 text-white' : item.status.toLowerCase() == 'cancelled',
                                                     }">
                                                     {{ item.status }}
                                                 </span>
@@ -421,7 +712,7 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(item.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" v-if="item.status.toLowerCase() != 'approved'"  @click="archiveAssistance(item.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
                                                     <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -468,7 +759,7 @@
                                 <div class="form-group mb-5">
                                     <InputLabel for="type" value="Name" :required="true" />
                                     <div class="w-80">
-                                        <Select2 class="uppercase mt-1" v-model="form.farmer" :options="props.farmer" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }" @select="handleFarmer" />
+                                        <Select2 class="uppercase mt-1" v-model="form.farmer" :options="props.farmer" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }" @select="handleFarmer($event, 'add')" />
                                     </div>
                                     <p v-if="hasError('farmer')" class="text-red-500 text-sm">
                                         <span class="text-red-500 text-sm" v-if="v$.farmer.required?.$invalid">Farmer is required!</span>
@@ -478,7 +769,7 @@
                                 <div class="form-group mb-5">
                                     <InputLabel for="type" value="Livelihood" :required="true" />
                                     <div class="w-80">
-                                        <Select2 class="uppercase mt-1" v-model="form.livelihood" :options="livelihood" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }" @select="handleLivelihood" :disabled="livelihood ? false : 'disabled'" />
+                                        <Select2 class="uppercase mt-1" v-model="form.livelihood" :options="livelihood" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#newAssistance') }" @select="handleLivelihood($event, 'add')" :disabled="livelihood ? false : 'disabled'" />
                                     </div>
 
                                     <p v-if="hasError('livelihood')" class="text-red-500 text-sm">
@@ -492,7 +783,7 @@
                                         <Select2 class="uppercase mt-1" v-model="form.assistance" :options="availableAssistance" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#newAssistance') }" :disabled="availableAssistance ? false : 'disabled'" />
                                     </div>
                                     <p v-if="hasError('assistance')" class="text-red-500 text-sm">
-                                        <span class="text-red-500 text-sm" v-if="v$.farmer.required?.$invalid">Farmer is required!</span>
+                                        <span class="text-red-500 text-sm" v-if="v$.assistance.required?.$invalid">Assistance is required!</span>
                                     </p>
                                 </div>
                             </div>
@@ -553,9 +844,9 @@
                             <span class="inline-flex items-center rounded-md px-2 py-1 text-md font-medium uppercase inset-ring inset-ring-yellow-400/20"
                                 :class="{
                                     'bg-yellow-500 text-white' : _viewAssistance.status.toLowerCase() == 'pending',
-                                    'bg-green-500 text-white' : _viewAssistance.status.toLowerCase() == 'success',
+                                    'bg-green-500 text-white' : _viewAssistance.status.toLowerCase() == 'approved',
                                     'bg-red-500 text-white' : _viewAssistance.status.toLowerCase() == 'disapproved',
-                                    'bg-zinc-500' : _viewAssistance.status.toLowerCase() == 'cancelled',
+                                    'bg-zinc-500 text-white' : _viewAssistance.status.toLowerCase() == 'cancelled',
                                 }">
                                 {{ _viewAssistance.status }}
                             </span>
@@ -611,24 +902,177 @@
                     <div class="flex flex-wrap flex-row">
                         <div class="w-full">
                             <p class="text-sm text-gray-500 m-0">Attachments</p>
-                            <div class="flex flex-row flex-wrap items-start">
-                                <template v-if="_viewAssistance.attachments && _viewAssistance.attachments.length > 0">
-                                    <a v-for="(item, index) in _viewAssistance.attachments" :key="index" :href="item.url" target="_blank" class="w-10 h-10 bg-gray-100 rounded-md flex flex-col items-center justify-center m-2 p-2">
-                                        <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                                        </svg>
-                                    </a>
-                                </template>
-                                <template v-else>
-                                    <p class="text-sm text-gray-500 mt-2">No attachments found.</p>
-                                </template>
+                            <table  class="w-full text-sm text-left text-gray-500 mt-3">
+                                <thead lass="text-xs text-gray-700 uppercase">
+                                    <tr>
+                                        <!-- <th class="px-3 py-2 w-2/12">File Type</th> -->
+                                        <th class="px-3 py-2 w-6/12">Filename</th>
+                                        <th class="px-3 py-2 w-1/12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template v-if="_viewAssistance.attachments && _viewAssistance.attachments.length > 0">
+                                        <tr class="bg-white border-b" v-for="(item, index) in _viewAssistance.attachments" :key="item.id">
+                                            <!-- <td class="px-3 py-3 font-medium text-gray-900 whitespace-nowrap uppercase text-center">
+                                                <template v-if="isImage(item.extension)">
+                                                    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" title="Image">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M14.2639 15.9375L12.5958 14.2834C11.7909 13.4851 11.3884 13.086 10.9266 12.9401C10.5204 12.8118 10.0838 12.8165 9.68048 12.9536C9.22188 13.1095 8.82814 13.5172 8.04068 14.3326L4.04409 18.2801M14.2639 15.9375L14.6053 15.599C15.4112 14.7998 15.8141 14.4002 16.2765 14.2543C16.6831 14.126 17.12 14.1311 17.5236 14.2687C17.9824 14.4251 18.3761 14.8339 19.1634 15.6514L20 16.4934M14.2639 15.9375L18.275 19.9565M18.275 19.9565C17.9176 20 17.4543 20 16.8 20H7.2C6.07989 20 5.51984 20 5.09202 19.782C4.71569 19.5903 4.40973 19.2843 4.21799 18.908C4.12796 18.7313 4.07512 18.5321 4.04409 18.2801M18.275 19.9565C18.5293 19.9256 18.7301 19.8727 18.908 19.782C19.2843 19.5903 19.5903 19.2843 19.782 18.908C20 18.4802 20 17.9201 20 16.8V16.4934M4.04409 18.2801C4 17.9221 4 17.4575 4 16.8V7.2C4 6.0799 4 5.51984 4.21799 5.09202C4.40973 4.71569 4.71569 4.40973 5.09202 4.21799C5.51984 4 6.07989 4 7.2 4H16.8C17.9201 4 18.4802 4 18.908 4.21799C19.2843 4.40973 19.5903 4.71569 19.782 5.09202C20 5.51984 20 6.0799 20 7.2V16.4934M17 8.99989C17 10.1045 16.1046 10.9999 15 10.9999C13.8954 10.9999 13 10.1045 13 8.99989C13 7.89532 13.8954 6.99989 15 6.99989C16.1046 6.99989 17 7.89532 17 8.99989Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </template>
+
+                                                <template v-if="isDocument(item.extension)">
+                                                    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M3 14V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H13C16.7712 2 18.6569 2 19.8284 3.17157C20.4816 3.82476 20.7706 4.69989 20.8985 6M21 10V14C21 17.7712 21 19.6569 19.8284 20.8284C18.6569 22 16.7712 22 13 22H11C7.22876 22 5.34315 22 4.17157 20.8284C3.51839 20.1752 3.22937 19.3001 3.10149 18" stroke="#000000" stroke-width="1.5" stroke-linecap="round"></path> 
+                                                            <path d="M8 14H13" stroke="#000000" stroke-width="1.5" stroke-linecap="round"></path> 
+                                                            <path d="M8 10H9M16 10H12" stroke="#000000" stroke-width="1.5" stroke-linecap="round"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </template>
+                                            </td> -->
+                                            <td class="px-3 py-3 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.filename }} 
+                                            </td>
+                                            <td class="px-3 py-3 font-medium text-gray-900 whitespace-nowrap uppercase text-center">
+                                                <PrimaryButton class="bg-info-500 hover:bg-info-700 text-white mr-1" @click="viewAttachment(item.url)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94291 16.4788 5 12.0012 5Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template v-else>
+                                        <tr>
+                                            <td colspan="2">No Attachment(s) Found.</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <PrimaryButton
+                    v-if="actions.approve.show"
+                    :class="[actions.approve.classes, 'text-white me-2', { 'opacity-25': processing }]"
+                    :disabled="processing"
+                    @click="updateStatus('approve')"
+                >
+                    {{ actions.approve.label }}
+                </PrimaryButton>
+
+                <!-- DISAPPROVE -->
+                <PrimaryButton
+                    v-if="actions.disapprove.show"
+                    :class="[actions.disapprove.classes, 'text-white me-2', { 'opacity-25': processing }]"
+                    :disabled="processing"
+                    @click="updateStatus('disapprove')"
+                >
+                    {{ actions.disapprove.label }}
+                </PrimaryButton>
+
+                <!-- CANCEL -->
+                <PrimaryButton
+                    v-if="actions.cancel.show"
+                    :class="[actions.cancel.classes, 'text-white me-2', { 'opacity-25': processing }]"
+                    :disabled="processing"
+                    @click="updateStatus('cancel')"
+                >
+                    {{ actions.cancel.label }}
+                </PrimaryButton>
+                <SecondaryButton @click="closeViewModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <DialogModal id="editAssistance" :show="editDialog" :max-width="'3xl'" @close="closeEditModal">
+            <template #title>
+                Edit Assistance
+            </template>
+            <template #content>
+                <div>
+                    <div class="py-3 lg:py-3 bg-white">
+                        <div class="flex flex-row justify-between mb-5">
+                            <div class="w-6/12">
+                                <div class="form-group mb-5">
+                                    <InputLabel for="type" value="Name" :required="true" />
+                                    <div class="w-80">
+                                        <Select2 class="uppercase mt-1" v-model="editForm.farmer" :options="props.farmer" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#editAssistance') }" @select="handleFarmer($event, 'edit')" />
+                                    </div>
+                                    <p v-if="editHasError('farmer')" class="text-red-500 text-sm">
+                                        <span class="text-red-500 text-sm" v-if="y$.farmer.required?.$invalid">Farmer is required!</span>
+                                    </p>
+                                </div>
+
+                                <div class="form-group mb-5">
+                                    <InputLabel for="type" value="Livelihood" :required="true" />
+                                    <div class="w-80">
+                                        <Select2 class="uppercase mt-1" v-model="editForm.livelihood" :options="livelihood" :settings="{ placeholder: 'Select An Option',  width: '100%', dropdownParent: $('#editAssistance') }" @select="handleLivelihood($event, 'edit')" />
+                                    </div>
+
+                                    <p v-if="editHasError('livelihood')" class="text-red-500 text-sm">
+                                        <span class="text-red-500 text-sm" v-if="y$.livelihood.required?.$invalid">Livelihood is required!</span>
+                                    </p>
+                                </div>
+
+                                <div class="form-group mb-2">
+                                    <InputLabel for="type" value="Type of Assistance" :required="true" />
+                                    <div class="w-80">
+                                        <Select2 class="uppercase mt-1" v-model="editForm.assistance" :options="availableAssistance" :settings="{ placeholder: 'Select An Option', width: '100%', dropdownParent: $('#editAssistance') }" />
+                                    </div>
+                                    <p v-if="editHasError('assistance')" class="text-red-500 text-sm">
+                                        <span class="text-red-500 text-sm" v-if="y$.assistance.required?.$invalid">Assistance is required!</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="w-6/12">
+                                <InputLabel for="type" value="Purpose" :required="true" />
+                                <TextAreaInput v-model="editForm.remarks" class="uppercase mt-1 block w-full uppercase" 
+                                    @blur="y$.remarks.$touch()"
+                                    :class="!y$.remarks.$dirty && editForm.remarks ? 'border-gray-300' : editInputBorderClass('remarks')"
+                                />
+                                <p v-if="editHasError('remarks')" class="text-red-500 text-sm mb-1">
+                                    <span class="text-red-500 text-sm" v-if="y$.remarks.required?.$invalid">Purpose is required!</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <hr class="my-6 border-t border-gray-300 mb-4">
+
+                        <div class="flex flex-row">
+                            <div class="w-full">
+                                <InputLabel for="attachments" value="Attachments" :required="true" />
+                                <Dropzone @fileSelected="handleEditUploadSuccess" :uploadedFiles="editForm.attachments" :isMultiple="true" :accepted-files="'.pdf, .jpg, .png'"  />
+                                <p v-if="editHasError('attachments')" class="text-red-500 text-sm mt-1">
+                                    <span class="text-red-500 text-sm" v-if="y$.attachments.required?.$invalid">Attachments is required. Add atleast one attachment.</span>
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </template>
             <template #footer>
-                <SecondaryButton @click="closeViewModal">Close</SecondaryButton>
+                <ActionMessage :on="recentlySuccessful" class="me-3">
+                    Assistance successfully updated.
+                </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update assistance.
+                </ActionMessage>
+                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
+                    :disabled="processing" @click="submitEditForm">Save</PrimaryButton>
+                <SecondaryButton @click="closeEditModal">Close</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>

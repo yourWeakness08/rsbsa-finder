@@ -146,7 +146,7 @@ class AssistanceController extends Controller
 
         Validator::make($input, $rules)->validate();
 
-        $toUpdate = $assistance::find($id);
+        $toUpdate = Assistance::where('id',$id)->first();
         $toUpdate->livelihoods = serialize($request->livelihoods);
         $toUpdate->name = trim(strtolower($request->name));
         $toUpdate->save();
@@ -175,7 +175,7 @@ class AssistanceController extends Controller
         $resultset = array();
 
         if ($id) {
-            $toArchive = $assistance::find($id);
+            $toArchive = Assistance::where('id',$id)->first();
             $toArchive->is_archived = 1;
             $toArchive->archived_by = $request->id;
             $toArchive->save();

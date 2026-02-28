@@ -55,6 +55,7 @@ class AssistancesController extends Controller
             ->leftJoin('farmer_information as e', 'e.id', '=', 'assistances.approved_by')
             ->leftJoin('farmer_information as f', 'f.id', '=', 'assistances.cancelled_by')
             ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
+            ->where('assistances.is_archived', 0)
             ->orderBy('assistances.created_at', 'desc')
             ->where( function($query) use ($request) {
                 if ($request->search) {
@@ -93,6 +94,7 @@ class AssistancesController extends Controller
             ->leftJoin('farmer_information as e', 'e.id', '=', 'assistances.approved_by')
             ->leftJoin('farmer_information as f', 'f.id', '=', 'assistances.cancelled_by')
             ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
+            ->where('assistances.is_archived', 0)
             ->where(function($query) use($request){
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
@@ -113,6 +115,12 @@ class AssistancesController extends Controller
             $attachments->transform(function ($attachment) use ($rs) {
                 $attachment->filepath = public_path('uploads/assistances/assistance_'.$rs->id.'/'.$attachment->filename);
                 $attachment->url = $attachment->filename && file_exists(public_path('uploads/assistances/assistance_'.$rs->id.'/'.$attachment->filename)) ? asset('uploads/assistances/assistance_'.$rs->id.'/'.$attachment->filename) : null;
+
+                if ($attachment->url) {
+                    $extension = pathinfo($attachment->url, PATHINFO_EXTENSION);
+                    $attachment->extension = $extension;
+                }
+
                 return $attachment;
             });
             $assistances[$key]->attachments = $attachments;
@@ -216,9 +224,60 @@ class AssistancesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Assistances $assistances)
-    {
-        //
+    public function update(Request $request, $id, Assistances $assistances){
+        $state = false;
+
+        $toUpdate = Assistances::where('id', $id)->first();
+        $toUpdate->farmer_id = $request->farmer;
+        $toUpdate->assistance_id = $request->assistance;
+        $toUpdate->livelihood = $request->livelihood;
+        $toUpdate->purpose = trim($request->remarks);
+        $toUpdate->updated_by = $request->user_id;
+        $update = $toUpdate->save();
+
+        if ($update) {
+            if ($request->file('attachments') !== null) {
+                Attachments::where('assistance_id', $id)->delete();
+
+                $attachments = (object) $request->file('attachments');
+
+                foreach($attachments as $attachment) {
+                    $_filename = $attachment->getClientOriginalName();
+                    $_destinationPath = "uploads/assistances/assistance_".$id;
+
+                    if(!file_exists(public_path($_destinationPath))){ 
+                        File::makeDirectory(public_path($_destinationPath), 0777, true);
+                    }
+
+                    $_tempFilePath = $_destinationPath."/".$_filename;
+
+                    if(file_exists(public_path($_tempFilePath))){
+                        unlink(public_path($_tempFilePath));
+                    }
+
+                    if(!file_exists(public_path($_tempFilePath))){
+                        $_fileMoved = $attachment->move($_destinationPath, $_filename);
+
+                        if($_fileMoved) {
+                            Attachments::create([
+                                'assistance_id' => $id,
+                                'filename' => $_filename,
+                                'filepath' => $_destinationPath,
+                                'uuid' => Str::random(12)
+                            ]);
+                        }
+                    }
+                }
+                $state = true;
+            }
+
+        }
+
+        return redirect()->back()->with([
+            'response' => [
+                'state' => $state
+            ]
+        ]);
     }
 
     /**
@@ -307,5 +366,78 @@ class AssistancesController extends Controller
 
             return "RSS-$year-$sequence";
         });
+    }
+
+    public function archive_assistance(Request $request, $id, Assistances $assistances) {
+        $state = false;
+
+        if ($id) {
+            $toArchive = Assistances::where('id',$id)->first();
+            $toArchive->is_archived = 1;
+            $toArchive->archived_by = $request->id;
+            $toArchive->archived_at = date('Y-m-d H:i:s');
+            $toArchive->save();
+
+            if ($toArchive) {
+                $state = true;
+            }
+        }
+
+        return back()->with('response', [
+            'state' => $state,
+        ]);
+    }
+
+    public function update_status(Request $request, $id, Assistances $assistances) {
+        $request->validate([
+            'status' => 'required|in:pending,approved,disapproved,cancelled',
+            'remarks' => 'required|string'
+        ]);
+
+        $assistances = Assistances::where('id', $id)->first();
+        $assistances->status = ucfirst($request->status);
+        
+        $_tempStatus = strtolower($request->status);
+        $_remarks = trim($request->remarks);
+        $_date = date('Y-m-d H:i:s');
+        $userId = auth()->id();
+        
+        if ($_tempStatus == 'approved') {
+            $assistances->approved_by = $userId;
+            $assistances->approved_remarks = $_remarks;
+            $assistances->approved_at = $_date;
+        }
+
+        if ($_tempStatus == 'disapproved') {
+            $assistances->disapproved_by = $userId;
+            $assistances->disapproved_remarks = $_remarks;
+            $assistances->disapproved_at = $_date;
+        }
+
+        if ($_tempStatus == 'cancelled') {
+            $assistances->cancelled_by = $userId;
+            $assistances->cancelled_remarks = $_remarks;
+            $assistances->cancelled_at = $_date;
+        }
+
+        if ($_tempStatus == 'pending') {
+            $assistances->approved_by = 0;
+            $assistances->approved_remarks = null;
+            $assistances->approved_at = null;
+            $assistances->disapproved_by = 0;
+            $assistances->disapproved_remarks = null;
+            $assistances->disapproved_at = null;
+            $assistances->cancelled_by = 0;
+            $assistances->cancelled_remarks = null;
+            $assistances->cancelled_at = null;
+        }
+
+        $state = $assistances->save();
+
+        return redirect()->back()->with([
+            'response' => [
+                'state' => $state
+            ]
+        ]);
     }
 }
