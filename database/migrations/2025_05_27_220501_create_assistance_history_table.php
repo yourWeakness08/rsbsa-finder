@@ -31,6 +31,10 @@ return new class extends Migration
             $table->datetime('disapproved_at')->nullable();
             $table->text('remarks')->nullable();
             $table->integer('created_by')->default(0);
+            $table->integer('updated_by')->default(0);
+            $table->integer('is_archived')->default(0);
+            $table->integer('archived_by')->default(0);
+            $table->datetime('archived_at')->nullable();
             $table->string('uuid')->unique(12);
             $table->timestamps();
         });

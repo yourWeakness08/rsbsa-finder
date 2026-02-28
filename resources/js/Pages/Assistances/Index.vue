@@ -197,7 +197,7 @@
                         v$.value.$reset();
                         livelihood.value = null;
                         availableAssistance.value = null;
-                    } else {
+                    } else { 
                         recentlyFailed.value = true;
                         processing.value = false;
 
@@ -227,8 +227,20 @@
         availableAssistance.value = filteredAssistance;
     }
 
-    const viewAssistance = () => {
-        
+    const viewDialog = ref(false);
+    const _viewAssistance = ref([]);
+
+    const viewAssistance = (val) => {
+        _viewAssistance.value = val;
+        viewDialog.value = true;
+    }
+
+    const closeViewModal = () => {
+        viewDialog.value = false;
+
+        setTimeout(() => {
+            _viewAssistance.value = [];
+        }, 500);
     }
 </script>
 
@@ -423,7 +435,7 @@
                                     </template>
                                     <template v-else>
                                         <tr>
-                                            <td colspan="5" class="px-6 py-4 text-center">No assistance found.</td>
+                                            <td colspan="7" class="px-6 py-4 text-center">No assistance found.</td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -520,6 +532,103 @@
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitForm">Save</PrimaryButton>
                 <SecondaryButton @click="closeModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <DialogModal id="viewAssistance" :show="viewDialog" :max-width="'xl'" @close="closeViewModal">
+            <template #title>
+                View Assistance
+            </template>
+            <template #content>
+                <div class="uppercase">
+                    <div class="flex flex-row flex-wrap mb-3 justify-between items-center">
+                        <div class="w-6/12">
+                            <p class="m-0">
+                                Reference No: 
+                                <b>{{ _viewAssistance.reference_no }}</b>
+                            </p>
+                        </div>
+                        <div class="w-6/12">
+                            <label class="text-sm text-gray-500 me-3">Status</label>
+                            <span class="inline-flex items-center rounded-md px-2 py-1 text-md font-medium uppercase inset-ring inset-ring-yellow-400/20"
+                                :class="{
+                                    'bg-yellow-500 text-white' : _viewAssistance.status.toLowerCase() == 'pending',
+                                    'bg-green-500 text-white' : _viewAssistance.status.toLowerCase() == 'success',
+                                    'bg-red-500 text-white' : _viewAssistance.status.toLowerCase() == 'disapproved',
+                                    'bg-zinc-500' : _viewAssistance.status.toLowerCase() == 'cancelled',
+                                }">
+                                {{ _viewAssistance.status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex flex-row justify-between mb-5">
+                        <div class="w-6/12">
+                            <p class="text-sm text-gray-500 m-0">Name</p>
+                            <h2 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.name }}</h2>
+                            <p class="m-0">
+                                <small>Applied Livelihood: <b>{{ _viewAssistance.livelihood.toUpperCase() }}</b> </small>
+                            </p>
+                        </div>
+                        <div class="w-6/12">
+                            <p class="text-sm text-gray-500 m-0">Type of Assistance</p>
+                            <h2 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.assistance_name }}</h2>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-start mb-3">
+                        <div class="w-12/12">
+                            <p class="text-sm text-gray-500 m-0">Purpose</p>
+                            <h2 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.purpose }}</h2>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-t border-gray-300" />
+
+                    <div class="flex flex-wrap flex-row items-start justify-between">
+                        <div class="w-5/12">
+                            <p class="text-sm text-gray-500 m-0">Created By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.created_name }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.created_at) }}</h4>
+                        </div>
+                        <div class="w-5/12" v-if="_viewAssistance.approved_name && _viewAssistance.approved_at">
+                            <p class="text-sm text-gray-500 m-0">Approved By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.approved_name ? _viewAssistance.approved_name : 'Not Approved Yet' }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.approved_at) }}</h4>
+                        </div>
+                        <div class="w-5/12" v-if="_viewAssistance.disapproved_name && _viewAssistance.disapproved_at">
+                            <p class="text-sm text-gray-500 m-0">Disapproved By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.disapproved_name ? _viewAssistance.disapproved_name : 'Not Disapproved Yet' }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.disapproved_at) }}</h4>
+                        </div>
+                        <div class="w-5/12" v-if="_viewAssistance.cancelled_name && _viewAssistance.cancelled_at">
+                            <p class="text-sm text-gray-500 m-0">Cancelled By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.cancelled_name ? _viewAssistance.cancelled_name : 'Not Cancelled Yet' }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.cancelled_at) }}</h4>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-t border-gray-300" />
+
+                    <div class="flex flex-wrap flex-row">
+                        <div class="w-full">
+                            <p class="text-sm text-gray-500 m-0">Attachments</p>
+                            <div class="flex flex-row flex-wrap items-start">
+                                <template v-if="_viewAssistance.attachments && _viewAssistance.attachments.length > 0">
+                                    <a v-for="(item, index) in _viewAssistance.attachments" :key="index" :href="item.url" target="_blank" class="w-10 h-10 bg-gray-100 rounded-md flex flex-col items-center justify-center m-2 p-2">
+                                        <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                        </svg>
+                                    </a>
+                                </template>
+                                <template v-else>
+                                    <p class="text-sm text-gray-500 mt-2">No attachments found.</p>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <SecondaryButton @click="closeViewModal">Close</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>
