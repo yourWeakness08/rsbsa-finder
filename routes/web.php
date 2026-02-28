@@ -13,6 +13,7 @@ use App\Http\Controllers\FarmingTypeController;
 use App\Http\Controllers\PublicPostController;
 use App\Http\Controllers\AssistanceController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AssistancesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +66,7 @@ Route::middleware([
     ])->parameters([ 'assistance'=>'id' ]);
 
     // change to assistance masterfile that has a approval of assistance
-    Route::resource('/assistances', AssistanceController::class)->only([
+    Route::resource('/assistances', AssistancesController::class)->only([
         'index', 'create', 'store', 'update', 'destroy'
     ])->parameters([ 'assistances'=>'id' ]);
 
@@ -79,6 +80,8 @@ Route::middleware([
     Route::get('/search', [FarmersController::class, 'search'])->name('farmers.search');
     Route::post('/farmers/save_attachments/{id}', [FarmersController::class, 'save_attachments'])->name('farmers.save_attachments');
     Route::put('/farmers/archive_attachment/{id}', [FarmersController::class, 'archive_attachment'])->name('farmers.archive_attachment');
+    Route::put('/assistances/archive_assistance/{id}', [AssistancesController::class, 'archive_assistance'])->name('assistances.archive_assistance');
+    Route::put('/assistances/update_status/{id}', [AssistancesController::class, 'update_status'])->name('assistances.update_status');
 
     Route::prefix('reports')->name('reports.')->group( function() {
         Route::match(['get', 'post'], '/assistance', [AssistanceController::class, 'reports'])->name('assistance');

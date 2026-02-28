@@ -23,6 +23,10 @@ const props = defineProps({
   isMultiple: {
     type: Boolean,
     default: false
+  },
+  acceptedFiles: {
+    type: String,
+    default: '.pdf'
   }
 })
 
@@ -38,7 +42,7 @@ onMounted(() => {
       url: '/upload', // change to your upload endpoint
       paramName: 'file',
       maxFilesize: 2, // MB
-      acceptedFiles: '.pdf',
+      acceptedFiles: props.acceptedFiles,
       clickable: true,
       autoProcessQueue: false,
       maxFiles: props.maxFile
@@ -141,6 +145,35 @@ onMounted(() => {
               .catch((err) => {
                 console.error(err);
               });
+          }
+        }else {
+          if (props.uploadedFiles.length > 0) {
+            $.each(props.uploadedFiles, function (index, item) {
+              const url = encodeURI(item);
+              const filename = decodeURIComponent(url.split('/').pop());
+
+              fetch(url).then(async (res) => {
+                if (!res.ok) throw new Error("Failed to fetch file: " + res.status);
+                return await res.blob();
+              }).then((blob) => {
+                const file = new File([blob], filename, {
+                  type: blob.type || "application/pdf",
+                });
+
+                file.url = url;
+
+                x.addFile(file);
+
+                file.previewElement?.classList.add("dz-success");
+                x.emit("success", file, {});
+                x.emit("complete", file);
+
+              }).catch((err) => {
+                console.error(err);
+              });
+            });
+
+            emit("fileSelected", [...props.uploadedFiles]);
           }
         }
       }

@@ -20,9 +20,9 @@
     <div class="-translate-x-full ease-in fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-white lg:translate-x-0 lg:static lg:inset-0">
       <Link class="flex flex-wrap items-center justify-center mt-8" :href="route('dashboard')">
         <div class="w-full">
-          <ApplicationMark class="block h-24 w-24 mx-auto" />
+          <ApplicationMark class="block h-24 w-50 mx-auto" />
         </div>
-        <span class="mx-2 text-2xl w-12/12 font-semibold">RSBA</span>
+        <span class="mx-2 text-2xl w-12/12 font-semibold">RRS</span>
       </Link>
 
       <nav class="mt-5">

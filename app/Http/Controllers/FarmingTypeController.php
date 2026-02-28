@@ -107,7 +107,7 @@ class FarmingTypeController extends Controller
         $resultset = array();
 
         if ($id) {
-            $toUpdate = $farmingType::find($id);
+            $toUpdate = FarmingType::where('id', $id)->first();
             $toUpdate->type = $request->type;
             $toUpdate->name = trim(strtolower($request->name));
             $toUpdate->updated_by = $request->user_id;
@@ -135,7 +135,7 @@ class FarmingTypeController extends Controller
         $resultset = array();
 
         if ($id) {
-            $toArchive = $farmingType::find($id);
+            $toArchive = FarmingType::where('id', $id)->first();
             $toArchive->is_archived = 1;
             $toArchive->archived_by = $request->id;
             $toArchive->archived_at = date('Y-m-d H:i:s');

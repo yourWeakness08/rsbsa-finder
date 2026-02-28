@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assistance;
-use App\Models\AssistanceHistory;
+use App\Models\Assistances;
 use App\Models\FarmerInformation;
 use App\Models\OthersFarmerInformation;
 use App\Models\FarmParcel;
@@ -594,7 +594,7 @@ class FarmersController extends Controller
         });
 
         $paginate = $request->paginate ? intval($request->paginate): 10;
-        $assistanceHistory = AssistanceHistory::from('assistance_history as a')
+        $assistances = Assistances::from('assistances as a')
             ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
             ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
             ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
@@ -608,10 +608,10 @@ class FarmersController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->paginate($paginate, '*', 'history_page');
-        $assistanceHistory->appends(['paginate' => $paginate]);
+        $assistances->appends(['paginate' => $paginate]);
 
         if($request->paginate == 'All'){
-            $assistanceHistory = AssistanceHistory::from('assistance_history as a')
+            $assistances = Assistances::from('assistances as a')
                 ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
                 ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
                 ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
@@ -625,7 +625,7 @@ class FarmersController extends Controller
                 })
                 ->orderBy('created_at', 'desc')
                 ->get();
-            $assistanceHistory->all();
+            $assistances->all();
         }
 
         $assistance = Assistance::select(DB::raw('livelihoods, id, name'))->where('is_archived', 0)->get();
@@ -645,7 +645,7 @@ class FarmersController extends Controller
         }
 
         return Inertia::render(
-            'Farmers/View', ['farmer' => $farmer, 'types' => $grouped, 'history' => $assistanceHistory, 'attachments' => $attachments, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
+            'Farmers/View', ['farmer' => $farmer, 'types' => $grouped, 'history' => $assistances, 'attachments' => $attachments, 'assistance' => $assistanceCollection, 'allassistance' => $allassistanceCollection]
         );
     }
 

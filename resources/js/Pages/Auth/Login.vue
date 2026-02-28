@@ -37,8 +37,7 @@ console.log(route('login').params);
     <AuthenticationCard>
         <template class="flex justify-center" #logo>
             <AuthenticationCardLogo :href="'/login'" />
-            
-            <h4 class="font-semibold uppercase mt-3 text-center">Registry System for Basic Sectors <br> in Agriculture</h4>
+            <h4 class="font-semibold uppercase mt-3 text-center">Hinigaran RRS Farmers and Fisherfolks <br> Information System</h4>
         </template>
 
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
