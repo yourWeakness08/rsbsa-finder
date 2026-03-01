@@ -13,6 +13,7 @@ use App\Models\FarmProfile;
 use App\Models\MainLivelihood;
 use App\Models\FarmingType;
 use App\Models\Attachments;
+use App\Models\AssistancesAttachments;
 use App\Models\CorrectedVerified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -593,39 +594,116 @@ class FarmersController extends Controller
             ];
         });
 
+        //here
         $paginate = $request->paginate ? intval($request->paginate): 10;
-        $assistances = Assistances::from('assistances as a')
-            ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
-            ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
-            ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
-            ->where('a.farmer_id', $farmer->id)
+        $assistances = Assistances::leftJoin('users as b', 'b.id', '=', 'assistances.created_by')
+            ->select(DB::raw("assistances.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
+                    c.firstname, ' ',
+                    IF(c.middlename IS NOT NULL AND c.middlename != '', CONCAT(LEFT(c.middlename, 1), '. '), ''),
+                    c.lastname,
+                    IF(c.suffix IS NOT NULL AND c.suffix != '', CONCAT(' ', c.suffix), '')
+                ) AS name, d.name as assistance_name, CONCAT(
+                    IF(e.firstname IS NOT NULL AND e.firstname != '', CONCAT(e.firstname, ' '), ''),
+                    IF(e.middlename IS NOT NULL AND e.middlename != '', CONCAT(LEFT(e.middlename, 1), '. '), ''),
+                    IF(e.lastname IS NOT NULL AND e.lastname != '', CONCAT(e.lastname, ' '), ''),
+                    IF(e.suffix IS NOT NULL AND e.suffix != '', CONCAT(e.suffix, ' '), '')
+                ) AS approved_name, CONCAT(
+                    IF(f.firstname IS NOT NULL AND f.firstname != '', CONCAT(f.firstname, ' '), ''),
+                    IF(f.middlename IS NOT NULL AND f.middlename != '', CONCAT(LEFT(f.middlename, 1), '. '), ''),
+                    IF(f.lastname IS NOT NULL AND f.lastname != '', CONCAT(f.lastname, ' '), ''),
+                    IF(f.suffix IS NOT NULL AND f.suffix != '', CONCAT(f.suffix, ' '), '')
+                ) AS cancelled_name, CONCAT(
+                    IF(g.firstname IS NOT NULL AND g.firstname != '', CONCAT(g.firstname, ' '), ''),
+                    IF(g.middlename IS NOT NULL AND g.middlename != '', CONCAT(LEFT(g.middlename, 1), '. '), ''),
+                    IF(g.lastname IS NOT NULL AND g.lastname != '', CONCAT(g.lastname, ' '), ''),
+                    IF(g.suffix IS NOT NULL AND g.suffix != '', CONCAT(g.suffix, ' '), '')
+                ) AS disapproved_name, CONCAT(
+                    IF(h.firstname IS NOT NULL AND h.firstname != '', CONCAT(h.firstname, ' '), ''),
+                    IF(h.middlename IS NOT NULL AND h.middlename != '', CONCAT(LEFT(h.middlename, 1), '. '), ''),
+                    IF(h.lastname IS NOT NULL AND h.lastname != '', CONCAT(h.lastname, ' '), ''),
+                    IF(h.suffix IS NOT NULL AND h.suffix != '', CONCAT(h.suffix, ' '), '')
+                ) AS updated_name"))
+            ->leftJoin('farmer_information as c', 'c.id', '=', 'assistances.farmer_id')
+            ->leftJoin('assistance as d', 'd.id', '=', 'assistances.assistance_id')
+            ->leftJoin('farmer_information as e', 'e.id', '=', 'assistances.approved_by')
+            ->leftJoin('farmer_information as f', 'f.id', '=', 'assistances.cancelled_by')
+            ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
+            ->leftJoin('farmer_information as h', 'h.id', '=', 'assistances.updated_by')
+            ->where('assistances.is_archived', 0)
+            ->where('assistances.farmer_id', $farmer->id)
+            ->orderBy('assistances.created_at', 'desc')
             ->where( function($query) use ($request) {
                 if ($request->search) {
-                    $query->where('a.livelihood', 'like', '%'.$request->search.'%')
-                    ->orWhere('c.name', 'like', '%'.$request->search.'%')
-                    ->orWhere('a.remarks', 'like', '%'.$request->search.'%');
+                    $query->where('assistances.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate($paginate, '*', 'history_page');
+            })->paginate($paginate);
         $assistances->appends(['paginate' => $paginate]);
 
         if($request->paginate == 'All'){
-            $assistances = Assistances::from('assistances as a')
-                ->select(DB::raw('a.*, CONCAT(b.firstname, " ", b.lastname) as created_name'))
-                ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
-                ->leftJoin('assistance as c', 'c.id', '=', 'a.assistance_id',)
-                ->where('a.farmer_id', $farmer->id)
-                ->where( function($query) use ($request) {
-                    if ($request->search) {
-                        $query->where('a.livelihood', 'like', '%'.$request->search.'%')
-                        ->orWhere('c.name', 'like', '%'.$request->search.'%')
-                        ->orWhere('a.remarks', 'like', '%'.$request->search.'%');
-                    }
-                })
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $assistances = Assistances::LeftJoin('users as b', 'b.id', '=', 'assistances.created_by')
+            ->select(DB::raw("assistances.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
+                    c.firstname, ' ',
+                    IF(c.middlename IS NOT NULL AND c.middlename != '', CONCAT(LEFT(c.middlename, 1), '. '), ''),
+                    c.lastname,
+                    IF(c.suffix IS NOT NULL AND c.suffix != '', CONCAT(' ', c.suffix), '')
+                ) AS name, d.name as assistance_name, CONCAT(
+                    IF(e.firstname IS NOT NULL AND e.firstname != '', CONCAT(e.firstname, ' '), ''),
+                    IF(e.middlename IS NOT NULL AND e.middlename != '', CONCAT(LEFT(e.middlename, 1), '. '), ''),
+                    IF(e.lastname IS NOT NULL AND e.lastname != '', CONCAT(e.lastname, ' '), ''),
+                    IF(e.suffix IS NOT NULL AND e.suffix != '', CONCAT(e.suffix, ' '), '')
+                ) AS approved_name, CONCAT(
+                    IF(f.firstname IS NOT NULL AND f.firstname != '', CONCAT(f.firstname, ' '), ''),
+                    IF(f.middlename IS NOT NULL AND f.middlename != '', CONCAT(LEFT(f.middlename, 1), '. '), ''),
+                    IF(f.lastname IS NOT NULL AND f.lastname != '', CONCAT(f.lastname, ' '), ''),
+                    IF(f.suffix IS NOT NULL AND f.suffix != '', CONCAT(f.suffix, ' '), '')
+                ) AS cancelled_name, CONCAT(
+                    IF(g.firstname IS NOT NULL AND g.firstname != '', CONCAT(g.firstname, ' '), ''),
+                    IF(g.middlename IS NOT NULL AND g.middlename != '', CONCAT(LEFT(g.middlename, 1), '. '), ''),
+                    IF(g.lastname IS NOT NULL AND g.lastname != '', CONCAT(g.lastname, ' '), ''),
+                    IF(g.suffix IS NOT NULL AND g.suffix != '', CONCAT(g.suffix, ' '), '')
+                ) AS disapproved_name, CONCAT(
+                    IF(h.firstname IS NOT NULL AND e.firstname != '', CONCAT(h.firstname, ' '), ''),
+                    IF(h.middlename IS NOT NULL AND e.middlename != '', CONCAT(LEFT(h.middlename, 1), '. '), ''),
+                    IF(h.lastname IS NOT NULL AND e.lastname != '', CONCAT(h.lastname, ' '), ''),
+                    IF(h.suffix IS NOT NULL AND e.suffix != '', CONCAT(h.suffix, ' '), '')
+                ) AS updated_name"))
+            ->leftJoin('farmer_information as c', 'c.id', '=', 'assistances.farmer_id')
+            ->leftJoin('assistance as d', 'd.id', '=', 'assistances.assistance_id')
+            ->leftJoin('farmer_information as e', 'e.id', '=', 'assistances.approved_by')
+            ->leftJoin('farmer_information as f', 'f.id', '=', 'assistances.cancelled_by')
+            ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
+            ->leftJoin('farmer_information as h', 'h.id', '=', 'assistances.updated_by')
+            ->where('assistances.is_archived', 0)
+            ->where('assistances.farmer_id', $farmer->id)
+            ->where(function($query) use($request){
+                if ($request->search) {
+                    $query->where('assistances.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
+                }
+            })
+            ->orderBy('assistances.created_at', 'desc')
+            ->get();
             $assistances->all();
+        }
+
+        foreach($assistances as $key => $rs) {
+            $_attachments = AssistancesAttachments::select('filename')
+                ->where('assistance_id', $rs->id)
+                ->get();
+
+            $_attachments->transform(function ($attachment) use ($rs) {
+                $attachment->filepath = public_path('uploads/assistances/assistance_'.$rs->id.'/'.$attachment->filename);
+                $attachment->url = $attachment->filename && file_exists(public_path('uploads/assistances/assistance_'.$rs->id.'/'.$attachment->filename)) ? asset('uploads/assistances/assistance_'.$rs->id.'/'.$attachment->filename) : null;
+
+                if ($attachment->url) {
+                    $extension = pathinfo($attachment->url, PATHINFO_EXTENSION);
+                    $attachment->extension = $extension;
+                }
+
+                return $attachment;
+            });
+            $assistances[$key]->attachments = $_attachments;
         }
 
         $assistance = Assistance::select(DB::raw('livelihoods, id, name'))->where('is_archived', 0)->get();
