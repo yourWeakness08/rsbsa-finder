@@ -49,12 +49,18 @@ class AssistancesController extends Controller
                     IF(g.middlename IS NOT NULL AND g.middlename != '', CONCAT(LEFT(g.middlename, 1), '. '), ''),
                     IF(g.lastname IS NOT NULL AND g.lastname != '', CONCAT(g.lastname, ' '), ''),
                     IF(g.suffix IS NOT NULL AND g.suffix != '', CONCAT(g.suffix, ' '), '')
-                ) AS disapproved_name"))
+                ) AS disapproved_name, CONCAT(
+                    IF(h.firstname IS NOT NULL AND e.firstname != '', CONCAT(h.firstname, ' '), ''),
+                    IF(h.middlename IS NOT NULL AND e.middlename != '', CONCAT(LEFT(h.middlename, 1), '. '), ''),
+                    IF(h.lastname IS NOT NULL AND e.lastname != '', CONCAT(h.lastname, ' '), ''),
+                    IF(h.suffix IS NOT NULL AND e.suffix != '', CONCAT(h.suffix, ' '), '')
+                ) AS updated_name"))
             ->leftJoin('farmer_information as c', 'c.id', '=', 'assistances.farmer_id')
             ->leftJoin('assistance as d', 'd.id', '=', 'assistances.assistance_id')
             ->leftJoin('farmer_information as e', 'e.id', '=', 'assistances.approved_by')
             ->leftJoin('farmer_information as f', 'f.id', '=', 'assistances.cancelled_by')
             ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
+            ->leftJoin('farmer_information as h', 'h.id', '=', 'assistances.updated_by')
             ->where('assistances.is_archived', 0)
             ->orderBy('assistances.created_at', 'desc')
             ->where( function($query) use ($request) {
@@ -88,12 +94,18 @@ class AssistancesController extends Controller
                     IF(g.middlename IS NOT NULL AND g.middlename != '', CONCAT(LEFT(g.middlename, 1), '. '), ''),
                     IF(g.lastname IS NOT NULL AND g.lastname != '', CONCAT(g.lastname, ' '), ''),
                     IF(g.suffix IS NOT NULL AND g.suffix != '', CONCAT(g.suffix, ' '), '')
-                ) AS disapproved_name"))
+                ) AS disapproved_name, CONCAT(
+                    IF(h.firstname IS NOT NULL AND e.firstname != '', CONCAT(h.firstname, ' '), ''),
+                    IF(h.middlename IS NOT NULL AND e.middlename != '', CONCAT(LEFT(h.middlename, 1), '. '), ''),
+                    IF(h.lastname IS NOT NULL AND e.lastname != '', CONCAT(h.lastname, ' '), ''),
+                    IF(h.suffix IS NOT NULL AND e.suffix != '', CONCAT(h.suffix, ' '), '')
+                ) AS updated_name"))
             ->leftJoin('farmer_information as c', 'c.id', '=', 'assistances.farmer_id')
             ->leftJoin('assistance as d', 'd.id', '=', 'assistances.assistance_id')
             ->leftJoin('farmer_information as e', 'e.id', '=', 'assistances.approved_by')
             ->leftJoin('farmer_information as f', 'f.id', '=', 'assistances.cancelled_by')
             ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
+            ->leftJoin('farmer_information as h', 'h.id', '=', 'assistances.updated_by')
             ->where('assistances.is_archived', 0)
             ->where(function($query) use($request){
                 if ($request->search) {

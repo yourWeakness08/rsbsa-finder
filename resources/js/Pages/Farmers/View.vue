@@ -189,7 +189,6 @@
                 'text': type == 'document' ? 'Document not found.' : 'Attachment not found.'
             })
         } else {
-            console.log(path)
             window.open(path);
         }
     }
@@ -778,14 +777,12 @@
             delete formData.search
         }
 
-        if (formData.search) {
-            router.visit(route('farmers.view', props.farmer.id), {
-                method: 'get',
-                data: formData,
-                preserveState: true,
-                only: ['history']
-            });
-        }
+        router.visit(route('farmers.view', props.farmer.id), {
+            method: 'get',
+            data: formData,
+            preserveState: true,
+            only: ['history']
+        });
     }, 1000);
 
     watch(searchValue, (val) => {
@@ -1483,7 +1480,17 @@
         { deep: true, immediate: true }
     )
 
-    
+    const viewDialog = ref(false);
+    const _viewAssistance = ref([]);
+
+    const viewAssistance = (val) => {
+        _viewAssistance.value = val;
+        viewDialog.value = true;
+    }
+
+    const closeViewModal = () => {
+        viewDialog.value = false;
+    }
 </script>
 
 <template>
@@ -2448,22 +2455,12 @@
                                 </div>
                             </template>
 
+                            <!-- here -->
                             <template #assistance>
                                 <div class="p-3">
                                     <div class="w-full">
                                         <div class="flex flex-row justify-between align-center">
-                                            <div class="md:w-1/6">
-                                                <!-- <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white" @click="createAssistanceDialog = true" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
-                                                    <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="#fff">
-                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                                                        <g id="SVGRepo_iconCarrier"> 
-                                                            <path fill="#fff" fill-rule="evenodd" d="M9 17a1 1 0 102 0v-6h6a1 1 0 100-2h-6V3a1 1 0 10-2 0v6H3a1 1 0 000 2h6v6z"></path> 
-                                                        </g>
-                                                    </svg>
-                                                    New
-                                                </PrimaryButton> -->
-                                            </div>
+                                            <div class="md:w-1/6"></div>
                                             <div class="md:w-3/12">
                                                 <TextInput v-model="searchValue" type="text" class="block w-full h-10" placeholder="Search" autocomplete="off" />
                                             </div>
@@ -2471,41 +2468,102 @@
                                         <table class="w-full text-sm text-left text-gray-500">
                                             <thead class="text-xs text-gray-700 uppercase">
                                                 <tr>
-                                                    <th class="px-4 py-3">Assistance</th>
-                                                    <th class="px-4 py-3">Livelihood</th>
-                                                    <th class="px-4 py-3">Amount</th>
-                                                    <th class="px-4 py-4">Remarks</th>
-                                                    <th class="px-4 py-3">Created By</th>
+                                                    <th scope="col" class="px-6 py-3 w-2/12">Ref No.</th>
+                                                    <th scope="col" class="px-6 py-3 w-2/12">Status</th>
+                                                    <th scope="col" class="px-6 py-3 w-2/12">Assistance</th>
+                                                    <th scope="col" class="px-6 py-3 w-3/12">Purpose</th>
+                                                    <th scope="col" class="px-6 py-3 w-2/12">Created By</th>
+                                                    <th scope="col" class="px-6 py-3 w-3/12">&nbsp;</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <template v-if="history.total > 0">
                                                     <template v-for="(item, index) in history.data" :key="index">
-                                                        <tr class="bg-white border-b">
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ assistanceFormat(item.assistance_id) }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.livelihood }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.amount ? item.amount : ' --- '}}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.remarks }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
+                                                        <tr class="bg-white border-b" v-for="(item, index) in history.data" :key="item.id">
+                                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                                {{ item.reference_no }}
+                                                            </td>
+                                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                                <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium inset-ring inset-ring-yellow-400/20"
+                                                                    :class="{
+                                                                        'bg-yellow-500 text-white' : item.status.toLowerCase() == 'pending',
+                                                                        'bg-green-500 text-white' : item.status.toLowerCase() == 'approved',
+                                                                        'bg-red-500 text-white' : item.status.toLowerCase() == 'disapproved',
+                                                                        'bg-zinc-500 text-white' : item.status.toLowerCase() == 'cancelled',
+                                                                    }">
+                                                                    {{ item.status }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                                <p class="m-0">
+                                                                    <small>Applied Livelihood: <b>{{ item.livelihood.toUpperCase() }}</b> </small>
+                                                                </p>
+                                                                {{ item.assistance_name }}
+                                                            </td>
+                                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                                {{ item.purpose }}
+                                                            </td>
+                                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                                 <p class="font-semibold">{{ item.created_name }}</p>
-                                                                <small>{{ dateTimeFormat(item.created_at) }}</small>
+                                                                <small>{{ dateFormat(item.created_at) }}</small>
+                                                            </td>
+                                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                                <PrimaryButton class="bg-gray-800 hover:bg-gray-700 text-white mr-1" @click="viewAssistance(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                                        <g id="SVGRepo_iconCarrier"> 
+                                                                            <path d="M9 4.45962C9.91153 4.16968 10.9104 4 12 4C16.1819 4 19.028 6.49956 20.7251 8.70433C21.575 9.80853 22 10.3606 22 12C22 13.6394 21.575 14.1915 20.7251 15.2957C19.028 17.5004 16.1819 20 12 20C7.81811 20 4.97196 17.5004 3.27489 15.2957C2.42496 14.1915 2 13.6394 2 12C2 10.3606 2.42496 9.80853 3.27489 8.70433C3.75612 8.07914 4.32973 7.43025 5 6.82137" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"></path>
+                                                                            <path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z" stroke="#ffffff" stroke-width="1.5"></path> 
+                                                                        </g>
+                                                                    </svg>
+                                                                </PrimaryButton>
                                                             </td>
                                                         </tr>
                                                     </template>
                                                 </template>
                                                 <template v-else-if="history.length > 0">
-                                                    <template v-for="(item, index) in history" :key="index">
-                                                        <tr class="bg-white border-b">
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ assistanceFormat(item.assistance_id) }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.livelihood }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.amount ? item.amount : ' --- ' }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{{ item.remarks }}</td>
-                                                            <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
-                                                                <p class="font-semibold">{{ item.created_name }}</p>
-                                                                <small>{{ dateTimeFormat(item.created_at) }}</small>
-                                                            </td>
-                                                        </tr>
-                                                    </template>
+                                                    <tr class="bg-white border-b" v-for="(item, index) in history" :key="item.id">
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            {{ item.reference_no }}
+                                                        </td>
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium inset-ring inset-ring-yellow-400/20"
+                                                                :class="{
+                                                                    'bg-yellow-500 text-white' : item.status.toLowerCase() == 'pending',
+                                                                    'bg-green-500 text-white' : item.status.toLowerCase() == 'approved',
+                                                                    'bg-red-500 text-white' : item.status.toLowerCase() == 'disapproved',
+                                                                    'bg-zinc-500 text-white' : item.status.toLowerCase() == 'cancelled',
+                                                                }">
+                                                                {{ item.status }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            <p class="m-0">
+                                                                <small>Applied Livelihood: <b>{{ item.livelihood.toUpperCase() }}</b> </small>
+                                                            </p>
+                                                            {{ item.assistance_name }}
+                                                        </td>
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            {{ item.purpose }}
+                                                        </td>
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            <p class="font-semibold">{{ item.created_name }}</p>
+                                                            <small>{{ dateFormat(item.created_at) }}</small>
+                                                        </td>
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            <PrimaryButton class="bg-gray-800 hover:bg-gray-700 text-white mr-1" @click="viewAssistance(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                                    <g id="SVGRepo_iconCarrier"> 
+                                                                        <path d="M9 4.45962C9.91153 4.16968 10.9104 4 12 4C16.1819 4 19.028 6.49956 20.7251 8.70433C21.575 9.80853 22 10.3606 22 12C22 13.6394 21.575 14.1915 20.7251 15.2957C19.028 17.5004 16.1819 20 12 20C7.81811 20 4.97196 17.5004 3.27489 15.2957C2.42496 14.1915 2 13.6394 2 12C2 10.3606 2.42496 9.80853 3.27489 8.70433C3.75612 8.07914 4.32973 7.43025 5 6.82137" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"></path>
+                                                                        <path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z" stroke="#ffffff" stroke-width="1.5"></path> 
+                                                                    </g>
+                                                                </svg>
+                                                            </PrimaryButton>
+                                                        </td>
+                                                    </tr>
                                                 </template>
                                                 <template v-else>
                                                     <tr class="bg-white border-b">
@@ -2520,7 +2578,6 @@
                                                     <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                                 </div>
                                                 <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
-                                                    <!-- <TablePagination :arr="history" /> -->
                                                     <div class="flex items-center justify-end -space-x-px h-8 text-sm" v-if="history.total > 0">
                                                         <template v-for="(link, index) in history.links" :key="index">
                                                             <template v-if="index == '0'">
@@ -3728,6 +3785,139 @@
                 <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
                     :disabled="processing" @click="submitEditFarmParcel">Save</PrimaryButton>
                 <SecondaryButton @click="closeEditFarmParcelModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <DialogModal id="viewAssistance" :show="viewDialog" :max-width="'xl'" @close="closeViewModal">
+            <template #title>
+                View Assistance
+            </template>
+            <template #content>
+                <div class="uppercase">
+                    <div class="flex flex-row flex-wrap mb-3 justify-between items-center">
+                        <div class="w-6/12">
+                            <p class="m-0">
+                                Reference No: 
+                                <b>{{ _viewAssistance.reference_no }}</b>
+                            </p>
+                        </div>
+                        <div class="w-6/12">
+                            <label class="text-sm text-gray-500 me-3">Status</label>
+                            <span class="inline-flex items-center rounded-md px-2 py-1 text-md font-medium uppercase inset-ring inset-ring-yellow-400/20"
+                                :class="{
+                                    'bg-yellow-500 text-white' : _viewAssistance.status.toLowerCase() == 'pending',
+                                    'bg-green-500 text-white' : _viewAssistance.status.toLowerCase() == 'approved',
+                                    'bg-red-500 text-white' : _viewAssistance.status.toLowerCase() == 'disapproved',
+                                    'bg-zinc-500 text-white' : _viewAssistance.status.toLowerCase() == 'cancelled',
+                                }">
+                                {{ _viewAssistance.status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex flex-row justify-between mb-5">
+                        <div class="w-6/12">
+                            <p class="text-sm text-gray-500 m-0">Name</p>
+                            <h2 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.name }}</h2>
+                            <p class="m-0">
+                                <small>Applied Livelihood: <b>{{ _viewAssistance.livelihood.toUpperCase() }}</b> </small>
+                            </p>
+                        </div>
+                        <div class="w-6/12">
+                            <p class="text-sm text-gray-500 m-0">Type of Assistance</p>
+                            <h2 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.assistance_name }}</h2>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-start mb-3">
+                        <div class="w-12/12">
+                            <p class="text-sm text-gray-500 m-0">Purpose</p>
+                            <h2 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.purpose }}</h2>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-t border-gray-300" />
+
+                    <div class="flex flex-wrap flex-row items-start justify-between">
+                        <div class="w-5/12">
+                            <p class="text-sm text-gray-500 m-0">Created By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.created_name }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.created_at) }}</h4>
+                        </div>
+
+                        <div class="w-5/12" v-if="_viewAssistance.updated_name && _viewAssistance.updated_at">
+                            <p class="text-sm text-gray-500 m-0">Updated By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.updated_name }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.updated_at) }}</h4>
+                        </div>
+
+                        <div class="w-5/12" v-if="_viewAssistance.approved_name && _viewAssistance.approved_at">
+                            <p class="text-sm text-gray-500 m-0">Approved By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.approved_name ? _viewAssistance.approved_name : 'Not Approved Yet' }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.approved_at) }}</h4>
+                            <p class="text-sm text-gray-500 mt-2 m-0">Remarks:</p>
+                            <h5 class="font-semibold text-gray-800">{{ _viewAssistance.approved_remarks }}</h5>
+                        </div>
+                        <div class="w-5/12" v-if="_viewAssistance.disapproved_name && _viewAssistance.disapproved_at">
+                            <p class="text-sm text-gray-500 m-0">Disapproved By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.disapproved_name ? _viewAssistance.disapproved_name : 'Not Disapproved Yet' }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.disapproved_at) }}</h4>
+                            <p class="text-sm text-gray-500 mt-2 m-0">Remarks:</p>
+                            <h5 class="font-semibold text-gray-800">{{ _viewAssistance.disapproved_remarks }}</h5>
+                        </div>
+                        <div class="w-5/12" v-if="_viewAssistance.cancelled_name && _viewAssistance.cancelled_at">
+                            <p class="text-sm text-gray-500 m-0">Cancelled By</p>
+                            <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.cancelled_name ? _viewAssistance.cancelled_name : 'Not Cancelled Yet' }}</h3>
+                            <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.cancelled_at) }}</h4>
+                            <p class="text-sm text-gray-500 mt-2 m-0">Remarks:</p>
+                            <h5 class="font-semibold text-gray-800">{{ _viewAssistance.cancelled_remarks }}</h5>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-t border-gray-300" />
+
+                    <div class="flex flex-wrap flex-row">
+                        <div class="w-full">
+                            <p class="text-sm text-gray-500 m-0">Attachments</p>
+                            <table  class="w-full text-sm text-left text-gray-500 mt-3">
+                                <thead lass="text-xs text-gray-700 uppercase">
+                                    <tr>
+                                        <!-- <th class="px-3 py-2 w-2/12">File Type</th> -->
+                                        <th class="px-3 py-2 w-6/12">Filename</th>
+                                        <th class="px-3 py-2 w-1/12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template v-if="_viewAssistance.attachments && _viewAssistance.attachments.length > 0">
+                                        <tr class="bg-white border-b" v-for="(item, index) in _viewAssistance.attachments" :key="item.id">
+                                            <td class="px-3 py-3 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                {{ item.filename }} 
+                                            </td>
+                                            <td class="px-3 py-3 font-medium text-gray-900 whitespace-nowrap uppercase text-center">
+                                                <PrimaryButton class="bg-info-500 hover:bg-info-700 text-white mr-1" @click="viewAttachment('attachment', item.url)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94291 16.4788 5 12.0012 5Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                                        </g>
+                                                    </svg>
+                                                </PrimaryButton>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template v-else>
+                                        <tr>
+                                            <td colspan="2">No Attachment(s) Found.</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <SecondaryButton @click="closeViewModal">Close</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>
