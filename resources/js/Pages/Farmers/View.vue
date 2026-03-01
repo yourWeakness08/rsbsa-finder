@@ -1490,7 +1490,6 @@
 
     const closeViewModal = () => {
         viewDialog.value = false;
-        _viewAssistance.value = [];
     }
 </script>
 
@@ -2469,8 +2468,8 @@
                                         <table class="w-full text-sm text-left text-gray-500">
                                             <thead class="text-xs text-gray-700 uppercase">
                                                 <tr>
-                                                    <th scope="col" class="px-6 py-3 w-1/12">Ref No.</th>
-                                                    <th scope="col" class="px-6 py-3 w-1/12">Status</th>
+                                                    <th scope="col" class="px-6 py-3 w-2/12">Ref No.</th>
+                                                    <th scope="col" class="px-6 py-3 w-2/12">Status</th>
                                                     <th scope="col" class="px-6 py-3 w-2/12">Assistance</th>
                                                     <th scope="col" class="px-6 py-3 w-3/12">Purpose</th>
                                                     <th scope="col" class="px-6 py-3 w-2/12">Created By</th>

@@ -75,11 +75,11 @@
             delete formData.search
         }
         
-        router.visit('/assistance', {
+        router.visit('/assistances', {
             method: 'get',
             data: formData,
             preserveState: true,
-            only: ['assistance', 'filter']
+            only: ['assistances', 'filter']
         });
     }, 1000);
 
@@ -726,7 +726,7 @@
                                     </template>
                                     <template v-else>
                                         <tr>
-                                            <td colspan="7" class="px-6 py-4 text-center">No assistance found.</td>
+                                            <td colspan="7" id="no-data-found" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No data found!</td>
                                         </tr>
                                     </template>
                                 </tbody>
