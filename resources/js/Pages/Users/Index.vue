@@ -120,7 +120,9 @@
 
     const role = ref([
         { id: 1, text: 'ADMINISTRATOR' },
-        { id: 0, text: 'MEMBER' },
+        { id: 2, text: 'ENCODER' },
+        { id: 3, text: 'BRGY. STAFF' }
+        // { id: 0, text: 'MEMBER' },
     ])
 
     let isMember = ref(false);
@@ -129,7 +131,7 @@
     const handleSelect = (event) => {
         const selectedValue = event.id;
 
-        isMember.value = selectedValue != 1;
+        isMember.value = selectedValue == 0;
 
         addform.firstname = '';
         addform.lastname = '';
@@ -336,7 +338,15 @@
                                                 {{ users.email }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
-                                                {{ (users.role == 1) ? 'Administrator' : 'Member' }}
+                                                <template v-if="users.role == 1">
+                                                    Administrator
+                                                </template>
+                                                <template v-else-if="users.role == 2">
+                                                    Encoder
+                                                </template>
+                                                <template v-else>
+                                                    BRGY. STAFF
+                                                </template>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
                                                 <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
@@ -382,7 +392,15 @@
                                                 {{ users.email }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
-                                                {{ (users.role == 1) ? 'Administrator' : 'Member' }}
+                                                <template v-if="users.role == 1">
+                                                    Administrator
+                                                </template>
+                                                <template v-else-if="users.role == 2">
+                                                    Encoder
+                                                </template>
+                                                <template v-else>
+                                                    BRGY. STAFF
+                                                </template>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 uppercase">
                                                 <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white mr-1" @click="setFormUserData(users)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">

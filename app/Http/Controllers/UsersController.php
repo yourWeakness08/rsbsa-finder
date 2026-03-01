@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use App\Services\ActivityLogger;
 
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -85,7 +87,7 @@ class UsersController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, User $user) {
+    public function store(Request $request, User $user, ActivityLogger $activityLogger) {
         $input = array(
             'role' => $request->role,
             'farmer_id' => $request->farmer_id,
@@ -97,8 +99,8 @@ class UsersController extends Controller
 
         $rules = [
             'role' => ['required', 'integer'],
-            'farmer_id' => [($request->role == 1 ? 'nullable' : 'required'), 'integer'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'farmer_id' => [($request->role != 0 ? 'nullable' : 'required'), 'integer'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->where('is_archived', 0)],
             'password' => ['required', Rules\Password::min(8)]
         ];
 
@@ -134,6 +136,14 @@ class UsersController extends Controller
 
         $state = $created ? true : false;
 
+        $activityLogger->log(
+            userId: auth()->id(),
+            table: 'Users',
+            message: $state ? "Created a new `$request->firstname $request->lastname` user succesfully" : "Failed to create new user `$request->firstname $request->lastname`.",
+            action: 'create',
+            status: $state ? 'success' : 'error'
+        );
+
         return redirect()
             ->route('users.index')
             ->with([
@@ -162,40 +172,114 @@ class UsersController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id, User $user){
+    public function update(Request $request, $id, User $user, ActivityLogger $activityLogger){
+        $roleMap = [
+            1 => 'Administrator',
+            2 => 'Encoder',
+            3 => 'Brgy Staff',
+        ];
+
         $input = array(
             'role' => $request->role,
-            'firstname' => $request->firstname,
-            'lastname' => $request->lastname,
-            'email' => $request->email,
+            'firstname' => trim(strtolower($request->firstname)),
+            'lastname' => trim(strtolower($request->lastname)),
+            'email' => trim(strtolower($request->email)),
             'password' => $request->password,
         );
 
         $rules = [
             'role' => ['required', 'integer'],
+            'firstname' => ['required', 'string', 'max:255'],
+            'lastname'  => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
             'password' => ['nullable', 'string', Rules\Password::min(8)]
         ];
-
-        $rules['*.firstname'] = ['required', 'string', 'max:255'];
-        $rules['*.lastname'] = ['required', 'string', 'max:255'];
-
-        if ($request->role == 1) {
-            // $rules['firstname'][] = 'unique:users,firstname,'.$id;
-            // $rules['lastname'][] = 'unique:users,lastname,'.$id;
-        }
         
         $validated = Validator::make($input, $rules)->validate();
 
-        $toUpdate = $user::find($id);
+        $toUpdate = $user::where('id', $id)->first();
+
+        $original = $toUpdate->getOriginal();
+
         $toUpdate->role = $request->role;
         $toUpdate->firstname = trim(strtolower($request->firstname));
         $toUpdate->lastname = trim(strtolower($request->lastname));
         $toUpdate->email = trim(strtolower($request->email));
         $toUpdate->password = $validated['password'] ? Hash::make($request->password) : $toUpdate->password;
-        $toUpdate->save();
 
-        $state = $toUpdate ? true : false;
+        $newAttributes = [
+            'role'      => $request->role,
+            'firstname' => trim(strtolower($request->firstname)),
+            'lastname'  => trim(strtolower($request->lastname)),
+            'email'     => trim(strtolower($request->email)),
+        ];
+
+        $passwordProvided = !empty($validated['password'] ?? $request->password ?? null);
+
+        if ($passwordProvided) {
+            // set a sentinel to indicate password will change (so getDirty includes 'password')
+            $newAttributes['password'] = '<<CHANGING_PASSWORD>>';
+        }
+
+        $toUpdate->fill($newAttributes);
+        $state = false;
+
+        if ($toUpdate->isDirty()) {
+            $changes = $toUpdate->getDirty();
+            $saved = $toUpdate->save();
+            $changeMessages = [];
+
+            foreach ($changes as $field => $newValue) {
+                if ($field === 'password') {
+                    $changeMessages[] = "Password was changed";
+                    continue;
+                }
+
+                $oldValue = array_key_exists($field, $original) ? $original[$field] : null;
+
+                if ($field === 'role') {
+                    $oldRole = $roleMap[$oldValue] ?? 'Unknown';
+                    $newRole = $roleMap[$newValue] ?? 'Unknown';
+
+                    $changeMessages[] = "Role changed from '{$oldRole}' to '{$newRole}'";
+                    continue;
+                }
+
+                if (in_array($field, ['firstname','lastname','email'])) {
+                    $oldValue = (string) $oldValue;
+                    $newValue = (string) $newValue;
+                }
+                $label = match($field) {
+                    'role' => 'Role',
+                    'firstname' => 'First name',
+                    'lastname' => 'Last name',
+                    'email' => 'Email',
+                    default => ucfirst($field),
+                };
+
+                $changeMessages[] = "{$label} changed from '{$oldValue}' to '{$newValue}'";
+            }
+
+            $message = "User updated successfully. Changes: " . implode('; ', $changeMessages);
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'users',
+                message: $message,
+                action: 'update',
+                status: $saved ? 'success' : 'error'
+            );
+
+            $state = $saved;
+
+        } else {
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'users',
+                message: 'User update attempted but no actual changes were made.',
+                action: 'update',
+                status: 'info'
+            );
+        }
 
         return redirect()
             ->route('users.index')

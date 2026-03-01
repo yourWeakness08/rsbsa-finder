@@ -85,7 +85,7 @@ Route::middleware([
 
     Route::prefix('reports')->name('reports.')->group( function() {
         Route::match(['get', 'post'], '/assistance', [AssistanceController::class, 'reports'])->name('assistance');
-        Route::match(['get', 'post'], '/activities', [ReportController::class, 'reports'])->name('activities');
+        Route::match(['get', 'post'], '/activities', [ReportController::class, 'activities'])->name('activities');
         Route::match(['get', 'post'], '/registered', [ReportController::class, 'registered'])->name('registered');
         Route::match(['get', 'post'], '/farming', [ReportController::class, 'farming'])->name('farming');
         Route::match(['get', 'post'], '/livelihood', [ReportController::class, 'livelihood'])->name('livelihood');

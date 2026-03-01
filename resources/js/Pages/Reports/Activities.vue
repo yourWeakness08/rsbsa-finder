@@ -40,11 +40,13 @@
             type: Object,
             default: () => ({}),
         },
-        assistance: {
+        users: {
             type: Object,
             default: () => ({})
         }
     });
+
+    console.log(props.users);
 
     const pageValue = ref(null);
     const searchValue = ref(null);
@@ -53,21 +55,6 @@
     const select2Assitance = ref([]);
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
-
-    const submitFilter = () => {
-        const { value } = pageValue;
-        let formData = {};
-        if(value){ formData.paginate = value; }
-        if(searchValue.value){ formData.search = searchValue.value; }
-        
-        if(Object.keys(formData).length > 0){
-            router.visit('/types', {
-                method: 'get',
-                data: formData,
-                only: ['farming_type', 'filter']
-            });
-        }
-    }
 
     const dateFormat = (date) => {
         return moment(date).format('MMM. DD, YYYY hh:mm A');
@@ -81,7 +68,7 @@
         if (value) { form.paginate = value };
         form.search = debouncedSearch.value ? val : '';
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.activities'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -100,7 +87,7 @@
         if (value) { form.paginate = value };
         if (searchValue.value) { form.search = searchValue.value; }
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.activities'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -113,20 +100,12 @@
     const endDate = moment();
 
     const form = useForm({
-        livelihood: '',
-        assistance: '',
+        user: '',
         from: moment(startDate).format('YYYY-MM-DD'),
         to: moment(endDate).format('YYYY-MM-DD'),
         search: '',
         paginate: ''
     })
-
-    const main_livelihood = ref([
-        { id: 'farmer', text: 'FARMER' },
-        { id: 'farm_worker', text: 'FARM WORKER / LABORER' },
-        { id: 'fisherfolks', text: 'FISHERFOLKS' },
-        { id: 'agri_youth', text: 'AGRI YOUTH' },
-    ]);
 
     onMounted(() => {
         datepicker();
@@ -154,7 +133,7 @@
     const generateAssistance = () => {
         let formData = {};
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.activities'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -162,50 +141,12 @@
             }
         })
     }
-
-    const formatAssistance = (arr) => {
-        const index = props.assistance.map(obj => obj.id).indexOf(arr.assistance_id);
-        return props.assistance[index].name;
-    }
-
-    const formatLivelihood = (val) => {
-        const index = main_livelihood.value.map(obj => obj.id).indexOf(val);
-        return main_livelihood.value[index].text;
-    }
-
     const resetFields = () => {
-        form.livelihood = '';
-        form.assistance = '';
+        form.user = '';
         form.from = startDate;
         form.to = endDate;
 
         datepicker();
-        _assistance();
-    }
-
-    const _assistance = () => {
-        select2Assitance.value = [];
-        $.each(props.assistance, function(index, item) {
-            const temp = Object.assign({}, { id: item.id, text: item.name.toUpperCase() });
-            select2Assitance.value.push(temp);
-        });
-    }
-
-    _assistance();
-    
-
-    const handleLivelihood = (e) => {
-        const selectedValue = e.id;
-
-        select2Assitance.value = [];
-        $.each(props.assistance, function(index, item) {
-            $.each(item.livelihoods, function(i, v) {
-                if (v === e.id) {
-                    const _temp = Object.assign({}, {id: item.id, text: item.name.toUpperCase() });
-                    select2Assitance.value.push(_temp);
-                }
-            })
-        })
     }
 </script>
 
@@ -213,13 +154,13 @@
     <AppLayout title="Assistance Report">
         <template #header>
             <h2 class="font-semibold text-md text-gray-800 leading-tight">
-                ASSISTANCE REPORTS
+                Activity Logs
             </h2>
         </template>
 
         <div class="py-8">
             <div class="flex flex-wrap justify-between">
-                <div class="w-[33%]">
+                <div class="w-[28%]">
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                         <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
                             <div class="w-full mb-4">
@@ -229,19 +170,11 @@
                             <hr class="mb-4">
 
                             <div class="mb-4">
-                                <InputLabel for="Livelihood" value="Livelihood" />
+                                <InputLabel for="user" value="User" />
                                 <div class="rounded-md block w-full mt-1">
-                                    <Select2 class="h-10 uppercase" v-model="form.livelihood" :options="main_livelihood" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="handleLivelihood" />
+                                    <Select2 class="h-10 uppercase" v-model="form.user" :options="users" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="handleLivelihood" />
                                 </div>
                             </div>
-
-                            <div class="mb-4">
-                                <InputLabel for="Assistance" value="Assistance" />
-                                <div class="rounded-md block w-full mt-1">
-                                    <Select2 class="h-10 uppercase" v-model="form.assistance" :options="select2Assitance" :settings="{ placeholder: 'Select An Option', width: '100%' }" />
-                                </div>
-                            </div>
-
                             <div class="mb-4">
                                 <InputLabel for="daterange" value="Date" />
                                 <TextInput type="text" class="mt-1 block w-full uppercase" id="daterange" placeholder="MM/DD/YYYY - MM/DD/YYYY" />
@@ -261,7 +194,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="w-[65%]">
+                <div class="w-[70%]">
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                         <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
                             <div class="flex flex-wrap justify-end">
@@ -276,57 +209,50 @@
                                         class="text-xs text-gray-700 uppercase">
                                         <tr>
                                             <th scope="col" class="px-6 py-3 w-3/12">Name</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Assistance</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Remarks</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Created By</th>
-                                            <th scope="col" class="px-6 py-3">&nbsp;</th>
+                                            <th scope="col" class="px-6 py-3 w-4/12">Message</th>
+                                            <th scope="col" class="px-6 py-3 w-2/12">Status</th>
+                                            <th scope="col" class="px-6 py-3 w-3/12">Created At</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <template v-if="reports.total > 0">
                                             <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">{{ reports.user_name }}</td>
+                                                <td class="px-6 py-4 font-medium text-gray-900 uppercase">{{ reports.message }}</td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.name }}
+                                                    <span
+                                                        class="px-2 py-1 text-white rounded-md text-xs font-semibold uppercase"
+                                                        :class="{
+                                                            'bg-green-500': reports.status === 'success',
+                                                            'bg-red-500': reports.status === 'error',
+                                                            'bg-blue-500': reports.status === 'info',
+                                                            'bg-yellow-500': reports.status === 'warning'
+                                                        }"
+                                                        >
+                                                        {{ reports.status }}
+                                                    </span>
                                                 </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
-                                                </td>
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">{{ dateFormat(reports.created_at) }}</td>
                                             </tr>
                                         </template>
                                         <template v-else-if="filter.paginate == 'All' && reports.length > 0">
-                                             <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
+                                            <tr class="bg-white border-b" v-for="reports in reports" :key="reports.id">
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">{{ reports.user_name }}</td>
+                                                <td class="px-6 py-4 font-medium text-gray-900 uppercase">{{ reports.message }}</td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.name }}
+                                                    <span
+                                                        class="px-2 py-1 text-white rounded-full text-xs font-semibold uppercase"
+                                                        :class="{
+                                                            'bg-green-500': reports.status === 'success',
+                                                            'bg-red-500': reports.status === 'error',
+                                                            'bg-blue-500': reports.status === 'info',
+                                                            'bg-yellow-500': reports.status === 'warning'
+                                                        }"
+                                                        >
+                                                        {{ reports.status }}
+                                                    </span>
                                                 </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
-                                                </td>
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">{{ dateFormat(reports.created_at) }}</td>
                                             </tr>
                                         </template>
                                         <template v-else>
@@ -338,7 +264,7 @@
                                 </table>
                                 <div class="mt-6">
                                     <div class="flex flex-row justify-between items-center">
-                                        <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-1/12">
+                                        <div class="md:w-[11%] lg:w-[11%] xl:w-[11%] 2xl:w-[11%]">
                                             <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" />
                                         </div>
                                         <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">

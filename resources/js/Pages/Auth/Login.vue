@@ -27,8 +27,6 @@ const submit = () => {
         onFinish: () => form.reset('password'),
     });
 };
-
-console.log(route('login').params);
 </script>
 
 <template>

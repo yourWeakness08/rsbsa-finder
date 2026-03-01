@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FarmingType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\ActivityLogger;
 
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -61,7 +62,7 @@ class FarmingTypeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {
+    public function store(Request $request, ActivityLogger $activityLogger) {
         $resultSet = array();
 
         if ($request->type && $request->name) {
@@ -71,6 +72,14 @@ class FarmingTypeController extends Controller
                 'created_by'=>$request->user_id,
                 'uuid'=>Str::random(12)
             ]);
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Farming Type',
+                message: $created ? "User Created a new farming type `$request->name`" : "User Failed to create new farming type `$request->name`.",
+                action: 'create',
+                status: $created ? 'success' : 'error'
+            );
 
             $farming_type = FarmingType::paginate(25);
             $resultSet["state"] = true;
@@ -103,18 +112,62 @@ class FarmingTypeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id, FarmingType $farmingType) {
+    public function update(Request $request, $id, FarmingType $farmingType, ActivityLogger $activityLogger) {
         $resultset = array();
+
+        $roleMap = [
+            1 => 'Crops',
+            2 => 'Livestocks',
+            3 => 'Poultry',
+            4 => 'Agri-fishery',
+        ];
 
         if ($id) {
             $toUpdate = FarmingType::where('id', $id)->first();
+            
+            $original = $toUpdate->getOriginal();
+
             $toUpdate->type = $request->type;
             $toUpdate->name = trim(strtolower($request->name));
             $toUpdate->updated_by = $request->user_id;
-            $toUpdate->save();
+            
+            $state = false;
+            if ($toUpdate->isDirty()) {
+                $changes = $toUpdate->getDirty();
+
+                unset($changes['updated_by']);
+
+                $toUpdate->save();
+                $state = $toUpdate ? true : false;
+                $changeMessages = [];
+
+                foreach ($changes as $field => $newValue) {
+                    $oldValue = $original[$field] ?? null;
+
+                    if ($field === 'type') {
+                        $oldRole = $roleMap[$oldValue] ?? 'Unknown';
+                        $newRole = $roleMap[$newValue] ?? 'Unknown';
+
+                        $changeMessages[] = "Type changed from '{$oldRole}' to '{$newRole}'";
+                        continue;
+                    }
+                    
+                    $changeMessages[] = ucfirst($field) . " changed from '{$oldValue}' to '{$newValue}'";
+                }
+
+                $message = "User updated farming type successfully. Changes: " . implode('; ', $changeMessages);
+
+                $activityLogger->log(
+                    userId: auth()->id(),
+                    table: 'Farming Type',
+                    message: $message,
+                    action: 'update',
+                    status: $state ? 'success' : 'error'
+                );
+            }
 
             $farming_type = FarmingType::paginate(25);
-            $resultset["state"] = true;
+            $resultset["state"] = $state;
             $resultset["updated"] = $toUpdate;
             $resultset["farming_type"] = $farming_type;
         } else {
@@ -131,7 +184,7 @@ class FarmingTypeController extends Controller
     public function destroy(Request $request, $id, FarmingType $farmingType) {
     }
     
-    public function archive_type(Request $request, $id, FarmingType $farmingType) {
+    public function archive_type(Request $request, $id, FarmingType $farmingType, ActivityLogger $activityLogger) {
         $resultset = array();
 
         if ($id) {
@@ -139,7 +192,15 @@ class FarmingTypeController extends Controller
             $toArchive->is_archived = 1;
             $toArchive->archived_by = $request->id;
             $toArchive->archived_at = date('Y-m-d H:i:s');
-            $toArchive->save();
+            $update = $toArchive->save();
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Farming Type',
+                message: $update ? "User deleted farming type `$toArchive->name` succesfully" : "User failed to delete farming type $toArchive->name.",
+                action: 'delete',
+                status: $update ? 'success' : 'error'
+            );
 
             $farming_type = FarmingType::paginate(25);
             $resultset["state"] = true;

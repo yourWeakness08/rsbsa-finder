@@ -67,7 +67,9 @@ class AssistancesController extends Controller
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.lastname', 'like', '%'.$request->search.'%')
-                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%');
+                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
             })->paginate($paginate);
         $assistances->appends(['paginate' => $paginate]);
@@ -111,7 +113,9 @@ class AssistancesController extends Controller
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.lastname', 'like', '%'.$request->search.'%')
-                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%');
+                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
             })
             ->orderBy('assistances.created_at', 'desc')

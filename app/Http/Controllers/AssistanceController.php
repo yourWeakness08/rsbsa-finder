@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
+use App\Services\ActivityLogger;
 
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -78,7 +79,7 @@ class AssistanceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, ActivityLogger $activityLogger)
     {
         $input = array(
             'livelihoods' => $request->livelihoods,
@@ -101,13 +102,14 @@ class AssistanceController extends Controller
 
         $state = $created ? true : false;
 
-        // return redirect()
-        //     ->route('assistance.index')
-        //     ->with([
-        //         'response' => [
-        //             'state' => $state
-        //         ]
-        //     ]);
+        $activityLogger->log(
+            userId: auth()->id(),
+            table: 'Assistance',
+            message: $state ? "User Created a new assistance `$$request->name`" : "User Failed to create new assistance `$$request->name`.",
+            action: 'create',
+            status: $state ? 'success' : 'error'
+        );
+
         return redirect()->back()->with('response', [
             'state' => $state
         ]);
@@ -132,7 +134,7 @@ class AssistanceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id, Assistance $assistance)
+    public function update(Request $request, $id, Assistance $assistance, ActivityLogger $activityLogger)
     {
         $input = array(
             'livelihoods' => $request->livelihoods,
@@ -147,17 +149,50 @@ class AssistanceController extends Controller
         Validator::make($input, $rules)->validate();
 
         $toUpdate = Assistance::where('id',$id)->first();
+
+        $original = $toUpdate->getOriginal();
+
         $toUpdate->livelihoods = serialize($request->livelihoods);
         $toUpdate->name = trim(strtolower($request->name));
-        $toUpdate->save();
 
-        $state = $toUpdate ? true : false;
+        $state = false;
+        if ($toUpdate->isDirty()) {
+            $changes = $toUpdate->getDirty();
+            $toUpdate->save();
+            $state = $toUpdate ? true : false;
+            $changeMessages = [];
 
-        // return redirect()
-        //     ->route('assistance.index')
-        //     ->with('response', [
-        //         'state' => $state
-        //     ]);
+            foreach ($changes as $field => $newValue) {
+                $oldValue = $original[$field] ?? null;
+                if ($field === 'livelihoods') {
+                    $oldValue = $oldValue ? implode(', ', unserialize($oldValue)) : '';
+                    $newValue = implode(', ', $request->livelihoods);
+                }
+
+                $changeMessages[] = ucfirst($field) . " changed from '{$oldValue}' to '{$newValue}'";
+            }
+
+            $message = "User updated assistance successfully. Changes: " . implode('; ', $changeMessages);
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Assistance',
+                message: $message,
+                action: 'update',
+                status: $state ? 'success' : 'error'
+            );
+
+        } else {
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Assistance',
+                message: 'No changes were made to assistance.',
+                action: 'update',
+                status: 'info'
+            );
+        }
+
         return redirect()->back()->with('response', [
             'state' => $state
         ]);
@@ -171,14 +206,22 @@ class AssistanceController extends Controller
         //
     }
 
-    public function archive_assistance(Request $request, $id, Assistance $assistance) {
+    public function archive_assistance(Request $request, $id, Assistance $assistance, ActivityLogger $activityLogger) {
         $resultset = array();
 
         if ($id) {
             $toArchive = Assistance::where('id',$id)->first();
             $toArchive->is_archived = 1;
             $toArchive->archived_by = $request->id;
-            $toArchive->save();
+            $update = $toArchive->save();
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Assistance',
+                message: $update ? "User deleted assistance `$toArchive->name` succesfully" : "User failed to delete assistance $toArchive->name.",
+                action: 'delete',
+                status: $update ? 'success' : 'error'
+            );
 
             $_assistance = Assistance::paginate(25);
             $resultset["state"] = true;
@@ -236,6 +279,11 @@ class AssistanceController extends Controller
                 }
             })
             ->where( function($query) use ($request) {
+                if (isset($request->status) && $request->status) {
+                    $query->where('a.status', $request->status);
+                }
+            })
+            ->where( function($query) use ($request) {
                 if (isset($request->livelihood) && $request->livelihood){
                     $query->where('a.livelihood', $request->livelihood);
                 }
@@ -273,6 +321,11 @@ class AssistanceController extends Controller
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.lastname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.middlename', 'like', '%'.$request->search.'%');
+                }
+            })
+            ->where( function($query) use ($request) {
+                if (isset($request->status) && $request->status) {
+                    $query->where('a.status', $request->status);
                 }
             })
             ->where( function($query) use ($request) {
