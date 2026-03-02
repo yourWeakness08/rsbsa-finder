@@ -195,12 +195,12 @@
               <!-- <NavLink :href="'#'" :key="'registered'" :active="route().current('reports.registered')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
                 REGISTERED
               </NavLink>
-              <NavLink :href="'#'" :key="'farming'" :active="route().current('reports.farming')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+              <NavLink :href="route('reports.farming')" :key="'farming'" :active="route().current('reports.farming')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
                 CROPS / LIVESTOCK / POULTRY
-              </NavLink>
-              <NavLink :href="'#'" :key="'Livelihood'" :active="route().current('reports.livelihood')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
-                MAIN LIVELIHOOD
               </NavLink> -->
+              <NavLink :href="route('reports.livelihood')" :key="'Livelihood'" :active="route().current('reports.livelihood')" class="block pt-3 py-3 border-b-0 text-gray-500 w-full m-0 border-r-4" style="border-bottom: 0 !important">
+                MAIN LIVELIHOOD
+              </NavLink>
             </div>
           </div>
   

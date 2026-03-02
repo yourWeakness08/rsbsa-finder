@@ -101,9 +101,37 @@ class ReportController extends Controller{
         );
     }
 
+    //not done
     public function livelihood(Request $request) {
+        $paginate = $request->paginate ? intval($request->paginate): 10;
+        $livelihood = $request->livelihood ? $request->livelihood : null;
+
+        $livelihood = FarmerInformation::from('farmer_information as a')
+            ->select(DB::raw("a.id, CONCAT(
+                    a.firstname, ' ',
+                    IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
+                    a.lastname,
+                    IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
+                ) AS name, b.main_livelihood"))
+            ->leftJoin('farm_profile as b', 'b.farmer_id', '=', 'a.id')
+            ->where( function($query) use ($request) {
+                if ($request->search) {
+                    $query->where('a.firstname', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.middlename', 'like', '%'.$request->search.'%')
+                    ->orWhere('a.lastname', 'like', '%'.$request->search.'%');
+                }
+            })
+            ->where( function($query) use ($livelihood) {
+                if ($livelihood) {
+                    $query->where('b.main_livelihood', 'like', '%"'.$livelihood.'"%');
+                }
+            })
+            ->where("a.is_archived", 0)
+            ->paginate($paginate);
+        $livelihood->appends(['paginate' => $paginate]);
+
         return Inertia::render(
-            'Reports/Livelihood', ['reports' => array()]
+            'Reports/Livelihood', ['reports' => $livelihood, 'filter' => $request]
         );
     }
 }

@@ -61,10 +61,10 @@
         if(searchValue.value){ formData.search = searchValue.value; }
         
         if(Object.keys(formData).length > 0){
-            router.visit('/types', {
+            router.visit('/livelihood', {
                 method: 'get',
                 data: formData,
-                only: ['farming_type', 'filter']
+                only: ['reports', 'filter']
             });
         }
     }
@@ -154,18 +154,13 @@
     const generateAssistance = () => {
         let formData = {};
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.livelihood'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
                 $("#search").val('');
             }
         })
-    }
-
-    const formatAssistance = (arr) => {
-        const index = props.assistance.map(obj => obj.id).indexOf(arr.assistance_id);
-        return props.assistance[index].name;
     }
 
     const formatLivelihood = (val) => {
@@ -264,10 +259,7 @@
                                         class="text-xs text-gray-700 uppercase">
                                         <tr>
                                             <th scope="col" class="px-6 py-3 w-3/12">Name</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Assistance</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Remarks</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Created By</th>
-                                            <th scope="col" class="px-6 py-3">&nbsp;</th>
+                                            <th scope="col" class="px-6 py-3 w-3/12">Type / Kind of Activity</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -277,20 +269,6 @@
                                                     {{ reports.name }}
                                                 </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
                                                 </td>
                                             </tr>
                                         </template>
@@ -300,20 +278,6 @@
                                                     {{ reports.name }}
                                                 </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
                                                 </td>
                                             </tr>
                                         </template>
