@@ -30,6 +30,10 @@
 
     const { proxy } = getCurrentInstance()
 
+    const user = ref([]);
+    const _page = usePage()
+    user.value = _page.props.auth.user;
+
     const props = defineProps({
         assistances: {
             type: Object,
@@ -946,34 +950,36 @@
                 </div>
             </template>
             <template #footer>
-                <PrimaryButton
-                    v-if="actions.approve.show"
-                    :class="[actions.approve.classes, 'text-white me-2', { 'opacity-25': processing }]"
-                    :disabled="processing"
-                    @click="updateStatus('approve')"
-                >
-                    {{ actions.approve.label }}
-                </PrimaryButton>
-
-                <!-- DISAPPROVE -->
-                <PrimaryButton
-                    v-if="actions.disapprove.show"
-                    :class="[actions.disapprove.classes, 'text-white me-2', { 'opacity-25': processing }]"
-                    :disabled="processing"
-                    @click="updateStatus('disapprove')"
-                >
-                    {{ actions.disapprove.label }}
-                </PrimaryButton>
-
-                <!-- CANCEL -->
-                <PrimaryButton
-                    v-if="actions.cancel.show"
-                    :class="[actions.cancel.classes, 'text-white me-2', { 'opacity-25': processing }]"
-                    :disabled="processing"
-                    @click="updateStatus('cancel')"
-                >
-                    {{ actions.cancel.label }}
-                </PrimaryButton>
+                <template v-if="user.role == 1">
+                    <PrimaryButton
+                        v-if="actions.approve.show"
+                        :class="[actions.approve.classes, 'text-white me-2', { 'opacity-25': processing }]"
+                        :disabled="processing"
+                        @click="updateStatus('approve')"
+                    >
+                        {{ actions.approve.label }}
+                    </PrimaryButton>
+    
+                    <!-- DISAPPROVE -->
+                    <PrimaryButton
+                        v-if="actions.disapprove.show"
+                        :class="[actions.disapprove.classes, 'text-white me-2', { 'opacity-25': processing }]"
+                        :disabled="processing"
+                        @click="updateStatus('disapprove')"
+                    >
+                        {{ actions.disapprove.label }}
+                    </PrimaryButton>
+    
+                    <!-- CANCEL -->
+                    <PrimaryButton
+                        v-if="actions.cancel.show"
+                        :class="[actions.cancel.classes, 'text-white me-2', { 'opacity-25': processing }]"
+                        :disabled="processing"
+                        @click="updateStatus('cancel')"
+                    >
+                        {{ actions.cancel.label }}
+                    </PrimaryButton>
+                </template>
                 <SecondaryButton @click="closeViewModal">Close</SecondaryButton>
             </template>
         </DialogModal>

@@ -1491,6 +1491,190 @@
     const closeViewModal = () => {
         viewDialog.value = false;
     }
+
+    const _datepicker = () => {
+        $('#paper_date').daterangepicker({
+            opens: 'left',
+            locale: {
+                format: 'MM/DD/YYYY',
+            },
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: false,
+            parentEl: $("#editSignatory")
+        }).on('apply.daterangepicker', function(ev, picker){
+            $(this).val(picker.startDate.format('MM/DD/YYYY'))
+
+            signatoryForm.paper_date = moment(picker.startDate.format('MM/DD/YYYY')).format('MM/DD/YYYY');
+        });
+    }
+
+    const signatoryForm = useForm({
+        farmer_id: 0,
+        paper_date: null,
+        official: null,
+        muni_city_official: null,
+        cafc_chairman: null,
+        user_id: 0,
+        submit_type: 'signatory'
+    });
+
+    const closeEditSignatoryModal = ref(false);
+    const signatoryEditDialog = ref(false);
+
+    const editSignatory = (farmer) => {
+        signatoryForm.farmer_id = farmer.id;
+        signatoryForm.paper_date = farmer.paper_date;
+        signatoryForm.official = farmer.official;
+        signatoryForm.muni_city_official = farmer.muni_city_official;
+        signatoryForm.cafc_chairman = farmer.cafc_chairman;
+        signatoryEditDialog.value = true;
+
+        setTimeout( function(){
+            _datepicker();
+        }, 500);
+    }
+
+    const closeSignatoryModal = () => {
+        signatoryEditDialog.value = false;
+    }
+
+    const signatoryRules = computed(() => {
+        return {
+            farmer_id: {},
+            paper_date: { required },
+            official: { required },
+            muni_city_official: { required },
+            cafc_chairman: { required },
+            user_id: {},
+            submit_type: {}
+        }
+    })
+
+    const signatory$ = useVuelidate(signatoryRules, signatoryForm, {
+        $autoDirty: false
+    })
+
+    const { hasError: hasSignatoryError, inputBorderClass : signatoryInputBorderClass, getFieldState: signatoryGetFieldState } = useValidationHelpers(signatory$, signatoryForm, { autoTouch: true })
+
+    const submitEditSignatory = () => {
+        const { id } = props.auth.user;
+
+        processing.value = false;
+        signatoryForm.user_id = id;
+
+        signatory$.value.$touch();
+        if (!signatory$.value.$invalid) {
+            signatoryForm.put(route('farmers.update', signatoryForm.farmer_id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    const page = usePage();
+                    const response = page.props.flash?.response;
+                    processing.value = false;
+
+                    setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                    setTimeout(() => { closeSignatoryModal(); form.reset(); }, 800);
+
+                    if (response.state) {
+                        recentlySuccessful.value = true;
+
+                        setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                        setTimeout(() => { closeSignatoryModal(); signatoryForm.reset(); signatory$.value.$reset(); }, 800);
+                    } else {
+                        recentlyFailed.value = true;
+                        setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                    }
+                },
+                onError: (errors) => {
+                    console.log(errors);
+                }
+            });
+        } else {
+            processing.value = false;
+        }
+    }
+
+    const updateProfileDialog = ref(false);
+    const closeEditProfileModal = ref(false);
+    const uploadedImage = ref(null);
+
+    const profileForm = useForm({
+        farmer_id: 0,
+        image : null,
+        user_id: 0,
+        submit_type: 'profile'
+    });
+
+    const updateProfile = (farmer) => {
+        profileForm.farmer_id = farmer.id;
+        profileForm.image = farmer.farmer_image;
+        updateProfileDialog.value = true;
+    }
+
+    const profileRules = computed(() => {
+        return {
+            farmer_id: {},
+            image: { required },
+            submit_type: {}
+        }
+    })
+
+    const profile$ = useVuelidate(profileRules, profileForm, {
+        $autoDirty: false
+    })
+
+    const { hasError: profileHasError, inputBorderClass : profileInputBorderClass, getFieldState: profileGetFieldState } = useValidationHelpers(profile$, profileForm, { autoTouch: true })
+
+    function handleImageSelected(file) {
+        profileForm.image = file // attach file to form
+
+        const reader = new FileReader()
+        reader.onload = e => {
+            uploadedImage.value = e.target.result
+        }
+        reader.readAsDataURL(file)
+    }
+
+    const closeProfileModal = () => {
+        updateProfileDialog.value = false;
+    }
+
+    const submitEditProfile = () => {
+        const { id } = props.auth.user;
+
+        processing.value = false;
+        profileForm.user_id = id;
+
+        profile$.value.$touch();
+        if (!profile$.value.$invalid) {
+            profileForm.transform((data) => ({
+                ...data,
+                _method: 'put',
+            })).post(route('farmers.update', props.farmer.id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    const page = usePage();
+                    const response = page.props.flash?.response;
+                    processing.value = false;
+
+                    if (response.state) {
+                        recentlySuccessful.value = true;
+
+                        setTimeout(() => { recentlySuccessful.value = false; }, 1500);
+                        setTimeout(() => { closeProfileModal(); profileForm.reset(); profile$.value.$reset(); uploadedImage.value = null; }, 800);
+                    } else {
+                        recentlyFailed.value = true;
+                        setTimeout(() => { recentlyFailed.value = false; }, 1500);
+                    }
+                },
+                onError: (errors) => {
+                    console.log(errors);
+                }
+            });
+        } else {
+            processing.value = false;
+        }
+    }
 </script>
 
 <template>
@@ -1525,6 +1709,18 @@
                         <hr class="mb-4">
 
                         <ul class="list-none">
+                            <li class="inline-flex items-center w-full cursor-pointer hover:bg-gray-100 py-2 px-3" @click="updateProfile(farmer)">
+                                <svg class="w-6 h-6 me-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                    <g id="SVGRepo_iconCarrier"> 
+                                        <path d="M12.12 12.78C12.05 12.77 11.96 12.77 11.88 12.78C10.12 12.72 8.71997 11.28 8.71997 9.50998C8.71997 7.69998 10.18 6.22998 12 6.22998C13.81 6.22998 15.28 7.69998 15.28 9.50998C15.27 11.28 13.88 12.72 12.12 12.78Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                        <path d="M18.74 19.3801C16.96 21.0101 14.6 22.0001 12 22.0001C9.40001 22.0001 7.04001 21.0101 5.26001 19.3801C5.36001 18.4401 5.96001 17.5201 7.03001 16.8001C9.77001 14.9801 14.25 14.9801 16.97 16.8001C18.04 17.5201 18.64 18.4401 18.74 19.3801Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                    </g>
+                                </svg>
+                                <h4 class="font-bold">Update Profile</h4>
+                            </li>
                             <li @click="back" class="inline-flex items-center w-full cursor-pointer hover:bg-gray-100 py-2 px-3"> 
                                 <svg class="w-6 h-6 me-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -2400,9 +2596,7 @@
                                             </table>
                                             <div class="mt-6">
                                                 <div class="flex flex-row justify-between items-center">
-                                                    <div class="md:w-[10%] lg:w-[10%] xl:w-[10%] 2xl:w-[9%]">
-                                                        <!-- <SelectInput placeholder="Show" v-model="pageValue" :model-options="pages" class="block w-full" @change="tableShow" /> -->
-                                                    </div>
+                                                    <div class="md:w-[10%] lg:w-[10%] xl:w-[10%] 2xl:w-[9%]"></div>
                                                     <div class="md:w-10/12 lg:w-10/12 xl:w-10/12 2xl:w-11/12">
                                                         <div class="flex items-center justify-end -space-x-px h-8 text-sm" v-if="attachments.total > 0">
                                                             <template v-for="(link, index) in attachments.links" :key="index">
@@ -2425,6 +2619,29 @@
 
                                     <hr class="my-6 border-t border-gray-300">
 
+                                    <div class="flex flex-wrap w-full justify-between mb-4">
+                                            <div class="w-3/12"></div>
+                                            <div class="w-6/12 text-right">
+                                                <PrimaryButton class=" hover:bg-yellow-700 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition ease-in-out duration-150 bg-yellow-500 hover:bg-yellow-700 text-white" @click="editSignatory(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                    <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
+                                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                                        <g id="SVGRepo_iconCarrier"> 
+                                                            <title></title> 
+                                                            <g id="Complete"> 
+                                                                <g id="edit">
+                                                                    <g> 
+                                                                        <path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8" fill="none" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path> 
+                                                                        <polygon fill="none" points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8" stroke="#ffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon> 
+                                                                    </g> 
+                                                                </g> 
+                                                            </g> 
+                                                        </g>
+                                                    </svg>
+                                                    Edit
+                                                </PrimaryButton>
+                                            </div>
+                                        </div>
                                     <div class="flex flex-wrap justify-center mb-4">
                                         <div class="w-3/12">
                                             <InputLabel for="firstname" value="Form Date" />
@@ -2455,7 +2672,6 @@
                                 </div>
                             </template>
 
-                            <!-- here -->
                             <template #assistance>
                                 <div class="p-3">
                                     <div class="w-full">
@@ -2505,7 +2721,7 @@
                                                             </td>
                                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                                 <p class="font-semibold">{{ item.created_name }}</p>
-                                                                <small>{{ dateFormat(item.created_at) }}</small>
+                                                                <small>{{ dateTimeFormat(item.created_at) }}</small>
                                                             </td>
                                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                                 <PrimaryButton class="bg-gray-800 hover:bg-gray-700 text-white mr-1" @click="viewAssistance(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
@@ -2549,7 +2765,7 @@
                                                         </td>
                                                         <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                             <p class="font-semibold">{{ item.created_name }}</p>
-                                                            <small>{{ dateFormat(item.created_at) }}</small>
+                                                            <small>{{ dateTimeFormat(item.created_at) }}</small>
                                                         </td>
                                                         <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                             <PrimaryButton class="bg-gray-800 hover:bg-gray-700 text-white mr-1" @click="viewAssistance(item)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
@@ -3918,6 +4134,119 @@
             </template>
             <template #footer>
                 <SecondaryButton @click="closeViewModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <DialogModal id="editSignatory" :show="signatoryEditDialog" :max-width="'md'" @close="closeEditSignatoryModal">
+            <template #title>
+                Edit Form Date and Signatories
+            </template>
+            <template #content>
+                <div>
+                    <div class="py-3 lg:py-3 bg-white">
+                        <div class="mb-4">
+                            <InputLabel value="Form Date" :required="true" />
+                            <div class="rounded-md block w-[60%]">
+                                <TextInput v-model="signatoryForm.paper_date" id="paper_date" type="text" class="mt-1 block w-full uppercase" placeholder="Enter Form Date" autocomplete="off" 
+                                    @blur="signatory$.amount.$touch()"
+                                    :class="signatoryInputBorderClass('paper_date')"
+                                />
+                            </div>
+
+                            <p v-if="hasSignatoryError('paper_date')" class="text-red-500 text-sm mt-1">
+                                <span class="text-red-500 text-sm" v-if="signatory$.paper_date.required?.$invalid">Form Date is required.</span>
+                            </p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg">Verified true and Corrected by:</h3>
+                        </div>
+
+                        <div class="mb-4">
+                            <InputLabel value="Barangay Chairman / City / Mun. Veterinarian (livestock) / Mill District Office (Sugarcane) / IP Leader / c/m/Paro (arb)" :required="true" />
+                            <div class="rounded-md block w-full">
+                                <TextInput v-model="signatoryForm.official" type="text" class="mt-1 block w-full uppercase" placeholder="Enter Official" autocomplete="off" 
+                                    @blur="signatory$.official.$touch()"
+                                    :class="signatoryInputBorderClass('official')"
+                                />
+                            </div>
+
+                            <p v-if="hasSignatoryError('official')" class="text-red-500 text-sm mt-1">
+                                <span class="text-red-500 text-sm" v-if="signatory$.official.required?.$invalid">Field is required.</span>
+                            </p>
+                        </div>
+
+                        <div class="mb-4">
+                            <InputLabel value="City / Municipal Agriculture Office" :required="true" />
+                            <div class="rounded-md block w-full">
+                                <TextInput v-model="signatoryForm.muni_city_official" type="text" class="mt-1 block w-full uppercase" placeholder="Enter Official" autocomplete="off" 
+                                    @blur="signatory$.muni_city_official.$touch()"
+                                    :class="signatoryInputBorderClass('muni_city_official')"
+                                />
+                            </div>
+
+                            <p v-if="hasSignatoryError('muni_city_official')" class="text-red-500 text-sm mt-1">
+                                <span class="text-red-500 text-sm" v-if="signatory$.muni_city_official.required?.$invalid">Field is required.</span>
+                            </p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <InputLabel value="CAFC / MAFC Chairmain" :required="true" />
+                            <div class="rounded-md block w-full">
+                                <TextInput v-model="signatoryForm.cafc_chairman" type="text" class="mt-1 block w-full uppercase" placeholder="Enter Official" autocomplete="off" 
+                                    @blur="signatory$.cafc_chairman.$touch()"
+                                    :class="signatoryInputBorderClass('cafc_chairman')"
+                                />
+                            </div>
+
+                            <p v-if="hasSignatoryError('cafc_chairman')" class="text-red-500 text-sm mt-1">
+                                <span class="text-red-500 text-sm" v-if="signatory$.cafc_chairman.required?.$invalid">Field is required.</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <ActionMessage :on="recentlySuccessful" class="me-3">
+                    Signatory successfully updated.
+                </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update assistance.
+                </ActionMessage>
+                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
+                    :disabled="processing" @click="submitEditSignatory">Save</PrimaryButton>
+                <SecondaryButton @click="closeSignatoryModal">Close</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <DialogModal id="updateProfile" :max-width="'sm'" :show="updateProfileDialog" @close="closeEditProfileModal">
+            <template #title>
+                Edit Profile
+            </template>
+            <template #content>
+                <div class="text-center">
+                    <InputLabel for="profile" value="Farmer Image" :required="true" />
+                    <div class="flex flex-wrap justify-center">
+                        <DropzoneInput
+                            label="Profile Photo"
+                            upload-url="/"
+                            :current-image-url="uploadedImage ? uploadedImage : '/images/no-user-image.png'"
+                            @fileSelected="handleImageSelected"
+                        />
+                    </div>
+                    <span class="text-red-500 text-sm" v-if="profile$.image.$error">Image is required.</span>
+                </div>
+            </template>
+            <template #footer>
+                <ActionMessage :on="recentlySuccessful" class="me-3">
+                    Profile successfully updated.
+                </ActionMessage>
+                <ActionMessage :on="recentlyFailed" class="me-3">
+                    Failed to update assistance.
+                </ActionMessage>
+                <PrimaryButton class="bg-blue-500 hover:bg-blue-700 text-white me-2" :class="{ 'opacity-25': processing }" 
+                    :disabled="processing" @click="submitEditProfile">Save</PrimaryButton>
+                <SecondaryButton @click="closeProfileModal">Close</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>

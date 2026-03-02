@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use App\Services\ActivityLogger;
 
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -67,7 +68,9 @@ class AssistancesController extends Controller
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.lastname', 'like', '%'.$request->search.'%')
-                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%');
+                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
             })->paginate($paginate);
         $assistances->appends(['paginate' => $paginate]);
@@ -111,7 +114,9 @@ class AssistancesController extends Controller
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
                     ->orWhere('c.lastname', 'like', '%'.$request->search.'%')
-                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%');
+                    ->orWhere('c.middlename', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.livelihood', 'like', '%'.$request->search.'%')
+                    ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
             })
             ->orderBy('assistances.created_at', 'desc')
@@ -157,12 +162,12 @@ class AssistancesController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Assistances $assistances) {
+    public function store(Request $request, Assistances $assistances, ActivityLogger $activityLogger) {
         $user_id = $request->user_id;
         $state = false;
 
+        $reference = $this->generateReferenceNo();
         if ($request->farmer && $request->assistance && $request->remarks) {
-            $reference = $this->generateReferenceNo();
 
             $created = Assistances::create([
                 'farmer_id' => $request->farmer,
@@ -212,6 +217,15 @@ class AssistancesController extends Controller
             }
         }
 
+        $name = $this->getFullname($request->farmer);
+        $activityLogger->log(
+            userId: auth()->id(),
+            table: 'Assistances',
+            message: $state ? "User added assistance for `{$name}` with reference number `{$reference}` successfully." : "User failed to add assistance for `{$name}`.",
+            action: 'create',
+            status: $state ? 'success' : 'error'
+        );
+
         return redirect()->back()->with('response', [
             'state' => $state
         ]);
@@ -236,15 +250,77 @@ class AssistancesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id, Assistances $assistances){
+    public function update(Request $request, $id, Assistances $assistances, ActivityLogger $activityLogger) {
         $state = false;
 
+        $changeMessages = [];
         $toUpdate = Assistances::where('id', $id)->first();
+
+        $original = $toUpdate->getOriginal();
+        $beforeFiles = Attachments::where('assistance_id', $id)
+            ->pluck('filename')
+            ->map(fn ($x) => strtolower(trim($x)))
+            ->sort()
+            ->values()
+            ->toArray();
+
         $toUpdate->farmer_id = $request->farmer;
         $toUpdate->assistance_id = $request->assistance;
         $toUpdate->livelihood = $request->livelihood;
         $toUpdate->purpose = trim($request->remarks);
         $toUpdate->updated_by = $request->user_id;
+
+        $dirty = $toUpdate->getDirty();
+        unset($dirty['updated_by']);
+
+        $norm = fn($v) => strtolower(trim((string)($v ?? '')));
+        $disp = fn($v) => ($v === null || $v === '') ? '(empty)' : $v;
+
+        $farmerNameById = function ($farmerId) {
+            if (!$farmerId) return '(empty)';
+            $farmer = DB::table('farmer_information')->where('id', $farmerId)->first();
+            if (!$farmer) return (string)$farmerId;
+
+            $mid = (!empty($farmer->middlename)) ? (mb_substr($farmer->middlename, 0, 1) . '. ') : '';
+            $suffix = (!empty($farmer->suffix)) ? (' ' . $farmer->suffix) : '';
+            return trim($farmer->firstname . ' ' . $mid . $farmer->lastname . $suffix);
+        };
+
+        $assistanceTextById = function ($assistanceId) {
+            if (!$assistanceId) return '(empty)';
+            $a = DB::table('assistance')->where('id', $assistanceId)->first();
+            return $a?->name ?? (string)$assistanceId;
+        };
+
+        foreach ($dirty as $field => $newValue) {
+            $oldValue = $original[$field] ?? null;
+
+            if ($norm($oldValue) === '' && $norm($newValue) === '') continue;
+            if ($norm($oldValue) === $norm($newValue)) continue;
+
+            $label = ucfirst(str_replace('_', ' ', $field));
+
+            if ($field === 'farmer_id') {
+                $oldDisp = $farmerNameById($oldValue);
+                $newDisp = $farmerNameById($newValue);
+                if ($norm($oldDisp) !== $norm($newDisp)) {
+                    $changeMessages[] = "Farmer changed from '{$oldDisp}' to '{$newDisp}'";
+                }
+                continue;
+            }
+
+            if ($field === 'assistance_id') {
+                $oldDisp = $assistanceTextById($oldValue);
+                $newDisp = $assistanceTextById($newValue);
+                if ($norm($oldDisp) !== $norm($newDisp)) {
+                    $changeMessages[] = "Assistance changed from '{$oldDisp}' to '{$newDisp}'";
+                }
+                continue;
+            }
+
+            $changeMessages[] = "{$label} changed from '{$disp($oldValue)}' to '{$disp($newValue)}'";
+        }
+
         $update = $toUpdate->save();
 
         if ($update) {
@@ -280,9 +356,44 @@ class AssistancesController extends Controller
                         }
                     }
                 }
+
+                $afterFiles = Attachments::where('assistance_id', $id)
+                    ->pluck('filename')
+                    ->map(fn ($x) => strtolower(trim($x)))
+                    ->sort()
+                    ->values()
+                    ->toArray();
+
+                if ($beforeFiles !== $afterFiles) {
+                    $added = array_values(array_diff($afterFiles, $beforeFiles));
+                    $removed = array_values(array_diff($beforeFiles, $afterFiles));
+
+                    $fileParts = [];
+                    if (!empty($added))   $fileParts[] = "Added: " . implode(', ', $added);
+                    if (!empty($removed)) $fileParts[] = "Removed: " . implode(', ', $removed);
+
+                    $changeMessages[] =
+                        "Attachments changed from '".count($beforeFiles)."' to '".count($afterFiles)."'"
+                        . (!empty($fileParts) ? " (" . implode('; ', $fileParts) . ")" : '');
+                }
+
                 $state = true;
             }
+        }
 
+        if (!empty($changeMessages)) {
+
+            $message = $state
+                ? "User updated assistance successfully. Changes: " . implode('; ', $changeMessages)
+                : "Failed to update assistance. Attempted changes: " . implode('; ', $changeMessages);
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Assistances',
+                message: $message,
+                action: 'update',
+                status: $state ? 'success' : 'error'
+            );
         }
 
         return redirect()->back()->with([
@@ -380,7 +491,7 @@ class AssistancesController extends Controller
         });
     }
 
-    public function archive_assistance(Request $request, $id, Assistances $assistances) {
+    public function archive_assistance(Request $request, $id, Assistances $assistances, ActivityLogger $activityLogger) {
         $state = false;
 
         if ($id) {
@@ -388,11 +499,16 @@ class AssistancesController extends Controller
             $toArchive->is_archived = 1;
             $toArchive->archived_by = $request->id;
             $toArchive->archived_at = date('Y-m-d H:i:s');
-            $toArchive->save();
+            $state = $toArchive->save();
 
-            if ($toArchive) {
-                $state = true;
-            }
+            $name = $this->getFullname($toArchive->farmer_id);
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Assistances',
+                message: $state ? "User archived assistance for `$name` successfully." : "User failed to archive assistance for `$name`.",
+                action: 'delete',
+                status: $state ? 'success' : 'error'
+            );
         }
 
         return back()->with('response', [
@@ -400,13 +516,16 @@ class AssistancesController extends Controller
         ]);
     }
 
-    public function update_status(Request $request, $id, Assistances $assistances) {
+    public function update_status(Request $request, $id, Assistances $assistances, ActivityLogger $activityLogger) {
         $request->validate([
             'status' => 'required|in:pending,approved,disapproved,cancelled',
             'remarks' => 'required|string'
         ]);
 
         $assistances = Assistances::where('id', $id)->first();
+        $oldStatus = $assistances->status;
+        $oldRemarks = null;
+
         $assistances->status = ucfirst($request->status);
         
         $_tempStatus = strtolower($request->status);
@@ -415,18 +534,21 @@ class AssistancesController extends Controller
         $userId = auth()->id();
         
         if ($_tempStatus == 'approved') {
+            $oldRemarks = $assistances->approved_remarks;
             $assistances->approved_by = $userId;
             $assistances->approved_remarks = $_remarks;
             $assistances->approved_at = $_date;
         }
 
         if ($_tempStatus == 'disapproved') {
+            $oldRemarks = $assistances->disapproved_remarks;
             $assistances->disapproved_by = $userId;
             $assistances->disapproved_remarks = $_remarks;
             $assistances->disapproved_at = $_date;
         }
 
         if ($_tempStatus == 'cancelled') {
+            $oldRemarks = $assistances->cancelled_remarks;
             $assistances->cancelled_by = $userId;
             $assistances->cancelled_remarks = $_remarks;
             $assistances->cancelled_at = $_date;
@@ -446,10 +568,44 @@ class AssistancesController extends Controller
 
         $state = $assistances->save();
 
+        $changeMessages = [];
+
+        $newStatus = $assistances->status;
+        $newRemarks = $_remarks;
+
+        $norm = fn($v) => strtolower(trim((string)($v ?? '')));
+
+        if ($norm($oldStatus) !== $norm($newStatus)) {
+            $changeMessages[] = "Status changed from '{$oldStatus}' to '{$newStatus}'";
+        }
+
+        if (!empty($changeMessages)) {
+
+            $message = $state
+                ? "User updated assistance status successfully. Changes: " . implode('; ', $changeMessages) .' for assistance with reference number `'.$assistances->reference_no.'` with remarks `'.$newRemarks.'`.'
+                : "Failed to update assistance status.";
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Assistance',
+                message: $message,
+                action: 'update',
+                status: $state ? 'success' : 'error'
+            );
+        }
+
         return redirect()->back()->with([
             'response' => [
                 'state' => $state
             ]
         ]);
+    }
+
+    function getFullname ($value) {
+        if (is_numeric($value)) {
+            $type = FarmerInformation::select(DB::raw("UPPER(CONCAT(firstname, ' ', IF(middlename IS NOT NULL AND middlename != '', CONCAT(LEFT(middlename, 1), '. '), ''), lastname, IF(suffix IS NOT NULL AND suffix != '', CONCAT(' ', suffix), ''))) AS name"))->where('id', $value)->first();
+            return $type ? $type->name : $value;
+        }
+        return $value;
     }
 }

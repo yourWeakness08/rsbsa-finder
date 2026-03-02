@@ -117,6 +117,7 @@
     const endDate = moment();
 
     const form = useForm({
+        status: '',
         livelihood: '',
         assistance: '',
         from: moment(startDate).format('YYYY-MM-DD'),
@@ -178,6 +179,7 @@
     }
 
     const resetFields = () => {
+        form.status = '';
         form.livelihood = '';
         form.assistance = '';
         form.from = startDate;
@@ -211,6 +213,14 @@
             })
         })
     }
+
+    const status = ref([
+        { id: 'Pending', text: 'PENDING' },
+        { id: 'Approved', text: 'APPROVED' },
+        { id: 'Disapproved', text: 'DISAPPROVED' },
+        { id: 'CANCELLED', text: 'CANCELLED' },
+    ]);
+
 </script>
 
 <template>
@@ -231,6 +241,13 @@
                             </div>
 
                             <hr class="mb-4">
+
+                            <div class="mb-4">
+                                <InputLabel for="status" value="Status" />
+                                <div class="rounded-md block w-full mt-1">
+                                    <Select2 class="h-10 uppercase" v-model="form.status" :options="status" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="handleLivelihood" />
+                                </div>
+                            </div>
 
                             <div class="mb-4">
                                 <InputLabel for="Livelihood" value="Livelihood" />
@@ -279,16 +296,32 @@
                                     <thead
                                         class="text-xs text-gray-700 uppercase">
                                         <tr>
+                                            <th scope="col" class="px-6 py-3 w-2/12">Ref #</th>
                                             <th scope="col" class="px-6 py-3 w-3/12">Name</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Assistance</th>
+                                            <th scope="col" class="px-6 py-3 w-2/12">Assistance</th>
                                             <th scope="col" class="px-6 py-3 w-3/12">Remarks</th>
                                             <th scope="col" class="px-6 py-3 w-3/12">Created By</th>
-                                            <th scope="col" class="px-6 py-3">&nbsp;</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <template v-if="reports.total > 0">
                                             <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                    <small>
+                                                        <span class="inline-flex items-center text-sm rounded-md px-2 py-1 uppercase inset-ring inset-ring-yellow-400/20"
+                                                            :class="{
+                                                                'bg-yellow-500 text-white' : reports.status.toLowerCase() == 'pending',
+                                                                'bg-green-500 text-white' : reports.status.toLowerCase() == 'approved',
+                                                                'bg-red-500 text-white' : reports.status.toLowerCase() == 'disapproved',
+                                                                'bg-zinc-500 text-white' : reports.status.toLowerCase() == 'cancelled',
+                                                            }">
+                                                                {{ reports.status }}
+                                                        </span>
+                                                    </small>
+                                                    <p class="m-0">
+                                                        {{ reports.reference_no }}
+                                                    </p>
+                                                </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                     {{ reports.name }}
                                                 </td>
@@ -302,7 +335,7 @@
                                                     </p>
                                                 </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
+                                                    {{ reports.purpose }}
                                                 </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                     <p class="font-semibold">{{ reports.created_name }}</p>
@@ -311,7 +344,23 @@
                                             </tr>
                                         </template>
                                         <template v-else-if="filter.paginate == 'All' && reports.length > 0">
-                                             <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
+                                            <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                    <small>
+                                                        <span class="inline-flex items-center text-sm rounded-md px-2 py-1 uppercase inset-ring inset-ring-yellow-400/20"
+                                                            :class="{
+                                                                'bg-yellow-500 text-white' : reports.status.toLowerCase() == 'pending',
+                                                                'bg-green-500 text-white' : reports.status.toLowerCase() == 'approved',
+                                                                'bg-red-500 text-white' : reports.status.toLowerCase() == 'disapproved',
+                                                                'bg-zinc-500 text-white' : reports.status.toLowerCase() == 'cancelled',
+                                                            }">
+                                                                {{ reports.status }}
+                                                        </span>
+                                                    </small>
+                                                    <p class="m-0">
+                                                        {{ reports.reference_no }}
+                                                    </p>
+                                                </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                     {{ reports.name }}
                                                 </td>
@@ -325,7 +374,7 @@
                                                     </p>
                                                 </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
+                                                    {{ reports.purpose }}
                                                 </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                     <p class="font-semibold">{{ reports.created_name }}</p>
@@ -335,7 +384,7 @@
                                         </template>
                                         <template v-else>
                                             <tr class="bg-white border-b">
-                                                <th colspan="4" id="no-data-found" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No Data Found!</th>
+                                                <th colspan="5" id="no-data-found" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No Data Found!</th>
                                             </tr>
                                         </template>
                                     </tbody>

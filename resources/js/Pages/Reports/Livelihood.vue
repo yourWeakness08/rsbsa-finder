@@ -54,25 +54,6 @@
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
-    const submitFilter = () => {
-        const { value } = pageValue;
-        let formData = {};
-        if(value){ formData.paginate = value; }
-        if(searchValue.value){ formData.search = searchValue.value; }
-        
-        if(Object.keys(formData).length > 0){
-            router.visit('/types', {
-                method: 'get',
-                data: formData,
-                only: ['farming_type', 'filter']
-            });
-        }
-    }
-
-    const dateFormat = (date) => {
-        return moment(date).format('MMM. DD, YYYY hh:mm A');
-    }
-
     const handleSearch = proxy.$debounce((val) => {
         const { value } = pageValue;
 
@@ -81,7 +62,7 @@
         if (value) { form.paginate = value };
         form.search = debouncedSearch.value ? val : '';
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.livelihood'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -100,7 +81,7 @@
         if (value) { form.paginate = value };
         if (searchValue.value) { form.search = searchValue.value; }
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.livelihood'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -109,14 +90,8 @@
 
     }
 
-    const startDate = moment().subtract(6, 'days');
-    const endDate = moment();
-
     const form = useForm({
         livelihood: '',
-        assistance: '',
-        from: moment(startDate).format('YYYY-MM-DD'),
-        to: moment(endDate).format('YYYY-MM-DD'),
         search: '',
         paginate: ''
     })
@@ -128,33 +103,10 @@
         { id: 'agri_youth', text: 'AGRI YOUTH' },
     ]);
 
-    onMounted(() => {
-        datepicker();
-    });
-
-    const datepicker = () => {
-        $('#daterange').daterangepicker({
-            opens: 'left',
-            locale: {
-                format: 'MM/DD/YYYY',
-            },
-            singleDatePicker: false,
-            showDropdowns: true,
-            autoUpdateInput: true,
-            startDate: startDate,
-            endDate: endDate
-        }).on('apply.daterangepicker', function(ev, picker){
-            $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
-
-            form.from = picker.startDate.format('YYYY-MM-DD');
-            form.to = picker.endDate.format('YYYY-MM-DD');
-        });
-    }
-
-    const generateAssistance = () => {
+    const generateLivelihood = () => {
         let formData = {};
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.livelihood'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -163,35 +115,9 @@
         })
     }
 
-    const formatAssistance = (arr) => {
-        const index = props.assistance.map(obj => obj.id).indexOf(arr.assistance_id);
-        return props.assistance[index].name;
-    }
-
-    const formatLivelihood = (val) => {
-        const index = main_livelihood.value.map(obj => obj.id).indexOf(val);
-        return main_livelihood.value[index].text;
-    }
-
     const resetFields = () => {
         form.livelihood = '';
-        form.assistance = '';
-        form.from = startDate;
-        form.to = endDate;
-
-        datepicker();
-        _assistance();
     }
-
-    const _assistance = () => {
-        select2Assitance.value = [];
-        $.each(props.assistance, function(index, item) {
-            const temp = Object.assign({}, { id: item.id, text: item.name.toUpperCase() });
-            select2Assitance.value.push(temp);
-        });
-    }
-
-    _assistance();
     
 
     const handleLivelihood = (e) => {
@@ -241,7 +167,7 @@
                                 <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white px-2 py-3 me-2" @click="resetFields"> 
                                     Reset Filter 
                                 </PrimaryButton>
-                                <PrimaryButton class="bg-green-500 hover:bg-green-700 text-white px-2 py-3" :class="{ 'opacity-25': processing }" @click="generateAssistance" :disabled="processing"> 
+                                <PrimaryButton class="bg-green-500 hover:bg-green-700 text-white px-2 py-3" :class="{ 'opacity-25': processing }" @click="generateLivelihood" :disabled="processing"> 
                                     Generate 
                                 </PrimaryButton>
                             </div>
@@ -264,10 +190,7 @@
                                         class="text-xs text-gray-700 uppercase">
                                         <tr>
                                             <th scope="col" class="px-6 py-3 w-3/12">Name</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Assistance</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Remarks</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Created By</th>
-                                            <th scope="col" class="px-6 py-3">&nbsp;</th>
+                                            <th scope="col" class="px-6 py-3 w-9/12">Type / Kind of Activity</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -276,21 +199,17 @@
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                     {{ reports.name }}
                                                 </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
+                                                <td class="px-6 py-4 font-medium text-gray-900 uppercase">
+                                                    <template v-if="reports.main_livelihood">
+                                                        <template v-for="(item, index) in reports.main_livelihood">
+                                                            <ul class="mb-3">
+                                                                <li class="font-extrabold">{{ item.livelihood }}</li>
+                                                                <li class="ps-3" v-if="item.content.length > 0">
+                                                                    - <span class="text-gray-700">{{ item.content.join(', ') }}</span>
+                                                                </li>
+                                                            </ul>
+                                                        </template>
+                                                    </template>
                                                 </td>
                                             </tr>
                                         </template>
@@ -300,20 +219,6 @@
                                                     {{ reports.name }}
                                                 </td>
                                                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
                                                 </td>
                                             </tr>
                                         </template>
