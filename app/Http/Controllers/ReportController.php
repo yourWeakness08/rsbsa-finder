@@ -101,10 +101,10 @@ class ReportController extends Controller{
         );
     }
 
-    //not done
     public function livelihood(Request $request) {
         $paginate = $request->paginate ? intval($request->paginate): 10;
-        $livelihood = $request->livelihood ? $request->livelihood : null;
+        $filterLivelihood = $request->livelihood ? $request->livelihood : null;
+        $search = $request->search ? $request->search : null;
 
         $livelihood = FarmerInformation::from('farmer_information as a')
             ->select(DB::raw("a.id, CONCAT(
@@ -112,7 +112,7 @@ class ReportController extends Controller{
                     IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
                     a.lastname,
                     IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
-                ) AS name, b.main_livelihood"))
+                ) AS name, b.main_livelihood, b.id as farm_profile_id"))
             ->leftJoin('farm_profile as b', 'b.farmer_id', '=', 'a.id')
             ->where( function($query) use ($request) {
                 if ($request->search) {
@@ -121,17 +121,82 @@ class ReportController extends Controller{
                     ->orWhere('a.lastname', 'like', '%'.$request->search.'%');
                 }
             })
-            ->where( function($query) use ($livelihood) {
-                if ($livelihood) {
-                    $query->where('b.main_livelihood', 'like', '%"'.$livelihood.'"%');
+            ->where( function($query) use ($filterLivelihood) {
+                if ($filterLivelihood) {
+                    $query->where('b.main_livelihood', 'like', '%"'.$filterLivelihood.'"%');
                 }
             })
             ->where("a.is_archived", 0)
             ->paginate($paginate);
         $livelihood->appends(['paginate' => $paginate]);
 
+        if ($filterLivelihood == 'All') {
+            $livelihood = FarmerInformation::from('farmer_information as a')
+                ->select(DB::raw("a.id, CONCAT(
+                        a.firstname, ' ',
+                        IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
+                        a.lastname,
+                        IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
+                    ) AS name, b.main_livelihood, b.id as farm_profile_id"))
+                ->leftJoin('farm_profile as b', 'b.farmer_id', '=', 'a.id')
+                ->where( function($query) use ($request) {
+                    if ($request->search) {
+                        $query->where('a.firstname', 'like', '%'.$request->search.'%')
+                        ->orWhere('a.middlename', 'like', '%'.$request->search.'%')
+                        ->orWhere('a.lastname', 'like', '%'.$request->search.'%');
+                    }
+                })
+                ->where( function($query) use ($filterLivelihood) {
+                    if ($filterLivelihood) {
+                        $query->where('b.main_livelihood', 'like', '%"'.$filterLivelihood.'"%');
+                    }
+                })
+                ->where("a.is_archived", 0)
+                ->get();
+                $livelihood->all();
+        }
+
+        $mainLivelihoodLabel = [
+            'farmer'      => 'Farmer',
+            'farm_worker' => 'Farm Worker / Laborer',
+            'fisherfolks' => 'Fisherfolk',
+            'agri_youth'  => 'Agri Youth',
+        ];
+        
+        foreach($livelihood as $key => $value) {
+            $meta = @unserialize($value->main_livelihood);
+
+            $temp = array();
+            if (is_array($meta) && $meta) {
+                $main = MainLivelihood::select(DB::raw('main_livelihood, meta, value'))
+                    ->where('farmer_profile_id', $value->farm_profile_id)
+                    ->whereIn('main_livelihood', $meta)
+                    ->get();
+
+                foreach ($main as $k => $v) {
+                    // only filter the generated livelihood
+                    if ($filterLivelihood && $v->main_livelihood !== $filterLivelihood) {
+                        continue;
+                    }
+                    
+                    $temp[$v->main_livelihood]['livelihood'] = $mainLivelihoodLabel[$v->main_livelihood];
+                    $temp[$v->main_livelihood]['content'][] = $this->get_farming_type($v->value);
+                }
+            }
+
+            $value->main_livelihood = $temp;
+        }
+
         return Inertia::render(
             'Reports/Livelihood', ['reports' => $livelihood, 'filter' => $request]
         );
+    }
+
+    function get_farming_type($val) {
+        if (!is_numeric($val)) return $val;
+
+        $farming_type = FarmingType::where('id', $val)->first();
+
+        return $farming_type->name;
     }
 }

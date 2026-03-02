@@ -478,6 +478,10 @@ class FarmersController extends Controller
             $state = $this->updateLivelihood($request, $id, $activityLogger);
         } else if ($request->submit_type == 'farm_parcel') {
             $state = $this->updateFarmParcel($request, $id, $activityLogger);
+        } else if ($request->submit_type == 'signatory') {
+            $state = $this->updateSignatory($request, $id, $activityLogger);
+        } else if ($request->submit_type == 'profile') {
+            $state = $this->updateProfile($request, $id, $activityLogger);
         }
 
         return redirect()
@@ -915,7 +919,6 @@ class FarmersController extends Controller
         $profile = FarmProfile::where('farmer_id', $id)->first();
         
         $changeMessages = [];
-
         if($profile) {
             $original = $profile->getOriginal();
             $profile->main_livelihood = serialize($request->main_livelihood);
@@ -1366,7 +1369,7 @@ class FarmersController extends Controller
     }
 
     public function updateFarmParcel ($request, $id, ActivityLogger $activityLogger) {
-        $state = true;
+        $state = false;
         $changeMessages = [];
 
         if ($id) {
@@ -1596,5 +1599,101 @@ class FarmersController extends Controller
             return $type ? $type->name : $value;
         }
         return $value;
+    }
+
+    function updateSignatory($request, $id, ActivityLogger $activityLogger) {
+        $state = false;
+        $changeMessages = [];
+
+        if ($id) {
+            $signatory = CorrectedVerified::where('farmer_id', $id)->first();
+
+            if ($signatory) {
+                $original = $signatory->getOriginal();
+                $signatory->paper_date = $request->paper_date;
+                $signatory->official = strtolower(trim($request->official));
+                $signatory->muni_city_official = strtolower(trim($request->muni_city_official));
+                $signatory->cafc_chairman = strtolower(trim($request->cafc_chairman));
+
+                $dirty = $signatory->getDirty();
+                $query = $signatory->save();
+
+                foreach ($dirty as $field => $newValue) {
+                    $oldValue = $original[$field] ?? null;
+
+                    $changeMessages[] = $field . " changed from '{$oldValue}' to '{$newValue}'";
+                }
+            } else {
+                $query = CorrectedVerified::create([
+                    'farmer_id' => $id,
+                    'paper_date' => $request->paper_date,
+                    'official' => strtolower(trim($request->official)),
+                    'muni_city_official' => strtolower(trim($request->muni_city_official)),
+                    'cafc_chairman' => strtolower(trim($request->cafc_chairman)),
+                    'uuid' => Str::random(12)
+                ]);
+            }
+
+            $state = $query ? true : false;
+
+            $message = "User updated Signatory successfully. Changes: " . implode('; ', $changeMessages);
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Farming Type',
+                message: $state ? $message : "User failed to update Signatory.",
+                action: 'update',
+                status: $state ? 'success' : 'error'
+            );
+        }
+
+        return $state;
+    }
+
+    function updateProfile($request, $id, ActivityLogger $activityLogger) {
+        $state = false;
+        $file = $request->file('image');
+        $filename = $file->getClientOriginalName();
+        $farmer = FarmerInformation::select(DB::raw("CONCAT(
+                        firstname, ' ',
+                        IF(middlename IS NOT NULL AND middlename != '', CONCAT(LEFT(middlename, 1), '. '), ''),
+                        lastname,
+                        IF(suffix IS NOT NULL AND suffix != '', CONCAT(' ', suffix), '')
+                    ) AS name"))
+        ->where("id", $id)->first();
+
+        $destinationPath = "uploads/farmers/farmer_".$id;
+        if(!file_exists(public_path($destinationPath))){ 
+            File::makeDirectory(public_path($destinationPath), 0777, true);
+        }
+
+        $tempFilePath = $destinationPath."/".$filename;
+
+        if(file_exists(public_path($tempFilePath))){
+            unlink(public_path($tempFilePath));
+        }
+
+        if(!file_exists(public_path($tempFilePath))){
+            $fileMoved = $file->move($destinationPath, $filename);
+
+            if($fileMoved) {
+                DB::table('farmer_information')
+                ->where('id', $id)
+                ->update(['farmer_image' => $filename, 'updated_at' => date("Y-m-d H:i:s")]);
+
+                $state = true;
+            }
+        }
+
+        $message = "User updated profile of `$farmer->name` successfully.";
+        $activityLogger->log(
+            userId: auth()->id(),
+            table: 'Farming Type',
+            message: $state ? $message : "User failed to update `$farmer->name` profile.",
+            action: 'update',
+            status: $state ? 'success' : 'error'
+        );
+
+        return $state;
     }
 }
