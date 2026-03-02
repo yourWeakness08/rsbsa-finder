@@ -10,4 +10,8 @@ class FarmParcel extends Model
     use HasFactory;
     protected $table = 'farm_parcels';
     protected $fillable = ['farmer_profile_id', 'brgy', 'city', 'total_farm_area', 'is_whithin_ancentral_domain', 'ownership_document_no', 'is_agrarian_reform_beneficiary', 'document', 'ownership_type', 'landowner_name', 'is_other', 'farmer_in_rotation_name', 'uuid'];
+
+    public function farmParcelInformations(){
+        return $this->hasMany(\App\Models\FarmParcelInformation::class, 'farm_parcels_id', 'id');
+    }
 }

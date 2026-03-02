@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use App\Services\ActivityLogger;
 
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -123,7 +124,7 @@ class FarmersController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, FarmerInformation $farmerInformation) {
+    public function store(Request $request, FarmerInformation $farmerInformation, ActivityLogger $activityLogger) {
         $user_id = $request->user_id;
         $contact = preg_replace('/\D/', '', $request->contact);
 
@@ -426,6 +427,14 @@ class FarmersController extends Controller
                     'cafc_chairman' => trim(strtolower($request->cafc_chairman)),
                     'uuid'  => Str::random(12)
                 ]);
+
+                $activityLogger->log(
+                    userId: auth()->id(),
+                    table: 'Farmer',
+                    message: $created ? "User Created a new farmer / fishermen `$request->firstname $request->lastname`" : "User Failed to create new farmer / fishermen `$request->firstname $request->lastname`.",
+                    action: 'create',
+                    status: $created ? 'success' : 'error'
+                );
             }
 
             $state = true;
@@ -460,15 +469,15 @@ class FarmersController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id, FarmerInformation $farmers)
+    public function update(Request $request, $id, FarmerInformation $farmers, ActivityLogger $activityLogger)
     {
         $state = false;
         if ($request->submit_type == 'personal') {
-            $state = $this->updatePersonal($request, $id);
+            $state = $this->updatePersonal($request, $id, $activityLogger);
         } else if ($request->submit_type == 'livelihood') {
-            $state = $this->updateLivelihood($request, $id);
+            $state = $this->updateLivelihood($request, $id, $activityLogger);
         } else if ($request->submit_type == 'farm_parcel') {
-            $state = $this->updateFarmParcel($request, $id);
+            $state = $this->updateFarmParcel($request, $id, $activityLogger);
         }
 
         return redirect()
@@ -488,7 +497,7 @@ class FarmersController extends Controller
         //
     }
 
-    public function archive_farmer(Request $request, $id, FarmerInformation $farmerInformation) {
+    public function archive_farmer(Request $request, $id, FarmerInformation $farmerInformation, ActivityLogger $activityLogger) {
         $resultset = array();
 
         if ($id) {
@@ -496,7 +505,15 @@ class FarmersController extends Controller
             $toArchive->is_archived = 1;
             $toArchive->archived_by = $request->id;
             $toArchive->archived_at = date('Y-m-d H:i:s');
-            $toArchive->save();
+            $update = $toArchive->save();
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Farmer',
+                message: $update ? "User archived farmer `$toArchive->firstname $toArchive->lastname` succesfully" : "User failed to archive farmer `$toArchive->firstname $toArchive->lastname`.",
+                action: 'delete',
+                status: $update ? 'success' : 'error'
+            );
 
             $farmer = FarmerInformation::paginate(25);
             $resultset["state"] = true;
@@ -550,7 +567,6 @@ class FarmersController extends Controller
 
         $farmer->farm_parcel = $parcelCollection;
 
-        //here
         $attachments = Attachments::where('farmer_id', $farmer->id)
             ->where('is_archived', 0)
             ->orderBy('created_at', 'desc')
@@ -594,7 +610,6 @@ class FarmersController extends Controller
             ];
         });
 
-        //here
         $paginate = $request->paginate ? intval($request->paginate): 10;
         $assistances = Assistances::leftJoin('users as b', 'b.id', '=', 'assistances.created_by')
             ->select(DB::raw("assistances.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
@@ -749,7 +764,7 @@ class FarmersController extends Controller
         $farmer->all();
 
         $farmer->transform(function ($farmers) {
-            $farmers->farmer_image = asset('uploads/farmers/farmer_'.$farmers->id.'/'.$farmers->farmer_image);
+            $farmers->farmer_image =  $farmers->farmer_image && file_exists(public_path('uploads/farmers/farmer_'.$farmers->id.'/'.$farmers->farmer_image)) ? asset('uploads/farmers/farmer_'.$farmers->id.'/'.$farmers->farmer_image) : asset('images/male-farmer.png');
             $farmers->name = strtoupper($farmers->name);
             
             return $farmers;   
@@ -758,10 +773,13 @@ class FarmersController extends Controller
         return response()->json($farmer);
     }
 
-    private function updatePersonal ($request, $id) {
+    private function updatePersonal ($request, $id, ActivityLogger $activityLogger) {
         $contact = preg_replace('/\D/', '', $request->mobile_no);
 
-        $farmer = FarmerInformation::find($id);
+        $farmer = FarmerInformation::where('id', $id)->first();
+
+        $original = $farmer->getOriginal();
+
         $farmer->firstname = trim(strtolower($request->firstname));
         $farmer->lastname = trim(strtolower($request->lastname));
         $farmer->middlename = trim(strtolower($request->middlename));
@@ -777,16 +795,43 @@ class FarmersController extends Controller
         $farmer->date_of_birth = trim(date('Y-m-d', strtotime($request->date_of_birth)));
         $farmer->place_of_birth = trim(strtolower($request->place_of_birth));
         $farmer->religion = trim(strtolower($request->religon));
-        $farmer->civil_status = trim($request->civil_status);
+        $farmer->civil_status = trim(strtolower($request->civil_status));
         $farmer->spouse_name_if_married = trim(strtolower($request->spouse_name_if_married));
         $farmer->region = trim(strtolower($request->region));
         $farmer->updated_by = $request->user_id;
+
+        $state = false;
+
+        $changes = $farmer->getDirty();
         $query = $farmer->save();
+        $state = $query ? true : false;
 
-        if ($query) {
+        unset($changes['updated_by']);
+
+        $changeMessages = [];
+
+        foreach ($changes as $field => $newValue) {
+            $oldValue = $original[$field] ?? null;
+
+            $oldCompare = strtolower(trim((string) $oldValue));
+            $newCompare = strtolower(trim((string) $newValue));
+
+            if ($oldCompare === '' && $newCompare === '') {
+                continue;
+            }
+
+            if ($oldCompare === $newCompare) {
+                continue;
+            }
+            
+            $changeMessages[] = str_replace('_', ' ', $field) . " changed from '{$oldValue}' to '{$newValue}'";
+        }
+
+        if ($state) {
             $emer_contact = preg_replace('/\D/', '', $request->contact_no);
-
             $other_info = OthersFarmerInformation::where('farmer_id', $id)->first();
+
+            $original = $other_info->getOriginal();
 
             if ($other_info) {
                 $other_info->mothers_maiden_name = trim(strtolower($request->mothers_maiden_name));
@@ -805,7 +850,28 @@ class FarmersController extends Controller
                 $other_info->is_farmer_mem = trim(strtolower($request->is_farmer_mem));
                 $other_info->contact_emergency = trim(strtolower($request->contact_emergency));
                 $other_info->contact_no = $emer_contact;
-                $other_info->save();
+
+                if ($other_info->isDirty()) {
+                    $_changes = $other_info->getDirty();
+                    $other_info->save();
+
+                    foreach ($_changes as $field => $newValue) {
+                        $oldValue = $original[$field] ?? null;
+
+                        $oldCompare = strtolower(trim((string) $oldValue));
+                        $newCompare = strtolower(trim((string) $newValue));
+
+                        if ($oldCompare === '' && $newCompare === '') {
+                            continue;
+                        }
+
+                        if ($oldCompare === $newCompare) {
+                            continue;
+                        }
+
+                        $changeMessages[] = str_replace('_', ' ', $field) . " changed from '{$oldValue}' to '{$newValue}'";
+                    }
+                }
             } else {
                 $query = OthersFarmerInformation::create([
                     'farmer_id' => $id,
@@ -828,19 +894,78 @@ class FarmersController extends Controller
                     'uuid' => Str::random(12)
                 ]);
             }
+
+            $message = "User updated farmer information successfully. Changes: " . implode('; ', $changeMessages);
+        } else {
+            $message = "User failed to update farmer information.";
         }
 
-        return $query ? true : false;
+        $activityLogger->log(
+            userId: auth()->id(),
+            table: 'Farmer Information',
+            message: $state ? $message : 'User failed to update farmer information.',
+            action: 'update',
+            status: $state ? 'success' : 'error'
+        );
+
+        return $state ? true : false;
     }
 
-    private function updateLivelihood($request, $id) {
+    private function updateLivelihood($request, $id, ActivityLogger $activityLogger) {
         $profile = FarmProfile::where('farmer_id', $id)->first();
+        
+        $changeMessages = [];
 
         if($profile) {
+            $original = $profile->getOriginal();
             $profile->main_livelihood = serialize($request->main_livelihood);
             $profile->farming_gross = $request->farming_gross;
             $profile->no_farming_gross = $request->no_farming_gross;
+
+            $dirty = $profile->getDirty();
             $query = $profile->save();
+            $exclude = ['updated_by', 'updated_at'];
+            $dirty = array_diff_key($dirty, array_flip($exclude));
+
+            foreach ($dirty as $field => $newValue) {
+
+                $oldValue = $original[$field] ?? null;
+                if ($field === 'main_livelihood') {
+
+                    $oldArray = $oldValue ? unserialize($oldValue) : [];
+                    $newArray = $request->main_livelihood ?? [];
+                    sort($oldArray);
+                    sort($newArray);
+
+                    if ($oldArray === $newArray) {
+                        continue;
+                    }
+
+                    $oldDisplay = empty($oldArray) ? '(empty)' : implode(', ', $oldArray);
+                    $newDisplay = empty($newArray) ? '(empty)' : implode(', ', $newArray);
+
+                    $changeMessages[] = "Main livelihood changed from '{$oldDisplay}' to '{$newDisplay}'";
+                    continue;
+                }
+
+                $oldCompare = strtolower(trim((string) $oldValue));
+                $newCompare = strtolower(trim((string) $newValue));
+
+                if ($oldCompare === '' && $newCompare === '') {
+                    continue;
+                }
+
+                if ($oldCompare === $newCompare) {
+                    continue;
+                }
+
+                $oldDisplay = $oldValue === null || $oldValue === '' ? '(empty)' : $oldValue;
+                $newDisplay = $newValue === null || $newValue === '' ? '(empty)' : $newValue;
+
+                $label = ucfirst(str_replace('_', ' ', $field));
+
+                $changeMessages[] = "{$label} changed from '{$oldDisplay}' to '{$newDisplay}'";
+            }
         } else {
             $query = FarmProfile::create([
                 'farmer_id' => $id,
@@ -853,6 +978,12 @@ class FarmersController extends Controller
 
         if ($query) {
             $farm_profile_id = isset($profile->id) && $profile->id ? $profile->id : $query->id;
+
+            $before = MainLivelihood::where('farmer_profile_id', $farm_profile_id)
+                ->get()
+                ->groupBy('main_livelihood')
+                ->map(fn($items) => $items->pluck('value')->sort()->values()->toArray())
+                ->toArray();
 
             $checkMain = MainLivelihood::where('farmer_profile_id', $farm_profile_id)->where('main_livelihood', 'farmer')->get();
             if (count($checkMain->toArray()) > 0 || !in_array('farmer', $request->main_livelihood)) {
@@ -982,6 +1113,64 @@ class FarmersController extends Controller
                     }
                 }
             }
+
+            $after = MainLivelihood::where('farmer_profile_id', $farm_profile_id)
+                ->get()
+                ->groupBy('main_livelihood')
+                ->map(fn($items) => $items->pluck('value')->sort()->values()->toArray())
+                ->toArray();
+
+            $allIds = collect(array_merge(
+                    ...array_values($before),
+                    ...array_values($after)
+                ))
+                ->filter(fn($v) => is_numeric($v))
+                ->unique()
+                ->values()
+                ->toArray();
+            
+            $typeMap = FarmingType::whereIn('id', $allIds)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            $allKeys = array_unique(array_merge(array_keys($before), array_keys($after)));
+
+            foreach ($allKeys as $key) {
+
+                $oldValues = $before[$key] ?? [];
+                $newValues = $after[$key] ?? [];
+
+                sort($oldValues);
+                sort($newValues);
+
+                if ($oldValues === $newValues) {
+                    continue; // no real change
+                }
+
+                $oldDisplay = empty($oldValues)
+                    ? '(empty)'
+                    : $this->convertIdsToNames($oldValues, $typeMap);
+
+                $newDisplay = empty($newValues)
+                    ? '(empty)'
+                    : $this->convertIdsToNames($newValues, $typeMap);
+
+                $label = ucfirst(str_replace('_', ' ', $key));
+
+                $changeMessages[] = "{$label} changed from '{$oldDisplay}' to '{$newDisplay}'";
+            }
+        }
+
+        if (!empty($changeMessages)) {
+            $message = "User updated farmer profile successfully. Changes: " . implode('; ', $changeMessages);
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Farmer Profile',
+                message: $query ? $message : 'User failed to update farmer profile.',
+                action: 'update',
+                status: $query ? 'success' : 'error'
+            );
         }
 
         return $query ? true : false;
@@ -1083,7 +1272,7 @@ class FarmersController extends Controller
         }
     }
 
-    public function save_attachments(Request $request, $id, FarmerInformation $farmerInformation) {
+    public function save_attachments(Request $request, $id, FarmerInformation $farmerInformation, ActivityLogger $activityLogger) {
         $state = false;
 
         if ($request->file('attachments')) {
@@ -1128,6 +1317,16 @@ class FarmersController extends Controller
             }
         }
 
+        $name = $this->getFullname($id);
+
+        $activityLogger->log(
+            userId: auth()->id(),
+            table: 'Farmer Attachments',
+            message: $state ? "User uploaded attachments successfully for farmer `$name`." : "User failed to upload attachment for farmer `$name`.",
+            action: 'create',
+            status: $state ? 'success' : 'error'
+        );
+
         return redirect()
             ->route('farmers.view', $id)
             ->with([
@@ -1137,15 +1336,25 @@ class FarmersController extends Controller
             ]);
     }
 
-    public function archive_attachment(Request $request, $id, FarmerInformation $farmerInformation) {
+    public function archive_attachment(Request $request, $id, FarmerInformation $farmerInformation, ActivityLogger $activityLogger) {
         if ($id) {
             $toArchive = Attachments::where('id', $id)->first();
             $toArchive->is_archived = 1;
             $toArchive->archived_by = $request->user_id;
             $toArchive->archived_at = date('Y-m-d H:i:s');
-            $toArchive->save();
+            $state = $toArchive->save();
 
-            $resultset["state"] = true;
+            $name = $this->getFullname($toArchive->farmer_id);
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Farmer Attachments',
+                message: $state ? "User archived attachment `{$toArchive->filename}` for `$name`." : "User failed to archive attachment `{$toArchive->filename}` for `$name`.",
+                action: 'delete',
+                status: $state ? 'success' : 'error'
+            );
+
+            $resultset["state"] = $state;
             $resultset["updated"] = $toArchive;
             $resultset['message'] = 'Attachment successfully archived!';
         } else {
@@ -1156,12 +1365,19 @@ class FarmersController extends Controller
         return response()->json($resultset);
     }
 
-    public function updateFarmParcel ($request, $id) {
+    public function updateFarmParcel ($request, $id, ActivityLogger $activityLogger) {
         $state = true;
+        $changeMessages = [];
+
         if ($id) {
             $farmParcelId = 0;
             if (count($request->farm_parcel) > 0) {
                 $farm_profile = FarmProfile::where('farmer_id', $id)->first();
+
+                $before = FarmParcel::where('farmer_profile_id', $farm_profile->id)
+                    ->with('farmParcelInformations')
+                    ->orderBy('id')
+                    ->get();
 
                 $farmParcel = FarmParcel::where('farmer_profile_id', $farm_profile->id)->first();
                 FarmParcel::where('farmer_profile_id', $farm_profile->id)->delete();
@@ -1172,6 +1388,7 @@ class FarmersController extends Controller
 
                 foreach($request->farm_parcel as $parcel) {
                     $document = $parcel['document'];
+
                     $docFilename = $document->getClientOriginalName();
 
                     $state = FarmParcel::create([
@@ -1232,9 +1449,152 @@ class FarmersController extends Controller
                     $farm_profile->is_arb = $request->is_arb;
                     $farm_profile->save();
                 }
+
+                $after = FarmParcel::where('farmer_profile_id', $farm_profile->id)
+                    ->with('farmParcelInformations')
+                    ->orderBy('id')
+                    ->get();
+                
+                $norm = fn($v) => strtolower(trim((string)($v ?? '')));
+                $empty = fn($v) => $norm($v) === '';
+
+                $parcelToArray = function ($p) use ($norm) {
+                    // Summarize infos into stable strings (no IDs)
+                    $infos = $p->farmParcelInformations
+                        ->map(function ($i) use ($norm) {
+                            // Use farming_type_name if you have it; fallback to farming_type
+                            $type = $norm($i->farming_type_name ?: $i->farming_type);
+                            $farmType = $norm($i->farm_type);
+                            $size = (string)($i->size ?? 0);
+                            $head = (string)($i->no_of_head ?? 0);
+
+                            return "{$type}|{$farmType}|{$size}|{$head}";
+                        })
+                        ->sort()
+                        ->values()
+                        ->toArray();
+
+                    return [
+                        'city' => $norm($p->city),
+                        'brgy' => $norm($p->brgy),
+                        'total_farm_area' => (string)($p->total_farm_area ?? ''),
+                        'ownership_document_no' => $norm($p->ownership_document_no),
+                        'ownership_type' => (string)($p->ownership_type ?? ''),
+                        'landowner_name' => $norm($p->landowner_name),
+                        'is_other' => $norm($p->is_other),
+                        'farmer_in_rotation_name' => $norm($p->farmer_in_rotation_name),
+                        'is_whithin_ancentral_domain' => (string)($p->is_whithin_ancentral_domain ?? ''),
+                        'is_agrarian_reform_beneficiary' => (string)($p->is_agrarian_reform_beneficiary ?? ''),
+                        'document' => $norm($p->document),
+                        'infos' => $infos,
+                    ];
+                };
+
+                $beforeArr = $before->map($parcelToArray)->values()->toArray();
+                $afterArr  = $after->map($parcelToArray)->values()->toArray();
+
+
+                if (count($beforeArr) !== count($afterArr)) {
+                    $changeMessages[] = "Farm parcel count changed from '".count($beforeArr)."' to '".count($afterArr)."'";
+                }
+
+                $max = max(count($beforeArr), count($afterArr));
+
+                for ($i = 0; $i < $max; $i++) {
+
+                    $old = $beforeArr[$i] ?? null;
+                    $new = $afterArr[$i] ?? null;
+
+                    $label = "Farm Parcel #".($i + 1);
+
+                    if ($old === null && $new !== null) {
+                        $changeMessages[] = "{$label} was added";
+                        continue;
+                    }
+                    if ($old !== null && $new === null) {
+                        $changeMessages[] = "{$label} was removed";
+                        continue;
+                    }
+
+                    foreach ($old as $field => $oldVal) {
+                        if ($field === 'infos') continue;
+
+                        $newVal = $new[$field] ?? null;
+
+                        $oldCompare = $norm($oldVal);
+                        $newCompare = $norm($newVal);
+
+                        if ($oldCompare === '' && $newCompare === '') continue; // empty -> empty
+                        if ($oldCompare === $newCompare) continue;              // no real change
+
+                        $prettyField = ucfirst(str_replace('_', ' ', $field));
+                        $oldDisp = $empty($oldVal) ? '(empty)' : $oldVal;
+                        $newDisp = $empty($newVal) ? '(empty)' : $newVal;
+
+                        $changeMessages[] = "{$label}: {$prettyField} changed from '{$oldDisp}' to '{$newDisp}'";
+                    }
+
+                    $oldInfos = $old['infos'] ?? [];
+                    $newInfos = $new['infos'] ?? [];
+
+                    if ($oldInfos !== $newInfos) {
+                        $formatInfos = function (array $infos) {
+                            if (empty($infos)) return '(empty)';
+
+                            return collect($infos)->map(function ($s) {
+                                [$type, $farmType, $size, $head] = explode('|', $s);
+                                $type = $type ?: 'unknown';
+                                $farmType = $farmType ?: 'n/a';
+
+                                $headText = ((float)$head > 0) ? ", heads: {$head}" : '';
+
+                                return "{$type} size: {$size}{$headText}";
+                            })->implode(', ');
+                        };
+
+                        $changeMessages[] = "{$label}: Parcel informations changed from '{$formatInfos($oldInfos)}' to '{$formatInfos($newInfos)}'";
+                    }
+                }
             }
         }
 
+        if (!empty($changeMessages)) {
+
+            $message = "User updated farm profile successfully. Changes: " . implode('; ', $changeMessages);
+
+            $activityLogger->log(
+                userId: auth()->id(),
+                table: 'Farm Profile',
+                message: $message,
+                action: 'update',
+                status: 'success'
+            );
+        }
+
         return $state ? true : false;
+    }
+
+    function convertIdsToNames (array $values, array $typeMap) {
+        return collect($values)
+            ->map(function ($v) use ($typeMap) {
+
+                // If numeric and exists in farming_types, convert to name
+                if (is_numeric($v) && isset($typeMap[$v])) {
+                    return $typeMap[$v];
+                }
+
+                return $v; // keep text like "corn"
+            })
+            ->sort()
+            ->values()
+            ->implode(', ');
+    }
+
+    function getFullname ($value) {
+        if (is_numeric($value)) {
+            $type = FarmerInformation::select(DB::raw("UPPER(CONCAT(firstname, ' ', IF(middlename IS NOT NULL AND middlename != '', CONCAT(LEFT(middlename, 1), '. '), ''), lastname, IF(suffix IS NOT NULL AND suffix != '', CONCAT(' ', suffix), ''))) AS name"))->where('id', $value)->first();
+            return $type ? $type->name : $value;
+        }
+        return $value;
     }
 }

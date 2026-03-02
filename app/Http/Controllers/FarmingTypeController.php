@@ -152,7 +152,7 @@ class FarmingTypeController extends Controller
                         continue;
                     }
                     
-                    $changeMessages[] = ucfirst($field) . " changed from '{$oldValue}' to '{$newValue}'";
+                    $changeMessages[] = $field . " changed from '{$oldValue}' to '{$newValue}'";
                 }
 
                 $message = "User updated farming type successfully. Changes: " . implode('; ', $changeMessages);
@@ -160,7 +160,7 @@ class FarmingTypeController extends Controller
                 $activityLogger->log(
                     userId: auth()->id(),
                     table: 'Farming Type',
-                    message: $message,
+                    message: $state ? $message : "User failed to update farming type `$toUpdate->name`.",
                     action: 'update',
                     status: $state ? 'success' : 'error'
                 );
