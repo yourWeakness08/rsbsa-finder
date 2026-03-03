@@ -14,6 +14,7 @@ use App\Http\Controllers\PublicPostController;
 use App\Http\Controllers\AssistanceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AssistancesController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -90,6 +91,14 @@ Route::middleware([
         Route::match(['get', 'post'], '/farming', [ReportController::class, 'farming'])->name('farming');
         Route::match(['get', 'post'], '/livelihood', [ReportController::class, 'livelihood'])->name('livelihood');
     });
+
+    Route::get('/chart/assistance-status', [DashboardController::class, 'assistanceStatusChart'])->name('assistance-status');
+    Route::get('/chart/assistances-by-month', [DashboardController::class, 'assistancesByMonth'])->name('assistances-by-month');
+    Route::get('/dashboard/livelihood-totals', [DashboardController::class, 'livelihoodTotals'])->name('dashboard.livelihood-totals');
+    Route::get('/dashboard/chart/farmers-by-brgy', [DashboardController::class, 'farmersByBrgyFromFarmerInfo'])
+    ->name('dashboard.farmers_by_brgy');
+    Route::get('/dashboard/data', [DashboardController::class, 'dashboardData'])
+    ->name('dashboard.data');
 });
 
 Artisan::call('storage:link');
