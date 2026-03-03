@@ -120,7 +120,7 @@ class DashboardController extends Controller{
 
         /*
         |--------------------------------------------------------------------------
-        | 1️⃣ Assistance Status Totals
+        | Assistance Status Totals
         |--------------------------------------------------------------------------
         */
         $statusData = Assistances::selectRaw("LOWER(status) as status, COUNT(*) as total")
@@ -142,7 +142,7 @@ class DashboardController extends Controller{
 
         /*
         |--------------------------------------------------------------------------
-        | 2️⃣ Assistances By Month
+        | Assistances By Month
         |--------------------------------------------------------------------------
         */
         $monthlyQuery = Assistances::query()
@@ -168,7 +168,7 @@ class DashboardController extends Controller{
 
         /*
         |--------------------------------------------------------------------------
-        | 3️⃣ Livelihood Totals
+        | Livelihood Totals
         |--------------------------------------------------------------------------
         */
         $livelihoodTotals = [
@@ -195,7 +195,7 @@ class DashboardController extends Controller{
 
         /*
         |--------------------------------------------------------------------------
-        | 4️⃣ Farmers By Barangay (Based on Farmer Info)
+        | Farmers By Barangay (Based on Farmer Info)
         |--------------------------------------------------------------------------
         */
         $brgyQuery = DB::table('farmer_information as fi')
@@ -220,7 +220,7 @@ class DashboardController extends Controller{
 
         /*
         |--------------------------------------------------------------------------
-        | 🔥 Final Response
+        | Final Response
         |--------------------------------------------------------------------------
         */
         return response()->json([
