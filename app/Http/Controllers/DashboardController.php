@@ -140,6 +140,14 @@ class DashboardController extends Controller{
             }
         }
 
+        $total = array_sum($statuses);
+
+        $percentages = [];
+
+        foreach ($statuses as $key => $value) {
+            $percentages[$key] = $total > 0 ? round(($value / $total) * 100, 2) : 0;
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Assistances By Month
@@ -225,6 +233,7 @@ class DashboardController extends Controller{
         */
         return response()->json([
             'assistance_status' => $statuses,
+            'assistance_percentage' => $percentages,
             'assistances_by_month' => [
                 'labels' => $monthLabels,
                 'data'   => $monthData,
