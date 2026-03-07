@@ -35,6 +35,7 @@
     const routeName = 'create-farmer' // Optional: could be dynamic
     const STORAGE_KEY = `form-data-${routeName}`;
     const image_key = `image-${routeName}`;
+    import { provinces, municipalities, barangays } from 'psgc'
 
     const { proxy } = getCurrentInstance()
 
@@ -82,8 +83,8 @@
         street: '',
         brgy: '',
         muni_city: '',
-        province: '',
-        region: '',
+        province: 'Negros Occidental',
+        region: 'Region VI',
         contact: '',
         birth: '', 
         birthplace: '', 
@@ -865,10 +866,41 @@
         return text.toUpperCase();
     }
 
-    const test = () => {
-        setStep(0);
-        scrollToTop();
+    const cityOptions = ref([]);
+    const barangayOptions = ref([]);
+
+    cityOptions.value = municipalities
+        .all()
+        .filter(item => item.province === 'Negros Occidental')
+        .map(item => {
+            const name = item.name + (item.city ? ' City' : '')
+
+            return {
+                id: name,                 // Select2 value
+                text: name.toUpperCase(), // display
+                name: item.name.toLowerCase()
+            }
+    })
+
+    const handleMuniCitySelect = (event) => {
+        const selectedValue = event.id.toLowerCase();
+        const brgy = barangays.all()
+            .filter(
+                item => item.citymun.toLowerCase().includes(selectedValue)
+            ).map( item => {
+                return {
+                    id: item.name,
+                    text: item.name.toUpperCase(),
+                    citymun: item.citymun
+                }
+            });
+
+        barangayOptions.value = brgy;
     }
+
+    watch(() => form.muni_city, () => {
+        form.brgy = null
+    })
 </script>
 
 <style type="text/css">
@@ -993,30 +1025,37 @@
 
                                     <div class="flex flex-wrap items-start justify-between mb-4">
                                         <div class="md:w-[32.10%] sm:w-full">
-                                            <InputLabel for="house" value="House / Lot / Bldg. No." :required="true" />
-                                            <TextInput type="text" v-model="form.lot" class="mt-1 block w-full uppercase" autocomplete="off" 
-                                                @blur="v$.lot.$touch()"
-                                                :class="inputBorderClass('lot')"
+                                            <InputLabel for="province" value="Province" :required="true" />
+                                            <TextInput type="text" v-model="form.province" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                                @blur="v$.province.$touch()"
+                                                :class="inputBorderClass('province')"
+                                                disabled="true"
                                             />
-                                            <p v-if="hasError('lot')" class="text-red-500 text-sm">
-                                                <span class="text-red-500 text-sm" v-if="v$.lot.required?.$invalid">House / Lot is required.</span>
+                                            <p v-if="hasError('province')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.province.required?.$invalid">Province is required.</span>
                                             </p>
                                         </div>
                                         <div class="md:w-[32.10%] sm:w-full">
-                                            <InputLabel for="street" value="Street / Sitio / Subdv." :required="true" />
-                                            <TextInput type="text" v-model="form.street" class="mt-1 block w-full uppercase" autocomplete="off" 
-                                                @blur="v$.street.$touch()"
-                                                :class="inputBorderClass('street')"
+                                            <InputLabel for="municipality" value="Municipality / City" :required="true" />
+                                            <Select2
+                                                class="h-10 uppercase"
+                                                v-model="form.muni_city"
+                                                :options="cityOptions"
+                                                :settings="{ placeholder: 'Select City / Municipality', width: '100%' }"
+                                                @select="handleMuniCitySelect"
                                             />
-                                            <p v-if="hasError('street')" class="text-red-500 text-sm">
-                                                <span class="text-red-500 text-sm" v-if="v$.street.required?.$invalid">Street / Sitio / Subdv. is required.</span>
+                                            <p v-if="hasError('muni_city')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.muni_city.required?.$invalid">Municipality / City is required.</span>
                                             </p>
                                         </div>
                                         <div class="md:w-[32.10%] sm:w-full">
                                             <InputLabel for="barangay" value="Barangay" :required="true" />
-                                            <TextInput type="text" v-model="form.brgy" class="mt-1 block w-full uppercase" autocomplete="off"
-                                                @blur="v$.brgy.$touch()"
-                                                :class="inputBorderClass('brgy')"
+                                            <Select2
+                                                :key="form.muni_city"
+                                                class="h-10 uppercase"
+                                                v-model="form.barangay"
+                                                :options="barangayOptions"
+                                                :settings="{ placeholder: 'Select Barangay', width: '100%' }"
                                             />
                                             <p v-if="hasError('brgy')" class="text-red-500 text-sm">
                                                 <span class="text-red-500 text-sm" v-if="v$.brgy.required?.$invalid">Barangay is required.</span>
@@ -1026,23 +1065,23 @@
 
                                     <div class="flex flex-wrap items-start justify-between">
                                         <div class="md:w-[39.10%] sm:w-full">
-                                            <InputLabel for="municipality" value="Municipality / City" :required="true" />
-                                            <TextInput type="text" v-model="form.muni_city" class="mt-1 block w-full uppercase" autocomplete="off" 
-                                                @blur="v$.muni_city.$touch()"
-                                                :class="inputBorderClass('muni_city')"
+                                            <InputLabel for="house" value="House / Lot / Bldg. No." :required="true" />
+                                            <TextInput type="text" v-model="form.lot" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                                @blur="v$.lot.$touch()"
+                                                :class="inputBorderClass('lot')"
                                             />
-                                            <p v-if="hasError('muni_city')" class="text-red-500 text-sm">
-                                                <span class="text-red-500 text-sm" v-if="v$.muni_city.required?.$invalid">Municipality / City is required.</span>
+                                            <p v-if="hasError('lot')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.lot.required?.$invalid">House / Lot is required.</span>
                                             </p>
                                         </div>
                                         <div class="md:w-[39.10%] sm:w-full">
-                                            <InputLabel for="province" value="Province" :required="true" />
-                                            <TextInput type="text" v-model="form.province" class="mt-1 block w-full uppercase" autocomplete="off" 
-                                                @blur="v$.province.$touch()"
-                                                :class="inputBorderClass('province')"
+                                            <InputLabel for="street" value="Street / Sitio / Subdv." :required="true" />
+                                            <TextInput type="text" v-model="form.street" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                                @blur="v$.street.$touch()"
+                                                :class="inputBorderClass('street')"
                                             />
-                                            <p v-if="hasError('province')" class="text-red-500 text-sm">
-                                                <span class="text-red-500 text-sm" v-if="v$.province.required?.$invalid">Province is required.</span>
+                                            <p v-if="hasError('street')" class="text-red-500 text-sm">
+                                                <span class="text-red-500 text-sm" v-if="v$.street.required?.$invalid">Street / Sitio / Subdv. is required.</span>
                                             </p>
                                         </div>
                                         <div class="md:w-[18%] sm:w-full">
@@ -1050,6 +1089,7 @@
                                             <TextInput type="text" v-model="form.region" class="mt-1 block w-full uppercase" autocomplete="off" 
                                                 @blur="v$.region.$touch()"
                                                 :class="inputBorderClass('region')"
+                                                disabled="true"
                                             />
                                             <p v-if="hasError('region')" class="text-red-500 text-sm">
                                                 <span class="text-red-500 text-sm" v-if="v$.region.required?.$invalid">Region is required.</span>
@@ -2035,12 +2075,12 @@
 
                                     <div class="flex flex-wrap items-start justify-between mb-4">
                                         <div class="md:w-[32.10%] sm:w-full">
-                                            <InputLabel for="house" value="House / Lot / Bldg. No." />
-                                            <p class="border rounded block p-2 w-full uppercase">{{ form.lot ? form.lot : '&nbsp;' }}</p>
+                                            <InputLabel for="province" value="Province" :required="true" />
+                                            <p class="border rounded block p-2 w-full uppercase">{{ form.province ? form.province : '&nbsp;' }}</p>
                                         </div>
                                         <div class="md:w-[32.10%] sm:w-full">
-                                            <InputLabel for="street" value="Street / Sitio / Subdv." />
-                                            <p class="border rounded block p-2 w-full uppercase">{{ form.street ? form.street : '&nbsp;' }}</p>
+                                            <InputLabel for="municipality" value="Municipality / City" :required="true" />
+                                            <p class="border rounded block p-2 w-full uppercase">{{ form.muni_city ? form.muni_city : '&nbsp;' }}</p>
                                         </div>
                                         <div class="md:w-[32.10%] sm:w-full">
                                             <InputLabel for="barangay" value="Barangay" :required="true" />
@@ -2050,12 +2090,12 @@
 
                                     <div class="flex flex-wrap items-start justify-between">
                                         <div class="md:w-[39.10%] sm:w-full">
-                                            <InputLabel for="municipality" value="Municipality / City" :required="true" />
-                                            <p class="border rounded block p-2 w-full uppercase">{{ form.muni_city ? form.muni_city : '&nbsp;' }}</p>
+                                            <InputLabel for="house" value="House / Lot / Bldg. No." />
+                                            <p class="border rounded block p-2 w-full uppercase">{{ form.lot ? form.lot : '&nbsp;' }}</p>
                                         </div>
                                         <div class="md:w-[39.10%] sm:w-full">
-                                            <InputLabel for="province" value="Province" :required="true" />
-                                            <p class="border rounded block p-2 w-full uppercase">{{ form.province ? form.province : '&nbsp;' }}</p>
+                                            <InputLabel for="street" value="Street / Sitio / Subdv." />
+                                            <p class="border rounded block p-2 w-full uppercase">{{ form.street ? form.street : '&nbsp;' }}</p>
                                         </div>
                                         <div class="md:w-[18%] sm:w-full">
                                             <InputLabel for="region" value="Region" :required="true" />

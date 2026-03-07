@@ -30,6 +30,7 @@
         "inputmask": "^5.0.9",
         "jquery": "^3.7.1",
         "moment": "^2.30.1",
+        "psgc": "^2.2.0",
         "vue-chartjs": "^5.3.3"
     }
 }
