@@ -68,11 +68,13 @@
 
     const handleSearch = proxy.$debounce((val) => {
         const { value } = pageValue;
+        const status = props.filter.status ? props.filter.status : 'All';
 
         debouncedSearch.value = val;
         let formData = {};
         if (value) { formData.paginate = value };
         formData.search = debouncedSearch.value ? val : '';
+        formData.status = status;
 
         // deletes the search key if the search value is empty to prevent unnecessary query parameter in the url
         if (!formData.search) {
@@ -97,6 +99,7 @@
         let formData = {};
         if (value) { formData.paginate = value };
         if (searchValue.value) { formData.search = searchValue.value; }
+        formData.status = props.filter.status ? props.filter.status : 'All';
 
         router.visit('/assistances', {
             method: 'get',

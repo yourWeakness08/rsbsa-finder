@@ -1,5 +1,5 @@
 <script setup>
-    import { Head, Link, useForm } from '@inertiajs/vue3';
+    import { Head, Link, useForm, router } from '@inertiajs/vue3';
     import AppLayout from '@/Layouts/AppLayout.vue';
     import Welcome from '@/Components/Welcome.vue';
     import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -13,21 +13,15 @@
 
     const chartAssistanceKey = ref(0)
 
-    const AssistancePiechartData = ref({
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-            duration: 1000,
-            easing: 'easeOutQuart'
-        },
-        plugins: {
-            legend: { position: 'bottom' }
-        },
+    const AssistanceBarChartData = ref({
         labels: ['PENDING', 'APPROVED', 'DISAPPROVED', 'CANCELLED'],
         datasets: [
             {
-            data: [0, 0, 0, 0],
-            backgroundColor: ['#facc15', '#22c55e', '#ef4444', '#6b7280'],
+                label: 'Assistance Status (%)',
+                data: [0,0,0,0],
+                backgroundColor: ['#facc15', '#22c55e', '#ef4444', '#6b7280'],
+                borderRadius: 6,
+                barThickness: 40
             }
         ]
     })
@@ -35,8 +29,41 @@
     const chartAssistanceOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        indexAxis: 'y', // makes the bar chart horizontal
         plugins: {
-            legend: { position: 'bottom' }
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.raw + '%'
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%'
+                    }
+                }
+            }
+        },
+        onClick: (event, elements, chart) => {
+            if (!elements.length) return
+
+            const index = elements[0].index
+            const status = chart.data.labels[index].toLowerCase()
+
+            // redirect (adjust depending on your routing)
+            router.visit(route('assistances.index', { status }))
+        },
+        onHover: (event, elements) => {
+            event.native.target.style.cursor = elements.length ? 'pointer' : 'default'
         }
     }
 
@@ -173,11 +200,11 @@
         const data = res.data
 
         // Pie
-        AssistancePiechartData.value.datasets[0].data = [
-        data.assistance_status.pending,
-        data.assistance_status.approved,
-        data.assistance_status.disapproved,
-        data.assistance_status.cancelled,
+        AssistanceBarChartData.value.datasets[0].data = [
+            data.assistance_percentage.pending,
+            data.assistance_percentage.approved,
+            data.assistance_percentage.disapproved,
+            data.assistance_percentage.cancelled
         ]
         chartAssistanceKey.value++
 
@@ -365,7 +392,7 @@
                     <div class="p-4" style="height: 400px">
                         <h3 class="mb-3 font-semibold">Assistances by Status</h3>
                         <div style="height: 320px;">
-                            <Pie :key="chartAssistanceKey" :data="AssistancePiechartData" :options="chartAssistanceOptions" />
+                            <Bar :key="chartAssistanceKey" :data="AssistanceBarChartData" :options="chartAssistanceOptions" />
                         </div>
                     </div>
                 </div>

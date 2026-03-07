@@ -28,6 +28,7 @@ class AssistancesController extends Controller
      */
     public function index(Request $request){
         $paginate = $request->paginate ? intval($request->paginate): 10;
+        $status = $request->status ?? 'All';
 
         $assistances = Assistances::leftJoin('users as b', 'b.id', '=', 'assistances.created_by')
             ->select(DB::raw("assistances.*, CONCAT(b.firstname, ' ', b.lastname) as created_name, CONCAT(
@@ -72,7 +73,13 @@ class AssistancesController extends Controller
                     ->orWhere('assistances.livelihood', 'like', '%'.$request->search.'%')
                     ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
-            })->paginate($paginate);
+            })
+            ->where(function($query) use ($request) {
+                if ($request->status && strtolower($request->status) !== 'all') {
+                    $query->whereRaw('LOWER(assistances.status) = ?', [strtolower($request->status)]);
+                }
+            })
+            ->paginate($paginate);
         $assistances->appends(['paginate' => $paginate]);
 
         if($request->paginate == 'All'){
@@ -117,6 +124,11 @@ class AssistancesController extends Controller
                     ->orWhere('c.middlename', 'like', '%'.$request->search.'%')
                     ->orWhere('assistances.livelihood', 'like', '%'.$request->search.'%')
                     ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
+                }
+            })
+            ->where(function($query) use ($request) {
+                if ($request->status && strtolower($request->status) !== 'all') {
+                    $query->whereRaw('LOWER(assistances.status) = ?', [strtolower($request->status)]);
                 }
             })
             ->orderBy('assistances.created_at', 'desc')
