@@ -1053,7 +1053,7 @@
                                             <Select2
                                                 :key="form.muni_city"
                                                 class="h-10 uppercase"
-                                                v-model="form.barangay"
+                                                v-model="form.brgy"
                                                 :options="barangayOptions"
                                                 :settings="{ placeholder: 'Select Barangay', width: '100%' }"
                                             />
