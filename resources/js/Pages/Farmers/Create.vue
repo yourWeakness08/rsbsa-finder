@@ -883,7 +883,13 @@
     })
 
     const handleMuniCitySelect = (event) => {
-        const selectedValue = event.id.toLowerCase();
+        let selectedValue = event.id.toLowerCase();
+
+        if (selectedValue == 'escalante city' || selectedValue == 'himamaylan city' || selectedValue == 'kabankalan city' || selectedValue == 'talisay city' || selectedValue == 'victorias city') {
+            let newText = selectedValue.split(" ")[0];
+            selectedValue = 'city of ' + newText;
+        }
+
         const brgy = barangays.all()
             .filter(
                 item => item.citymun.toLowerCase().includes(selectedValue)
