@@ -99,6 +99,8 @@ Route::middleware([
     ->name('dashboard.farmers_by_brgy');
     Route::get('/dashboard/data', [DashboardController::class, 'dashboardData'])
     ->name('dashboard.data');
+
+    Route::get('/farmers/{id}/print', [FarmersController::class, 'print'])->name('farmers.print');
 });
 
 Artisan::call('storage:link');

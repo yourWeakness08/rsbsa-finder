@@ -1696,4 +1696,86 @@ class FarmersController extends Controller
 
         return $state;
     }
+
+    public function print($id) {
+        $select = "a.*, IFNULL(farmer_image, 'images/male-farmer.png') AS farmer_image, CONCAT(
+            a.firstname, ' ',
+            IF(a.middlename IS NOT NULL AND a.middlename != '', CONCAT(LEFT(a.middlename, 1), '. '), ''),
+            a.lastname,
+            IF(a.suffix IS NOT NULL AND a.suffix != '', CONCAT(' ', a.suffix), '')
+        ) AS name, b.mothers_maiden_name, b.is_household_head, b.name_if_not_head, b.is_not_head_relationship, b.no_of_living_members, b.no_of_male, b.no_of_female, b.highest_formal_education, b.is_pwd, b.is_4ps, b.is_ig_mem, b.is_mem_specify, b.has_gov_id, b.id_type, b.id_no, b.is_farmer_coop_mem, b.is_farmer_mem, b.contact_emergency, b.contact_no, c.id as farm_id, c.main_livelihood, c.farming_gross, c.no_farming_gross, c.farm_parcel_no, c.is_arb, d.paper_date, d.official, d.muni_city_official, d.cafc_chairman";
+        $farmer = FarmerInformation::from('farmer_information as a')
+            ->select(DB::raw($select))
+            ->LeftJoin('others_farmer_information as b', 'b.farmer_id', '=', 'a.id')
+            ->leftJoin('farm_profile as c', 'c.farmer_id', '=', 'a.id')
+            ->leftJoin('corrected_and_verified as d', 'd.farmer_id', '=', 'a.id')
+            ->where('a.id', $id)
+            ->first();
+        
+        $default = asset('images/male-farmer.png');
+        if (isset($farmer->farmer_image) && $farmer?->farmer_image) {
+            if (file_exists(public_path('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image))) {
+                $farmer->farmer_image = asset('uploads/farmers/farmer_'.$farmer->id.'/'.$farmer->farmer_image);
+            } else {
+                $farmer->farmer_image = $default;
+            }
+        } else {
+            $farmer->farmer_image = $default;
+        }
+
+        $farmer->main_livelihood = @unserialize($farmer->main_livelihood) ? @unserialize($farmer->main_livelihood) : array();
+
+        $parcel = FarmParcel::where('farmer_profile_id', $farmer->farm_id)->get();
+        $parcelCollection = collect($parcel);
+
+        foreach ($parcelCollection as $parcels) {
+            $parcels->filename = $parcels->document;
+            $parcels->document_path = file_exists(public_path('uploads/farmers/farmer_'.$farmer->id.'/farmParcelDocuments'.'/'.$parcels->document)) ? asset('uploads/farmers/farmer_'.$farmer->id.'/farmParcelDocuments'.'/'.$parcels->document) : 'Document not found.';
+            $parcels->farm_parcel_informations = FarmParcelInformation::where('farm_parcels_id', $parcels->id)->get();
+        }
+
+        $farmer->farm_parcel = $parcelCollection;
+
+        $farming = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)
+            ->where('main_livelihood', 'farmer')
+            ->get();
+
+        foreach ($farming as $farm) {
+            $farm->value = is_numeric($farm->value) ? FarmingType::where('id', $farm->value)->value('name') : $farm->value;
+        }
+        $farmworker = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'farm_worker')->get();
+        $fisherfolks = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'fisherfolks')->get();
+        $agriyouth = MainLivelihood::where('farmer_profile_id', $farmer->farm_id)->where('main_livelihood', 'agri_youth')->get();
+
+        $farmer->main_livelihood_info = array('farmer' => $farming, 'farm_worker' => $farmworker, 'fisherfolks' => $fisherfolks, 'agri_youth' => $agriyouth);
+
+        $all = FarmingType::select(DB::raw('id, UPPER(name) as text, type'))
+            ->where('is_archived', 0)
+            ->orderBy('text', 'asc')
+            ->get();
+
+        // Define type labels
+        $typeLabels = [
+            1 => 'crops',
+            2 => 'livestock',
+            3 => 'poultry',
+            4 => 'agri_fishery'
+        ];
+
+        // Group by numeric type and map to labels
+        $grouped = collect($typeLabels)->mapWithKeys(function ($label, $type) use ($all) {
+            return [
+                $label => $all->where('type', $type)->values()->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'text' => $item->text,
+                    ];
+                }),
+            ];
+        });
+
+        return Inertia::render(
+            'Farmers/Print', ['farmer' => $farmer, 'types' => $grouped]
+        );
+    }
 }

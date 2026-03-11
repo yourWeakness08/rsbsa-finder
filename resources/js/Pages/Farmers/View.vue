@@ -22,6 +22,7 @@
     import Dropzone from '@/Components/DropZone.vue';
     import FarmerTabs from '@/Components/FarmerTabs.vue';
     import TablePagination from '@/Components/TablePagination.vue';
+    import FarmerPrintTemplate from '@/Components/FarmerPrintTemplate.vue'
 
     import Select2 from 'vue3-select2-component';
 
@@ -1324,9 +1325,17 @@
                     is_whithin_ancentral_domain: { required },
                     is_agrarian_reform_beneficiary: { required },
                     ownership_type: { required },
-                    land_owner_name: {},
+                    land_owner_name: {
+                        required: requiredIf((index) => {
+                            const ownershipType = farmParcelForm.farm_parcel[index].ownership_type;
+                            return ownershipType === 'Tenant' || ownershipType === 'Lesse';
+                        })
+                    },
                     is_other: {
-                        required: requiredIf(ownerOthers)
+                        required: requiredIf((index) => {
+                            const ownershipType = farmParcelForm.farm_parcel[index].ownership_type;
+                            return ownershipType === 'Others';
+                        })
                     },
                     farmer_in_rotation_name: { required },
                     farm_parcel_informations: {
@@ -1407,17 +1416,19 @@
     const handleOwnership = (index, event) => {
         const selectedValue = event.id;
 
-        if (selectedValue == 'Tenant' || selectedValue == 'Lesse') {
-            ownerType.value = true;
-        } else {
-            ownerType.value = false;
-        }
+        // if (selectedValue == 'Tenant' || selectedValue == 'Lesse') {
+        //     ownerType.value = true;
+        // } else {
+        //     ownerType.value = false;
+        // }
 
-        if (selectedValue == 'Others') {
-            ownerOthers.value = true;
-        } else {
-            ownerOthers.value = false;
-        }
+        // if (selectedValue == 'Others' || selectedValue == 'others') {
+        //     ownerOthers.value = true;
+        //     ownerType.value = false;
+        // } else {
+        //     ownerOthers.value = false;
+        //     ownerType.value = true;
+        // }
     }
 
     const ownership_type = ref([
@@ -1737,6 +1748,16 @@
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
     }
+
+    const printPDS = async () => {
+        const id = props.farmer.id;
+        const url = route('farmers.print', id)
+        const win = window.open(url, '_blank', 'width=1100,height=900')
+
+        if (win) {
+            win.focus()
+        }
+    }
 </script>
 
 <template>
@@ -1783,6 +1804,16 @@
                                 </svg>
                                 <h4 class="font-bold">Update Profile</h4>
                             </li>
+                            <li class="inline-flex items-center w-full cursor-pointer hover:bg-gray-100 py-2 px-3" @click="printPDS()">
+                                <svg class="w-6 h-6 me-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                    <g id="SVGRepo_iconCarrier"> 
+                                        <path d="M8 15H16V18M16 18V21H8V18H4V9H8M16 18H20V9H8M8 9V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> 
+                                    </g>
+                                </svg>
+                                <h4 class="font-bold">Print Personal Data</h4>
+                            </li>
                             <li @click="back" class="inline-flex items-center w-full cursor-pointer hover:bg-gray-100 py-2 px-3"> 
                                 <svg class="w-6 h-6 me-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -1797,7 +1828,7 @@
                     </div>
                 </div>
                 <div class="w-[74%]">
-                    <div class="bg-white rounded-sm shadow-xl sm:rounded-lg px-8 py-8">
+                    <div id="container" class="bg-white rounded-sm shadow-xl sm:rounded-lg px-8 py-8">
                         <FarmerTabs :modelValue="activeTab" @update:modelValue="handleTabChange" >
                             <template #farmer-profile>
                                 <div class="p-3">
@@ -2562,7 +2593,7 @@
                                                                             <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
                                                                         </td>
                                                                         <td class="p-3 border border-gray-400">
-                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.head_no > 0 ? v.head_no : 0 }}</p>
+                                                                            <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.no_of_head > 0 ? v.no_of_head : 0 }}</p>
                                                                         </td>
                                                                         <td class="p-3 border border-gray-400">
                                                                             <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.farm_type ? formatFarmType(v.farm_type) : '&nbsp;' }}</p>
@@ -3944,13 +3975,13 @@
                                         </div>
                                         <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
                                             <InputLabel for="Name of Land Owner" value="Name of Land Owner" :required="true" />
-                                            <input type="text" class="mt-1 block w-full uppercase" v-model="item.land_owner_name" autocomplete="off" required="true" :class="{
-                                                    'border-gray-300': item.land_owner_name == null,
-                                                    'border-red-500' : item.land_owner_name != null && item.land_owner_name == '',
-                                                    'border-green-500' : item.land_owner_name
+                                            <input type="text" class="mt-1 block w-full uppercase" v-model="item.landowner_name" autocomplete="off" required="true" :class="{
+                                                    'border-gray-300': item.landowner_name == null,
+                                                    'border-red-500' : item.landowner_name != null && item.landowner_name == '',
+                                                    'border-green-500' : item.landowner_name
                                                 }"
                                             />
-                                            <span class="text-red-500 text-sm" v-if="item.land_owner_name != null && item.land_owner_name == ''">Name of Land Owner is Required</span>
+                                            <span class="text-red-500 text-sm" v-if="item.landowner_name != null && item.landowner_name == ''">Name of Land Owner is Required</span>
                                         </div>
                                         <div class="w-4/12"v-if="item.ownership_type == 'Others'">
                                             <InputLabel for="specify-other" value="Specify" :required="true" />
