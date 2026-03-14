@@ -1081,6 +1081,8 @@
             }
         }
 
+        console.log(farmParcelForm.farm_parcel);
+
         await nextTick()
 
         parcel$.value.$reset();
@@ -1317,7 +1319,7 @@
             farm_parcel: {
                 $each: helpers.forEach({
                     id: {},
-                    city: { required }, //not done here
+                    city: { required },
                     brgy: { required },
                     total_farm_area: { required },
                     document: { required },
@@ -1325,24 +1327,27 @@
                     is_whithin_ancentral_domain: { required },
                     is_agrarian_reform_beneficiary: { required },
                     ownership_type: { required },
-                    land_owner_name: {
-                        required: requiredIf((index) => {
-                            const ownershipType = farmParcelForm.farm_parcel[index].ownership_type;
-                            return ownershipType === 'Tenant' || ownershipType === 'Lesse';
-                        })
+
+                    landowner_name: {
+                        required: requiredIf((value, parent) =>
+                            parent?.ownership_type === 'Tenant' ||
+                            parent?.ownership_type === 'Lessee'
+                        )
                     },
+
                     is_other: {
-                        required: requiredIf((index) => {
-                            const ownershipType = farmParcelForm.farm_parcel[index].ownership_type;
-                            return ownershipType === 'Others';
-                        })
+                        required: requiredIf((value, parent) =>
+                            parent?.ownership_type === 'Others'
+                        )
                     },
+
                     farmer_in_rotation_name: { required },
+
                     farm_parcel_informations: {
                         $each: helpers.forEach({
                             id: {},
                             farming_type: { required },
-                            farming_type_name: { },
+                            farming_type_name: {},
                             size: { required },
                             no_of_head: { required },
                             farm_type: { required },
@@ -1352,7 +1357,7 @@
                     }
                 })
             },
-            user_id: {},
+            user_id: {}
         }
     });
 

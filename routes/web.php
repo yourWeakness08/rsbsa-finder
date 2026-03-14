@@ -101,6 +101,8 @@ Route::middleware([
     ->name('dashboard.data');
 
     Route::get('/farmers/{id}/print', [FarmersController::class, 'print'])->name('farmers.print');
+    Route::get('/farmers/test', [FarmersController::class, 'test'])->name('farmers.test');
+    Route::get('/assistances/test', [AssistancesController::class, 'test'])->name('assistances.test');
 });
 
 Artisan::call('storage:link');

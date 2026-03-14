@@ -180,12 +180,29 @@ class AssistancesController extends Controller
 
         $reference = $this->generateReferenceNo();
         if ($request->farmer && $request->assistance && $request->remarks) {
+            $checkAssistance = Assistance::where('id', $request->assistance)->value('name');
 
+            $status = 'Pending';
+            $amount = 0;
+            $remarks = null;
+            if ($checkAssistance) {
+                if (str_contains(strtolower($checkAssistance), 'cash')) {
+                    $calculateAssistance = $this->calculateCashAssistance($request->farmer);
+    
+                    $status = $calculateAssistance['status'];
+                    $amount = $calculateAssistance['amount'];
+                    $remarks = $calculateAssistance['purpose'];
+                }
+            }
+            
             $created = Assistances::create([
                 'farmer_id' => $request->farmer,
                 'assistance_id' => $request->assistance,
                 'reference_no' => $reference,
                 'purpose' => trim($request->remarks),
+                'status' => $status,
+                'amount' => $amount,
+                'remarks' => $remarks,
                 'livelihood' => $request->livelihood,
                 'created_by'=>$user_id,
                 'uuid'=>Str::random(12)
@@ -550,6 +567,13 @@ class AssistancesController extends Controller
             $assistances->approved_by = $userId;
             $assistances->approved_remarks = $_remarks;
             $assistances->approved_at = $_date;
+
+            if ($assistances->livelihood == 'farmer') {
+                $calculatedAmount = $this->calculateAssistance($id);
+
+                $assistances->amount = $calculatedAmount['metric']['amount'] ?? 0;
+                $assistances->remarks = $calculatedAmount['metric']['purpose'] ?? 'no purpose specified';
+            }
         }
 
         if ($_tempStatus == 'disapproved') {
@@ -576,6 +600,8 @@ class AssistancesController extends Controller
             $assistances->cancelled_by = 0;
             $assistances->cancelled_remarks = null;
             $assistances->cancelled_at = null;
+            $assistances->amount = 0;
+            $assistances->remarks = null;
         }
 
         $state = $assistances->save();
@@ -619,5 +645,113 @@ class AssistancesController extends Controller
             return $type ? $type->name : $value;
         }
         return $value;
+    }
+
+    public function calculateAssistance($id) {
+        $assistances = Assistances::where('id', $id)->first();
+
+        $getFarmParcelTotalHectares = function ($id) {
+            $total = DB::table('assistances as a')
+                ->leftJoin('farm_profile as b', 'b.farmer_id', '=', 'a.farmer_id')
+                ->leftJoin('farm_parcels as c', 'c.farmer_profile_id', '=', 'b.id')
+                ->where('a.id', $id)
+                ->sum('c.total_farm_area');
+
+            return $total;
+        };
+
+        $totalHectares = $getFarmParcelTotalHectares($id);
+
+        $metric = [];
+
+        if ($assistances && $assistances->assistance && !$assistances->assistance->is_archived) {
+            $name = strtolower($assistances->assistance->name);
+            if (str_contains($name, 'seed')) {
+                $metric = $this->seedMetric($totalHectares);
+            }
+            elseif (str_contains($name, 'fertilizer')) {
+                $metric = $this->fertilizerMetric($totalHectares);
+            }
+        }
+
+        return array(
+            'total_hectares' => $totalHectares,
+            'metric' => $metric
+        );
+    }
+
+    private function seedMetric($hectares) {
+        $hectares = (float) $hectares;
+
+        if ($hectares < 0.10) {
+            return [
+                'amount' => 0,
+                'purpose' => '0 bag(s)'
+            ];
+        }
+        
+        //commented for now to accomodate more than 10 hectares
+        // $hectares = min($hectares, 10);
+
+        $bags = (int) ceil($hectares / 0.50);
+
+        return [
+            'amount' => $bags,
+            'purpose' => "{$bags} bag(s) with total area of {$hectares} hectares"
+        ];
+    }
+
+    private function fertilizerMetric($hectares) {
+        $hectares = (float) $hectares;
+
+        if ($hectares < 0.10) {
+            return [
+                'amount' => 0,
+                'purpose' => 'Urea 0 kg, Potash 0 kg'
+            ];
+        }
+
+        //commented for now to accomodate more than 10 hectares
+        // $hectares = min($hectares, 10);
+
+        $step = (int) ceil($hectares / 0.20);
+
+        $urea = $step * 10;
+        $potash = $step * 10;
+
+        return [
+            'amount' => $urea + $potash,
+            'purpose' => "Urea {$urea} kg, Potash {$potash} kg with total area of {$hectares} hectares"
+        ];
+    }
+
+    public function calculateCashAssistance($id) {
+        $getFarmParcelTotalHectares = function ($id) {
+            $total = DB::table('farm_profile as a')
+                ->leftJoin('farm_parcels as b', 'b.farmer_profile_id', '=', 'a.id')
+                ->where('a.farmer_id', $id)
+                ->sum('b.total_farm_area');
+
+            return $total;
+        };
+
+        $totalHectares = $getFarmParcelTotalHectares($id);
+        $metric = [];
+
+        if ($totalHectares <= 0 || $totalHectares > 2) {
+            $metric = [
+                'amount' => 0,
+                'status' => 'Disapproved',
+                'purpose' => "Cash assistance is only applicable for total area between 0.10 and 2 hectares. Current total area: `{$totalHectares}` hectares"
+            ];
+        } else {
+            $metric = [
+                'amount' => 7000, //flat 7000 based on the metrics that 0.10 to 2 hectares is eligible for cash assistance, this can be adjusted as needed
+                'status' => 'Approved',
+                'purpose' => "Cash assistance for total area of `{$totalHectares}` hectares"
+            ];
+        }
+
+        return $metric;
     }
 }

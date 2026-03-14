@@ -55,4 +55,8 @@ class FarmerInformation extends Model
 
         return $resultset;
     }
+
+    public function farmProfile() {
+        return $this->hasOne(FarmProfile::class, 'farmer_id', 'id');
+    }
 }
