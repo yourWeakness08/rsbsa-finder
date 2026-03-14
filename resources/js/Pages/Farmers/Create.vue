@@ -446,6 +446,8 @@
     });
 
     const datepicker = () => {
+        const maxDate = moment().subtract(18, 'years');
+
         $('#birth').daterangepicker({
             opens: 'left',
             locale: {
@@ -454,6 +456,8 @@
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
+            maxDate: maxDate,
+            startDate: maxDate
         }).on('apply.daterangepicker', function(ev, picker){
             $(this).val(picker.startDate.format('MM/DD/YYYY'))
 
