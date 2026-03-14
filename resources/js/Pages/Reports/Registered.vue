@@ -22,6 +22,7 @@
     import moment from 'moment';
     import Swal from 'sweetalert2';
     import daterangepicker from 'daterangepicker';
+    import { provinces, municipalities, barangays } from 'psgc'
     
     import $ from 'jquery';
 
@@ -81,7 +82,7 @@
         if (value) { form.paginate = value };
         form.search = debouncedSearch.value ? val : '';
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.registered'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -100,21 +101,20 @@
         if (value) { form.paginate = value };
         if (searchValue.value) { form.search = searchValue.value; }
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.registered'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
             }
         })
-
     }
 
     const startDate = moment().subtract(6, 'days');
     const endDate = moment();
 
     const form = useForm({
-        livelihood: '',
-        assistance: '',
+        city: '',
+        brgy: '',
         from: moment(startDate).format('YYYY-MM-DD'),
         to: moment(endDate).format('YYYY-MM-DD'),
         search: '',
@@ -154,7 +154,7 @@
     const generateAssistance = () => {
         let formData = {};
 
-        form.post(route('reports.assistance'), {
+        form.post(route('reports.registered'), {
             onProgress: () => processing.value = true,
             onSuccess: () => {
                 const page = usePage();
@@ -163,50 +163,105 @@
         })
     }
 
-    const formatAssistance = (arr) => {
-        const index = props.assistance.map(obj => obj.id).indexOf(arr.assistance_id);
-        return props.assistance[index].name;
-    }
-
-    const formatLivelihood = (val) => {
-        const index = main_livelihood.value.map(obj => obj.id).indexOf(val);
-        return main_livelihood.value[index].text;
-    }
-
     const resetFields = () => {
-        form.livelihood = '';
-        form.assistance = '';
+        form.city = '';
+        form.brgy = '';
         form.from = startDate;
         form.to = endDate;
 
         datepicker();
-        _assistance();
     }
 
-    const _assistance = () => {
-        select2Assitance.value = [];
-        $.each(props.assistance, function(index, item) {
-            const temp = Object.assign({}, { id: item.id, text: item.name.toUpperCase() });
-            select2Assitance.value.push(temp);
-        });
-    }
+    const cityOptions = ref([]);
+    const barangayOptions = ref([]);
 
-    _assistance();
-    
+    cityOptions.value = municipalities
+        .all()
+        .filter(item => item.province === 'Negros Occidental')
+        .map(item => {
+            const name = item.name + (item.city ? ' City' : '')
 
-    const handleLivelihood = (e) => {
-        const selectedValue = e.id;
+            return {
+                id: name,                 // Select2 value
+                text: name.toUpperCase(), // display
+                name: item.name.toLowerCase()
+            }
+    })
 
-        select2Assitance.value = [];
-        $.each(props.assistance, function(index, item) {
-            $.each(item.livelihoods, function(i, v) {
-                if (v === e.id) {
-                    const _temp = Object.assign({}, {id: item.id, text: item.name.toUpperCase() });
-                    select2Assitance.value.push(_temp);
+    const handleMuniCitySelect = (event) => {
+        let selectedValue = event.id.toLowerCase();
+
+        if (selectedValue == 'escalante city' || selectedValue == 'himamaylan city' || selectedValue == 'kabankalan city' || selectedValue == 'talisay city' || selectedValue == 'victorias city') {
+            let newText = selectedValue.split(" ")[0];
+            selectedValue = 'city of ' + newText;
+        }
+
+        const brgy = barangays.all()
+            .filter(
+                item => item.citymun.toLowerCase().includes(selectedValue)
+            ).map( item => {
+                return {
+                    id: item.name,
+                    text: item.name.toUpperCase(),
+                    citymun: item.citymun
                 }
-            })
-        })
+            });
+
+        barangayOptions.value = brgy;
+        form.brgy = null;
     }
+
+    const groupedReports = computed(() => {
+        const rows = Array.isArray(props.reports?.data)
+            ? props.reports.data
+            : Array.isArray(props.reports)
+                ? props.reports
+                : [];
+
+        const groups = {};
+
+        const formCity = (props.filter.city ?? '').toString().trim();
+        const formBrgy = (props.filter.brgy ?? '').toString().trim();
+
+        rows.forEach((row) => {
+            const city = (row.city ?? '').toString().trim();
+            const brgy = (row.brgy ?? '').toString().trim();
+
+            // 1️⃣ If barangay filter exists → no grouping
+            if (formBrgy !== '') {
+                const key = `NO_GROUP_${row.id}`;
+                groups[key] = {
+                    group: null,
+                    items: [row]
+                };
+                return;
+            }
+
+            let key = '';
+
+            // 2️⃣ If city is filtered → group by brgy
+            if (formCity !== '') {
+                key = brgy !== '' ? brgy : 'UNSPECIFIED';
+            }
+            // 3️⃣ If no city filter → group by city
+            else {
+                key = city !== '' ? city : 'UNSPECIFIED';
+            }
+
+            if (!groups[key]) {
+                groups[key] = {
+                    group: key,
+                    items: []
+                };
+            }
+
+            groups[key].items.push(row);
+        });
+
+        return Object.values(groups);
+    });
+
+
 </script>
 
 <template>
@@ -219,7 +274,7 @@
 
         <div class="py-8">
             <div class="flex flex-wrap justify-between">
-                <div class="w-[33%]">
+                <div class="w-[28%]">
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                         <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
                             <div class="w-full mb-4">
@@ -229,16 +284,16 @@
                             <hr class="mb-4">
 
                             <div class="mb-4">
-                                <InputLabel for="Livelihood" value="Livelihood" />
+                                <InputLabel for="City" value="City" />
                                 <div class="rounded-md block w-full mt-1">
-                                    <Select2 class="h-10 uppercase" v-model="form.livelihood" :options="main_livelihood" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="handleLivelihood" />
+                                    <Select2 class="h-10 uppercase" v-model="form.city" :options="cityOptions" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="handleMuniCitySelect" />
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <InputLabel for="Assistance" value="Assistance" />
+                                <InputLabel for="Barangay" value="Barangay" />
                                 <div class="rounded-md block w-full mt-1">
-                                    <Select2 class="h-10 uppercase" v-model="form.assistance" :options="select2Assitance" :settings="{ placeholder: 'Select An Option', width: '100%' }" />
+                                    <Select2 class="h-10 uppercase" v-model="form.brgy" :options="barangayOptions" :settings="{ placeholder: 'Select An Option', width: '100%' }" />
                                 </div>
                             </div>
 
@@ -261,7 +316,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="w-[65%]">
+                <div class="w-[70%]">
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                         <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
                             <div class="flex flex-wrap justify-end">
@@ -276,65 +331,67 @@
                                         class="text-xs text-gray-700 uppercase">
                                         <tr>
                                             <th scope="col" class="px-6 py-3 w-3/12">Name</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Assistance</th>
-                                            <th scope="col" class="px-6 py-3 w-3/12">Remarks</th>
+                                            <template v-if="filter.city">
+                                                <th scope="col" class="px-6 py-3 w-2/12">City</th>
+                                            </template>
+
+                                            <!-- BARANGAY COLUMN -->
+                                            <template v-if="!filter.city || filter.brgy">
+                                                <th scope="col" class="px-6 py-3 w-2/12">Barangay</th>
+                                            </template>
                                             <th scope="col" class="px-6 py-3 w-3/12">Created By</th>
-                                            <th scope="col" class="px-6 py-3">&nbsp;</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-if="reports.total > 0">
-                                            <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.name }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
-                                                </td>
-                                            </tr>
+                                        <template v-if="groupedReports.length > 0">
+
+                                            <template v-for="group in groupedReports" :key="group.group ?? group.items[0].id">
+
+                                                <!-- GROUP HEADER -->
+                                                <tr v-if="group.group" class="bg-gray-100 border-b">
+                                                    <th colspan="4" class="px-6 py-3 text-left font-bold text-gray-800 uppercase">
+                                                        {{ group.group }}
+                                                    </th>
+                                                </tr>
+
+                                                <!-- ROWS -->
+                                                <tr v-for="report in group.items" :key="report.id" class="bg-white border-b">
+                                                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                        {{ report.name }}
+                                                    </td>
+
+                                                    <template v-if="filter.city">
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            {{ report.city || '-' }}
+                                                        </td>
+                                                    </template>
+
+                                                    <template v-if="!filter.city || filter.brgy">
+                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                            {{ report.brgy || '-' }}
+                                                        </td>
+                                                    </template>
+
+                                                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                        <p class="font-semibold">{{ report.created_name }}</p>
+                                                        <small>{{ dateFormat(report.created_at) }}</small>
+                                                    </td>
+                                                </tr>
+
+                                            </template>
+
                                         </template>
-                                        <template v-else-if="filter.paginate == 'All' && reports.length > 0">
-                                             <tr class="bg-white border-b" v-for="reports in reports.data" :key="reports.id">
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.name }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p>{{ formatAssistance(reports) }}</p>
-                                                    <p>
-                                                        <small><b>Livelihood: </b> {{ formatLivelihood(reports.livelihood) }}</small>
-                                                    </p>
-                                                    <p v-if="reports.amount">
-                                                        <small><b>Amount: </b> {{ reports.amount }}</small>
-                                                    </p>
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    {{ reports.remarks }}
-                                                </td>
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                    <p class="font-semibold">{{ reports.created_name }}</p>
-                                                    <small>{{ dateFormat(reports.created_at) }}</small>
-                                                </td>
-                                            </tr>
-                                        </template>
+
                                         <template v-else>
                                             <tr class="bg-white border-b">
-                                                <th colspan="4" id="no-data-found" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap text-center uppercase">No Data Found!</th>
+                                                <th colspan="4" class="px-6 py-4 text-center uppercase">
+                                                    No Data Found!
+                                                </th>
                                             </tr>
                                         </template>
                                     </tbody>
+
+
                                 </table>
                                 <div class="mt-6">
                                     <div class="flex flex-row justify-between items-center">
