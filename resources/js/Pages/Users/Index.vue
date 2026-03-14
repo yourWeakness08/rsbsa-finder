@@ -120,7 +120,7 @@
 
     const role = ref([
         { id: 1, text: 'ADMINISTRATOR' },
-        { id: 2, text: 'ENCODER' },
+        { id: 2, text: 'ADMIN STAFF' },
         { id: 3, text: 'BRGY. STAFF' }
         // { id: 0, text: 'MEMBER' },
     ])
@@ -342,7 +342,7 @@
                                                     Administrator
                                                 </template>
                                                 <template v-else-if="users.role == 2">
-                                                    Encoder
+                                                    ADMIN STAFF
                                                 </template>
                                                 <template v-else>
                                                     BRGY. STAFF
@@ -396,7 +396,7 @@
                                                     Administrator
                                                 </template>
                                                 <template v-else-if="users.role == 2">
-                                                    Encoder
+                                                    ADMIN STAFF
                                                 </template>
                                                 <template v-else>
                                                     BRGY. STAFF

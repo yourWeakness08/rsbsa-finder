@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assistance;
 use App\Models\Assistances;
+use App\Models\FarmerInformation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -280,7 +281,7 @@ class AssistanceController extends Controller
                 ) AS name"))
             ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
             ->leftJoin('farmer_information as c', 'c.id', '=', 'a.farmer_id')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('a.created_at', 'desc')
             ->where( function($query) use ($request) {
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')
@@ -325,7 +326,7 @@ class AssistanceController extends Controller
                 ) AS name"))
             ->leftJoin('users as b', 'b.id', '=', 'a.created_by')
             ->leftJoin('farmer_information as c', 'c.id', '=', 'a.farmer_id')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('a.created_at', 'desc')
             ->where( function($query) use ($request) {
                 if ($request->search) {
                     $query->where('c.firstname', 'like', '%'.$request->search.'%')

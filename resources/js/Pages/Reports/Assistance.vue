@@ -110,7 +110,6 @@
                 const page = usePage();
             }
         })
-
     }
 
     const startDate = moment().subtract(6, 'days');
