@@ -12,6 +12,6 @@ class FarmProfile extends Model
     protected $fillable = ['farmer_id', 'main_livelihood', 'farming_gross', 'no_farming_gross', 'farm_parcel_no', 'is_arb', 'uuid'];
 
     public function farmParcels(){
-        return $this->hasMany(FarmParcel::class, 'farm_profile_id', 'id');
+        return $this->hasMany(FarmParcel::class, 'farmer_profile_id', 'id');
     }
 }

@@ -30,6 +30,7 @@ return new class extends Migration
             $table->text('disapproved_remarks')->nullable();
             $table->datetime('disapproved_at')->nullable();
             $table->text('remarks')->nullable();
+            $table->text('is_generated')->default(0);
             $table->integer('created_by')->default(0);
             $table->integer('updated_by')->default(0);
             $table->integer('is_archived')->default(0);

@@ -263,7 +263,6 @@
         status = computed(() => (_viewAssistance.value.status || '').toLowerCase())
     }
 
-
     const closeViewModal = () => {
         viewDialog.value = false;
         processing.value = false;
@@ -540,6 +539,12 @@
             processing.value = false;
         }
     }
+
+    const formatLivelihood = (livelihood) => {
+        if (!livelihood) return '---';
+        const found = main_livelihood.value.find(item => item.id == livelihood);
+        return found ? found.text : livelihood;
+    }
 </script>
 
 <template>
@@ -603,16 +608,16 @@
                                                     {{ item.status }}
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                            <td class="px-6 py-4 font-medium text-gray-900 uppercase">
                                                 {{ item.name }}
                                                 <p class="m-0">
-                                                    <small>Applied Livelihood: <b>{{ item.livelihood.toUpperCase() }}</b> </small>
+                                                    <small>Applied Livelihood: <b>{{ item.livelihood ? formatLivelihood(item.livelihood) : ' --- ' }}</b> </small>
                                                 </p>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ item.assistance_name }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                            <td class="px-6 py-4 font-medium text-gray-900 uppercase">
                                                 {{ item.purpose }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
@@ -675,16 +680,16 @@
                                                     {{ item.status }}
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                            <td class="px-6 py-4 font-medium text-gray-900 uppercase">
                                                 {{ item.name }}
                                                 <p class="m-0">
-                                                    <small>Applied Livelihood: <b>{{ item.livelihood.toUpperCase() }}</b> </small>
+                                                    <small>Applied Livelihood: <b>{{ item.livelihood ? formatLivelihood(item.livelihood) : ' --- ' }}</b> </small>
                                                 </p>
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                 {{ item.assistance_name }}
                                             </td>
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                            <td class="px-6 py-4 font-medium text-gray-900 uppercase">
                                                 {{ item.purpose }}
                                             </td>
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
@@ -864,7 +869,7 @@
                             <p class="text-sm text-gray-500 m-0">Name</p>
                             <h2 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.name }}</h2>
                             <p class="m-0">
-                                <small>Applied Livelihood: <b>{{ _viewAssistance.livelihood.toUpperCase() }}</b> </small>
+                                <small>Applied Livelihood: <b>{{ _viewAssistance.livelihood ? formatLivelihood(_viewAssistance.livelihood) : ' --- ' }}</b> </small>
                             </p>
                         </div>
                         <div class="w-6/12">
@@ -879,33 +884,52 @@
                         </div>
                     </div>
 
+                    <div class="flex flex-wrap items-start mb-3" v-if="_viewAssistance.remarks && _viewAssistance.remarks != null">
+                        <div class="w-2/2">
+                            <p class="text-sm text-gray-500 m-0">Remarks</p>
+                            <h2 class="font-semibold text-lg text-gray-800 uppercase pl-2">- {{ _viewAssistance.remarks ?? _viewAssistance.approved_remarks }}</h2>
+                        </div>
+                    </div>
+
                     <hr class="my-6 border-t border-gray-300" />
 
                     <div class="flex flex-wrap flex-row items-start justify-between">
-                        <div class="w-5/12">
+                        <div class="w-5/12 mb-3">
                             <p class="text-sm text-gray-500 m-0">Created By</p>
                             <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.created_name }}</h3>
                             <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.created_at) }}</h4>
                         </div>
-                        <div class="w-5/12" v-if="_viewAssistance.updated_name && _viewAssistance.updated_at">
+                        <div class="w-5/12 mb-3" v-if="_viewAssistance.updated_name && _viewAssistance.updated_at">
                             <p class="text-sm text-gray-500 m-0">Updated By</p>
                             <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.updated_name }}</h3>
                             <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.updated_at) }}</h4>
                         </div>
-                        <div class="w-5/12" v-if="_viewAssistance.approved_name && _viewAssistance.approved_at">
+                        <div class="w-5/12 mb-3" v-if="_viewAssistance.approved_name && _viewAssistance.approved_at">
                             <p class="text-sm text-gray-500 m-0">Approved By</p>
                             <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.approved_name ? _viewAssistance.approved_name : 'Not Approved Yet' }}</h3>
                             <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.approved_at) }}</h4>
+                            <p class="text-sm text-gray-500 m-0">
+                                <strong>Remarks: </strong>
+                                <small>{{ _viewAssistance.approved_remarks }}</small>
+                            </p>
                         </div>
-                        <div class="w-5/12" v-if="_viewAssistance.disapproved_name && _viewAssistance.disapproved_at">
+                        <div class="w-5/12 mb-3" v-if="_viewAssistance.disapproved_name && _viewAssistance.disapproved_at">
                             <p class="text-sm text-gray-500 m-0">Disapproved By</p>
                             <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.disapproved_name ? _viewAssistance.disapproved_name : 'Not Disapproved Yet' }}</h3>
                             <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.disapproved_at) }}</h4>
+                            <p class="text-sm text-gray-500 m-0">
+                                <strong>Remarks: </strong>
+                                <small>{{ _viewAssistance.disapproved_remarks }}</small>
+                            </p>
                         </div>
-                        <div class="w-5/12" v-if="_viewAssistance.cancelled_name && _viewAssistance.cancelled_at">
+                        <div class="w-5/12 mb-3" v-if="_viewAssistance.cancelled_name && _viewAssistance.cancelled_at">
                             <p class="text-sm text-gray-500 m-0">Cancelled By</p>
                             <h3 class="font-semibold text-lg text-gray-800 uppercase">{{ _viewAssistance.cancelled_name ? _viewAssistance.cancelled_name : 'Not Cancelled Yet' }}</h3>
                             <h4 class="font-semibold text-gray-800">{{ dateFormat(_viewAssistance.cancelled_at) }}</h4>
+                            <p class="text-sm text-gray-500 m-0">
+                                <strong>Remarks: </strong>
+                                <small>{{ _viewAssistance.cancelled_remarks }}</small>
+                            </p>
                         </div>
                     </div>
 
@@ -964,14 +988,16 @@
                     </PrimaryButton>
     
                     <!-- DISAPPROVE -->
-                    <PrimaryButton
-                        v-if="actions.disapprove.show"
-                        :class="[actions.disapprove.classes, 'text-white me-2', { 'opacity-25': processing }]"
-                        :disabled="processing"
-                        @click="updateStatus('disapprove')"
-                    >
-                        {{ actions.disapprove.label }}
-                    </PrimaryButton>
+                    <template v-if="!_viewAssistance.assistance_name.includes('cash') && _viewAssistance.remarks != null">
+                        <PrimaryButton
+                            v-if="actions.disapprove.show"
+                            :class="[actions.disapprove.classes, 'text-white me-2', { 'opacity-25': processing }]"
+                            :disabled="processing"
+                            @click="updateStatus('disapprove')"
+                        >
+                            {{ actions.disapprove.label }}
+                        </PrimaryButton>
+                    </template>
     
                     <!-- CANCEL -->
                     <PrimaryButton

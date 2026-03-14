@@ -439,11 +439,18 @@ class FarmersController extends Controller
                             'uuid'  => Str::random(12)
                         ]);
         
-                        // // example: seeds
-                        // $this->assistanceService->create($farmer->id, $request->seeds_assistance_id, 'seeds');
-        
-                        // // example: fertilizer
-                        // $this->assistanceService->create($farmer->id, $request->fertilizer_assistance_id, 'fertilizer');
+                        if ($request->main_livelihood && in_array('farmer', $request->main_livelihood)) {
+                            $assistanceSeed = Assistance::where('name', 'like', '%seed%')->where('is_archived', 0)->first();
+                            $assistanceFertilizer = Assistance::where('name', 'like', '%fertilizer%')->where('is_archived', 0)->first();
+                            
+                            if ($assistanceSeed) {
+                                $this->assistanceService->create($farmer->id, $assistanceSeed->id, 'seeds');
+                            }
+            
+                            if ($assistanceFertilizer) {
+                                $this->assistanceService->create($farmer->id, $assistanceFertilizer->id, 'fertilizer');
+                            }
+                        }
         
                         $activityLogger->log(
                             userId: auth()->id(),
@@ -1836,6 +1843,24 @@ class FarmersController extends Controller
             'state' => true,
             'message' => 'Assistance automatically approved.',
             'data' => $assistance
+        ]);
+    }
+
+    public function test() {
+        $assistanceSeed = Assistance::where('name', 'like', '%seed%')->where('is_archived', 0)->first();
+        $assistanceFertilizer = Assistance::where('name', 'like', '%fertilizer%')->where('is_archived', 0)->first();
+        
+        if ($assistanceSeed) {
+            $this->assistanceService->create(2, $assistanceSeed->id, 'seeds');
+        }
+
+        if ($assistanceFertilizer) {
+            $this->assistanceService->create(2, $assistanceFertilizer->id, 'fertilizer');
+        }
+        
+        return response()->json([
+            'state' => true,
+            'message' => 'Test assistance auto-approval executed.'
         ]);
     }
 }
