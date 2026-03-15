@@ -82,7 +82,7 @@
         lot: '',
         street: '',
         brgy: '',
-        muni_city: '',
+        muni_city: 'Hinigaran',
         province: 'Negros Occidental',
         region: 'Region VI',
         contact: '',
@@ -443,6 +443,7 @@
 
         datepicker();
         _datepicker();
+        select2Brgy(form.muni_city);
     });
 
     const datepicker = () => {
@@ -873,6 +874,7 @@
     const cityOptions = ref([]);
     const barangayOptions = ref([]);
 
+    //gets all city / municipal in negros
     cityOptions.value = municipalities
         .all()
         .filter(item => item.province === 'Negros Occidental')
@@ -886,6 +888,7 @@
             }
     })
 
+    //gets all brgy within that city
     const handleMuniCitySelect = (event) => {
         let selectedValue = event.id.toLowerCase();
 
@@ -897,6 +900,22 @@
         const brgy = barangays.all()
             .filter(
                 item => item.citymun.toLowerCase().includes(selectedValue)
+            ).map( item => {
+                return {
+                    id: item.name,
+                    text: item.name.toUpperCase(),
+                    citymun: item.citymun
+                }
+            });
+
+        barangayOptions.value = brgy;
+    }
+
+    const select2Brgy = (val) => {
+        const city = val.toLowerCase();
+        const brgy = barangays.all()
+            .filter(
+                item => item.citymun.toLowerCase().includes(city)
             ).map( item => {
                 return {
                     id: item.name,
@@ -1046,14 +1065,21 @@
                                             </p>
                                         </div>
                                         <div class="md:w-[32.10%] sm:w-full">
+                                            <!-- here -->
                                             <InputLabel for="municipality" value="Municipality / City" :required="true" />
-                                            <Select2
+                                            <TextInput type="text" v-model="form.muni_city" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                                @blur="v$.muni_city.$touch()"
+                                                :class="inputBorderClass('muni_city')"
+                                                disabled="true"
+                                            />
+                                            <!-- <Select2
                                                 class="h-10 uppercase"
                                                 v-model="form.muni_city"
                                                 :options="cityOptions"
                                                 :settings="{ placeholder: 'Select City / Municipality', width: '100%' }"
                                                 @select="handleMuniCitySelect"
-                                            />
+                                                disabled="true"
+                                            /> -->
                                             <p v-if="hasError('muni_city')" class="text-red-500 text-sm">
                                                 <span class="text-red-500 text-sm" v-if="v$.muni_city.required?.$invalid">Municipality / City is required.</span>
                                             </p>
