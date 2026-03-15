@@ -113,7 +113,7 @@
     const endDate = moment();
 
     const form = useForm({
-        city: '',
+        city: 'Hinigaran',
         brgy: '',
         from: moment(startDate).format('YYYY-MM-DD'),
         to: moment(endDate).format('YYYY-MM-DD'),
@@ -130,6 +130,7 @@
 
     onMounted(() => {
         datepicker();
+        select2Brgy(form.city);
     });
 
     const datepicker = () => {
@@ -164,7 +165,6 @@
     }
 
     const resetFields = () => {
-        form.city = '';
         form.brgy = '';
         form.from = startDate;
         form.to = endDate;
@@ -227,7 +227,6 @@
             const city = (row.city ?? '').toString().trim();
             const brgy = (row.brgy ?? '').toString().trim();
 
-            // 1️⃣ If barangay filter exists → no grouping
             if (formBrgy !== '') {
                 const key = `NO_GROUP_${row.id}`;
                 groups[key] = {
@@ -239,12 +238,9 @@
 
             let key = '';
 
-            // 2️⃣ If city is filtered → group by brgy
             if (formCity !== '') {
                 key = brgy !== '' ? brgy : 'UNSPECIFIED';
-            }
-            // 3️⃣ If no city filter → group by city
-            else {
+            } else {
                 key = city !== '' ? city : 'UNSPECIFIED';
             }
 
@@ -261,7 +257,21 @@
         return Object.values(groups);
     });
 
+    const select2Brgy = (val) => {
+        const city = val.toLowerCase();
+        const brgy = barangays.all()
+            .filter(
+                item => item.citymun.toLowerCase().includes(city)
+            ).map( item => {
+                return {
+                    id: item.name,
+                    text: item.name.toUpperCase(),
+                    citymun: item.citymun
+                }
+            });
 
+        barangayOptions.value = brgy;
+    }
 </script>
 
 <template>
@@ -283,7 +293,7 @@
 
                             <hr class="mb-4">
 
-                            <div class="mb-4">
+                            <div class="mb-4" hidden>
                                 <InputLabel for="City" value="City" />
                                 <div class="rounded-md block w-full mt-1">
                                     <Select2 class="h-10 uppercase" v-model="form.city" :options="cityOptions" :settings="{ placeholder: 'Select An Option', width: '100%' }" @select="handleMuniCitySelect" />
@@ -330,10 +340,8 @@
                                     <thead
                                         class="text-xs text-gray-700 uppercase">
                                         <tr>
+                                            <th scope="col" class="px-6 py-3 w-2/12">Reference No.</th>
                                             <th scope="col" class="px-6 py-3 w-3/12">Name</th>
-                                            <template v-if="filter.city">
-                                                <th scope="col" class="px-6 py-3 w-2/12">City</th>
-                                            </template>
 
                                             <!-- BARANGAY COLUMN -->
                                             <template v-if="!filter.city || filter.brgy">
@@ -357,14 +365,11 @@
                                                 <!-- ROWS -->
                                                 <tr v-for="report in group.items" :key="report.id" class="bg-white border-b">
                                                     <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
+                                                        {{ report.ref_no }}
+                                                    </td>
+                                                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                         {{ report.name }}
                                                     </td>
-
-                                                    <template v-if="filter.city">
-                                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
-                                                            {{ report.city || '-' }}
-                                                        </td>
-                                                    </template>
 
                                                     <template v-if="!filter.city || filter.brgy">
                                                         <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">

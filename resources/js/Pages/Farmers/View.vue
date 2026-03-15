@@ -213,7 +213,7 @@
         lot_block_no: '',
         street: '',
         brgy: '',
-        city: '',
+        city: 'Hinigaran',
         province: 'Negros Occidental',
         region: 'Region VI',
         mobile_no: '',
@@ -342,7 +342,7 @@
         form.gender = farmer.gender;
         form.lot_block_no = farmer.lot_block_no;
         form.street = farmer.street;
-        form.city = capitalizeWords(farmer.city);
+        // form.city = capitalizeWords(farmer.city); //removes to force change the city to default hinigaran
         form.brgy = capitalizeWords(farmer.brgy);
 
         const brgy = barangays.all()
@@ -397,6 +397,8 @@
             emergency.mask($("#contact-emergency"));
 
             datepicker();
+
+            select2Brgy(form.city);
         }, 350);
     }
 
@@ -1714,6 +1716,7 @@
     const cityOptions = ref([]);
     const barangayOptions = ref([]);
 
+    //gets all city / municipal in negros
     cityOptions.value = municipalities
         .all()
         .filter(item => item.province === 'Negros Occidental')
@@ -1727,6 +1730,7 @@
             }
     })
 
+    //gets all brgy within that city
     const handleMuniCitySelect = (event) => {
         let selectedValue = event.id.toLowerCase();
 
@@ -1748,6 +1752,22 @@
 
         barangayOptions.value = brgy;
         form.brgy = null;
+    }
+
+    const select2Brgy = (val) => {
+        const city = val.toLowerCase();
+        const brgy = barangays.all()
+            .filter(
+                item => item.citymun.toLowerCase().includes(city)
+            ).map( item => {
+                return {
+                    id: item.name,
+                    text: item.name.toUpperCase(),
+                    citymun: item.citymun
+                }
+            });
+
+        barangayOptions.value = brgy;
     }
 
     function capitalizeWords(str) {
@@ -2998,13 +3018,18 @@
                             </div>
                             <div class="md:w-[32.10%] sm:w-full">
                                 <InputLabel for="municipality" value="Municipality / City" :required="true" />
-                                <Select2
+                                <TextInput type="text" v-model="form.city" class="mt-1 block w-full uppercase" autocomplete="off" 
+                                    @blur="v$.city.$touch()"
+                                    :class="!v$.city.$dirty && form.city ? 'border-gray-300' : inputBorderClass('city')"
+                                    disabled="true"
+                                />
+                                <!-- <Select2
                                     class="h-10 uppercase"
                                     v-model="form.city"
                                     :options="cityOptions"
                                     :settings="{ placeholder: 'Select City / Municipality', width: '100%', dropdownParent: $('#editPersonalInfo') }"
                                     @select="handleMuniCitySelect"
-                                />
+                                /> -->
                                 <p v-if="hasError('city')" class="text-red-500 text-sm">
                                     <span class="text-red-500 text-sm" v-if="v$.city.required?.$invalid">Municipality / City is required.</span>
                                 </p>
