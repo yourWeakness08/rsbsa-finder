@@ -505,7 +505,7 @@
         { value: 'farmer', label: 'Farmer' },
         { value: 'farm_worker', label: 'Farm Worker / Laborer' },
         { value: 'fisherfolks', label: 'Fisherfolk' },
-        { value: 'agri_youth', label: 'Agri Youth' },
+        // { value: 'agri_youth', label: 'Agri Youth' },
     ]);
 
     const handleLivelihood = (e) => {

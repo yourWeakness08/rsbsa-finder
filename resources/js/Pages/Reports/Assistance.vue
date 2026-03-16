@@ -129,7 +129,7 @@
         { id: 'farmer', text: 'FARMER' },
         { id: 'farm_worker', text: 'FARM WORKER / LABORER' },
         { id: 'fisherfolks', text: 'FISHERFOLKS' },
-        { id: 'agri_youth', text: 'AGRI YOUTH' },
+        // { id: 'agri_youth', text: 'AGRI YOUTH' },
     ]);
 
     onMounted(() => {

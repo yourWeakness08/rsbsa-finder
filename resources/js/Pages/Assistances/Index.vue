@@ -219,6 +219,24 @@
                         recentlyFailed.value = true;
                         processing.value = false;
 
+                        if (response.livelihood != 'farmer' && response.applied_assistance.includes('cash') && response.message) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Create Assistance',
+                                text: response.message,
+                                target: document.getElementById('newAssistance')
+                            })
+                        }
+
+                        if (typeof response.is_farm_worker != 'undefined' && response.is_farm_worker == 1) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Create Assistance',
+                                text: response.message,
+                                target: document.getElementById('newAssistance')
+                            })
+                        }
+
                         setTimeout(() => { recentlyFailed.value = false; }, 1500);
                     }
                 }
@@ -232,7 +250,7 @@
         { id: 'farmer', text: 'Farmer' },
         { id: 'farm_worker', text: 'Farm Worker / Laborer' },
         { id: 'fisherfolks', text: 'Fisherfolk' },
-        { id: 'agri_youth', text: 'Agri Youth' },
+        // { id: 'agri_youth', text: 'Agri Youth' },
     ]);
 
     const handleLivelihood = (event, type = 'add') => {
@@ -266,6 +284,7 @@
     const closeViewModal = () => {
         viewDialog.value = false;
         processing.value = false;
+        form.reset();
 
         setTimeout(() => {
             _viewAssistance.value = [];
@@ -344,24 +363,37 @@
                 }, {
                     preserveScroll: true,
                     onSuccess: (page) => {
-                        _viewAssistance.value.status = action.nextStatus
+                        const response = page.props.flash?.response;
 
-                        const newList = page?.props?.assistances;
-
-                        Swal.fire({
-                            target: document.getElementById('viewAssistance'),
-                            icon: 'success',
-                            title: 'Updated!',
-                            text: 'Status has been updated.',
-                            timer: 2500,
-                            showConfirmButton: true
-                        })
-
-                        const updated = newList.data.find(item =>
-                            item.id == _viewAssistance.value.id
-                        )
-
-                        _viewAssistance.value = {... updated}
+                        if (response.state == 'true') {
+                            _viewAssistance.value.status = action.nextStatus
+    
+                            const newList = page?.props?.assistances;
+    
+                            Swal.fire({
+                                target: document.getElementById('viewAssistance'),
+                                icon: 'success',
+                                title: 'Updated!',
+                                text: 'Status has been updated.',
+                                timer: 2500,
+                                showConfirmButton: true
+                            })
+    
+                            const updated = newList.data.find(item =>
+                                item.id == _viewAssistance.value.id
+                            )
+    
+                            _viewAssistance.value = {... updated}
+                        } else {
+                            if (typeof response.livelihood != 'undefined' && response.status == 'approved') {
+                                Swal.fire({
+                                    target: document.getElementById('viewAssistance'),
+                                    icon: 'warning',
+                                    title: 'Approve Assistance',
+                                    text: response.message
+                                })
+                            }
+                        }
                     },
                     onError: () => {
                         Swal.fire({

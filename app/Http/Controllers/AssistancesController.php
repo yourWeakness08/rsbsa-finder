@@ -185,14 +185,53 @@ class AssistancesController extends Controller
             $status = 'Pending';
             $amount = 0;
             $remarks = null;
-            if ($checkAssistance) {
-                if (str_contains(strtolower($checkAssistance), 'cash')) {
-                    $calculateAssistance = $this->calculateCashAssistance($request->farmer);
-    
-                    $status = $calculateAssistance['status'];
-                    $amount = $calculateAssistance['amount'];
-                    $remarks = $calculateAssistance['purpose'];
-                }
+
+            // limit cash assistance for farmers only
+            if ($checkAssistance && $request->livelihood == 'farmer' && str_contains(strtolower($checkAssistance), 'cash')) {
+                $calculateAssistance = $this->calculateCashAssistance($request->farmer);
+
+                $status = $calculateAssistance['status'];
+                $amount = $calculateAssistance['amount'];
+                $remarks = $calculateAssistance['purpose'];
+            }
+
+            // prompts if cash assistance is selected and is not a farmer
+            if ($checkAssistance && $request->livelihood != 'farmer' && str_contains(strtolower($checkAssistance), 'cash')) {
+                $name = $this->getFullname($request->farmer);
+                $activityLogger->log(
+                    userId: auth()->id(),
+                    table: 'Assistances',
+                    message: "User faied to add assistance for `{$name}` because the selected livelihood is not eligible for cash assistance.",
+                    action: 'create',
+                    status: $state ? 'success' : 'error'
+                );
+                
+
+                return redirect()->back()->with('response', [
+                    'state' => $state,
+                    'message' => 'Selected livelihood is not eligible for cash assistance.',
+                    'livelihood' => $request->livelihood,
+                    'applied_assistance' => $checkAssistance
+                ]);
+            }
+
+            if ($request->livelihood == 'farm_worker') {
+                $name = $this->getFullname($request->farmer);
+                $activityLogger->log(
+                    userId: auth()->id(),
+                    table: 'Assistances',
+                    message: "User faied to add assistance for `{$name}` because the selected livelihood is not eligible for any assistances.",
+                    action: 'create',
+                    status: $state ? 'success' : 'error'
+                );
+                
+                return redirect()->back()->with('response', [
+                    'state' => $state,
+                    'message' => 'Selected livelihood is not eligible for any assistances.',
+                    'livelihood' => $request->livelihood,
+                    'applied_assistance' => $checkAssistance,
+                    'is_farm_worker' => 1
+                ]);
             }
             
             $created = Assistances::create([
@@ -574,6 +613,36 @@ class AssistancesController extends Controller
                 $assistances->amount = $calculatedAmount['metric']['amount'] ?? 0;
                 $assistances->remarks = $calculatedAmount['metric']['purpose'] ?? 'no purpose specified';
             }
+
+            if ($assistances->livelihood == 'fisherfolks') {
+                $calculateHectares = $this->calculateHectares($id);
+
+                if (floatval($calculateHectares) <= 0) {
+                    $name = $this->getFullname($id);
+                    $activityLogger->log(
+                        userId: auth()->id(),
+                        table: 'Assistance',
+                        message: "Failed to approve assistance of `{$name}`. Applicant current total area is `{$calculateHectares}` Hectares.",
+                        action: 'update',
+                        status: 'error'
+                    );
+
+                    return redirect()->back()->with([
+                        'response' => [
+                            'state' => 'false',
+                            'message' => "Applicant current total area is `{$calculateHectares}` Hectares. Unable to proceed approval of assistance.",
+                            'livelihood' => 'fisherfolks',
+                            'status' => 'approved'
+                        ]
+                    ]);
+                }
+                $getAssistanceName = 'Fingerlings';
+                if ($assistances->assistance && !$assistances->assistance->is_archived) {
+                    $getAssistanceName = $assistances->assistance->name;
+                }
+                $assistances->amount = 5000;
+                $assistances->remarks = 'Amount of 5000 '.$getAssistanceName;
+            }
         }
 
         if ($_tempStatus == 'disapproved') {
@@ -738,7 +807,7 @@ class AssistancesController extends Controller
         $totalHectares = $getFarmParcelTotalHectares($id);
         $metric = [];
 
-        if ($totalHectares <= 0 || $totalHectares > 2) {
+        if (floatval($totalHectares) <= 0.10 || floatval($totalHectares) > 2.01) {
             $metric = [
                 'amount' => 0,
                 'status' => 'Disapproved',
@@ -753,5 +822,20 @@ class AssistancesController extends Controller
         }
 
         return $metric;
+    }
+
+    public function calculateHectares($id) {
+        $getFarmParcelTotalHectares = function ($id) {
+            $total = DB::table('farm_profile as a')
+                ->leftJoin('farm_parcels as b', 'b.farmer_profile_id', '=', 'a.id')
+                ->where('a.farmer_id', $id)
+                ->sum('b.total_farm_area');
+
+            return $total;
+        };
+
+        $totalHectares = $getFarmParcelTotalHectares($id);
+
+        return $totalHectares;
     }
 }

@@ -82,14 +82,14 @@
         { value: 'farmer', label: 'Farmer' },
         { value: 'farm_worker', label: 'Farm Worker / Laborer' },
         { value: 'fisherfolks', label: 'Fisherfolk' },
-        { value: 'agri_youth', label: 'Agri Youth' },
+        // { value: 'agri_youth', label: 'Agri Youth' },
     ]);
 
     const _main_livelihood = ref([
         { value: 'farmer', label: 'Farmer' },
         { value: 'farm_worker', label: 'Farm Worker / Laborer' },
         { value: 'fisherfolks', label: 'Fisherfolk' },
-        { value: 'agri_youth', label: 'Agri Youth' },
+        // { value: 'agri_youth', label: 'Agri Youth' },
     ]);
 
     const farmCommodity = (item) => {
@@ -2349,7 +2349,7 @@
                                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : farmer.main_livelihood.length == 3,
                                                     'md:w-[49%] lg:w-[33%] xl:w-[33%] 2xl:w-[24%]' : farmer.main_livelihood.length == 4
                                                 }"
-                                            >
+                                            hidden>
                                                 <div class="p-4 lg:p-6 bg-white">
                                                     <h4 class="text-center font-bold italic text-lg mb-3">For Agri Youth:</h4>
 
@@ -3631,7 +3631,7 @@
                                     'md:w-[32%] lg:w-[32%] xl:w-[32%] 2xl:w-[32%]' : livelihoodForm.main_livelihood.length == 3,
                                     'md:w-[49%] lg:w-[33%] xl:w-[33%] 2xl:w-[24%]' : livelihoodForm.main_livelihood.length == 4
                                 }"
-                            >
+                            hidden>
                                 <div class="p-4 lg:p-6 bg-white">
                                     <h4 class="text-center font-bold italic text-lg mb-3">For Agri Youth:</h4>
 

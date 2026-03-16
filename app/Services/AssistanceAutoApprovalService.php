@@ -82,6 +82,7 @@ class AssistanceAutoApprovalService
     }
 
     private function seedMetric($hectares) {
+        $hectares = floatval($hectares);
         if ($hectares < 0.10) {
             return [
                 'amount' => 0,
@@ -98,6 +99,7 @@ class AssistanceAutoApprovalService
     }
 
     private function fertilizerMetric($hectares){
+        $hectares = floatval($hectares);
         if ($hectares < 0.10) {
             return [
                 'amount' => 0,

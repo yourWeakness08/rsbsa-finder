@@ -111,7 +111,7 @@
         { id: 'farmer', text: 'Farmer' },
         { id: 'farm_worker', text: 'Farm Worker / Laborer' },
         { id: 'fisherfolks', text: 'Fisherfolk' },
-        { id: 'agri_youth', text: 'Agri Youth' },
+        // { id: 'agri_youth', text: 'Agri Youth' },
     ]);
 
     const isEmpty = (arr) => {

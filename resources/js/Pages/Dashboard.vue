@@ -379,7 +379,7 @@
                         <div class="text-3xl font-bold">{{ animatedTotals.fisherfolks }}</div>
                     </div>
                 </div>
-                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center">
+                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center" hidden>
                     <div class="p-4">
                         <h3 class="mb-3 font-semibold">Total Agri Youth</h3>
                         <div class="text-3xl font-bold">{{ animatedTotals.agri_youth }}</div>
