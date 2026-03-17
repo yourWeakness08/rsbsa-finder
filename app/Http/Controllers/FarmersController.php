@@ -230,8 +230,8 @@ class FarmersController extends Controller
                             'main_livelihood' => serialize($request->main_livelihood), 
                             'farming_gross' => $request->farming_gross_income, 
                             'no_farming_gross' => $request->non_farming_gross_income, 
-                            'farm_parcel_no' => $request->farm_parcel_no, 
-                            'is_arb' => $request->is_arb, 
+                            'farm_parcel_no' => in_array('farmer', $request->main_livelihood) || in_array('fisherfolks', $request->mian_livelihood) ? $request->farm_parcel_no : 0, 
+                            'is_arb' => $request->is_arb ? $request->is_arb : 0, 
                             'uuid'  => Str::random(12)
                         ]);
         
@@ -338,60 +338,62 @@ class FarmersController extends Controller
                                 }
                             }
         
-                            if (!empty($request->farm_parcel) && count($request->farm_parcel) > 0) {
-                                foreach($request->farm_parcel as $parcel) {
-                                    // $_temp = $parce['document'];
-                                    $document = $parcel['document'];
-                                    $docFilename = $document->getClientOriginalName();
-        
-                                    $farmparcel = FarmParcel::create([
-                                        'farmer_profile_id' => $farm_profile_id, 
-                                        'brgy' => trim(strtolower($parcel['brgy'])), 
-                                        'city'=> trim(strtolower($parcel['municipality'])),
-                                        'document' => $docFilename,
-                                        'total_farm_area' => $parcel['total_farm_area'], 
-                                        'is_whithin_ancentral_domain' => $parcel['is_whithin_ancentral_domain'], 
-                                        'is_agrarian_reform_beneficiary' => $parcel['is_agrarian_reform_beneficiary'], 
-                                        'ownership_document_no' => trim(strtolower($parcel['owner_doc_no'])),
-                                        'ownership_type' => $parcel['ownership_type'], 
-                                        'landowner_name' => $parcel['land_owner_name'] ? trim(strtolower($parcel['land_owner_name'])) : null, 
-                                        'is_other' => $parcel['is_other'] ? trim(strtolower($parcel['is_other'])) : null,
-                                        'farmer_in_rotation_name' => trim(strtolower($parcel['farmer_in_rotation_name'])),
-                                        'uuid' => Str::random(12)
-                                    ]);
-        
-                                    if ($farmparcel) {
-                                        if($parcel['document'] !== null) {
-                                            $docDestinationPath = "uploads/farmers/farmer_".$id.'/farmParcelDocuments';
-        
-                                            if(!file_exists(public_path($docDestinationPath))){ 
-                                                File::makeDirectory(public_path($docDestinationPath), 0777, true);
+                            if (in_array('farmer', $request->main_livelihood) || in_array('fisherfolks', $request->main_livelihood)) {
+                                if (!empty($request->farm_parcel) && count($request->farm_parcel) > 0) {
+                                    foreach($request->farm_parcel as $parcel) {
+                                        // $_temp = $parce['document'];
+                                        $document = $parcel['document'];
+                                        $docFilename = $document->getClientOriginalName();
+            
+                                        $farmparcel = FarmParcel::create([
+                                            'farmer_profile_id' => $farm_profile_id, 
+                                            'brgy' => trim(strtolower($parcel['brgy'])), 
+                                            'city'=> trim(strtolower($parcel['municipality'])),
+                                            'document' => $docFilename,
+                                            'total_farm_area' => $parcel['total_farm_area'], 
+                                            'is_whithin_ancentral_domain' => $parcel['is_whithin_ancentral_domain'], 
+                                            'is_agrarian_reform_beneficiary' => $parcel['is_agrarian_reform_beneficiary'], 
+                                            'ownership_document_no' => trim(strtolower($parcel['owner_doc_no'])),
+                                            'ownership_type' => $parcel['ownership_type'], 
+                                            'landowner_name' => $parcel['land_owner_name'] ? trim(strtolower($parcel['land_owner_name'])) : null, 
+                                            'is_other' => $parcel['is_other'] ? trim(strtolower($parcel['is_other'])) : null,
+                                            'farmer_in_rotation_name' => trim(strtolower($parcel['farmer_in_rotation_name'])),
+                                            'uuid' => Str::random(12)
+                                        ]);
+            
+                                        if ($farmparcel) {
+                                            if($parcel['document'] !== null) {
+                                                $docDestinationPath = "uploads/farmers/farmer_".$id.'/farmParcelDocuments';
+            
+                                                if(!file_exists(public_path($docDestinationPath))){ 
+                                                    File::makeDirectory(public_path($docDestinationPath), 0777, true);
+                                                }
+            
+                                                $DoctempFilePath = $docDestinationPath."/".$docFilename;
+            
+                                                if(file_exists(public_path($DoctempFilePath))){
+                                                    unlink(public_path($DoctempFilePath));
+                                                }
+            
+                                                if(!file_exists(public_path($DoctempFilePath))){
+                                                    $docFileMoved = $document->move($docDestinationPath, $docFilename);
+                                                }
                                             }
-        
-                                            $DoctempFilePath = $docDestinationPath."/".$docFilename;
-        
-                                            if(file_exists(public_path($DoctempFilePath))){
-                                                unlink(public_path($DoctempFilePath));
+            
+                                            $parcel_id = $farmparcel->id;
+            
+                                            foreach($parcel['farm_parcel_info'] as $info) {
+                                                FarmParcelInformation::create([
+                                                    'farm_parcels_id' => $parcel_id, 
+                                                    'farming_type' => $info['commodity'], 
+                                                    'size' => $info['size'], 
+                                                    'no_of_head' => $info['head_no'], 
+                                                    'farm_type' => $info['farm_type'], 
+                                                    'is_organic_practitioner' => $info['farm_type'] , 
+                                                    'remarks' => $info['remarks'] ? trim(strtolower($info['remarks'])) : null, 
+                                                    'uuid' => Str::random(12)
+                                                ]);
                                             }
-        
-                                            if(!file_exists(public_path($DoctempFilePath))){
-                                                $docFileMoved = $document->move($docDestinationPath, $docFilename);
-                                            }
-                                        }
-        
-                                        $parcel_id = $farmparcel->id;
-        
-                                        foreach($parcel['farm_parcel_info'] as $info) {
-                                            FarmParcelInformation::create([
-                                                'farm_parcels_id' => $parcel_id, 
-                                                'farming_type' => $info['commodity'], 
-                                                'size' => $info['size'], 
-                                                'no_of_head' => $info['head_no'], 
-                                                'farm_type' => $info['farm_type'], 
-                                                'is_organic_practitioner' => $info['farm_type'] , 
-                                                'remarks' => $info['remarks'] ? trim(strtolower($info['remarks'])) : null, 
-                                                'uuid' => Str::random(12)
-                                            ]);
                                         }
                                     }
                                 }
@@ -515,26 +517,38 @@ class FarmersController extends Controller
      */
     public function update(Request $request, $id, FarmerInformation $farmers, ActivityLogger $activityLogger)
     {
-        $state = false;
-        if ($request->submit_type == 'personal') {
-            $state = $this->updatePersonal($request, $id, $activityLogger);
-        } else if ($request->submit_type == 'livelihood') {
-            $state = $this->updateLivelihood($request, $id, $activityLogger);
-        } else if ($request->submit_type == 'farm_parcel') {
-            $state = $this->updateFarmParcel($request, $id, $activityLogger);
-        } else if ($request->submit_type == 'signatory') {
-            $state = $this->updateSignatory($request, $id, $activityLogger);
-        } else if ($request->submit_type == 'profile') {
-            $state = $this->updateProfile($request, $id, $activityLogger);
-        }
+        try {
+            DB::beginTransaction();
+            $state = false;
+            if ($request->submit_type == 'personal') {
+                $state = $this->updatePersonal($request, $id, $activityLogger);
+            } else if ($request->submit_type == 'livelihood') {
+                $state = $this->updateLivelihood($request, $id, $activityLogger);
+            } else if ($request->submit_type == 'farm_parcel') {
+                $state = $this->updateFarmParcel($request, $id, $activityLogger);
+            } else if ($request->submit_type == 'signatory') {
+                $state = $this->updateSignatory($request, $id, $activityLogger);
+            } else if ($request->submit_type == 'profile') {
+                $state = $this->updateProfile($request, $id, $activityLogger);
+            }
 
-        return redirect()
-            ->route('farmers.view', $id)
-            ->with([
-                'response' => [
-                    'state' => $state
-                ]
-            ]);
+            DB::commit();
+            
+            return redirect()
+                ->route('farmers.view', $id)
+                ->with([
+                    'response' => [
+                        'state' => $state
+                    ]
+                ]);
+        }catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'state' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
