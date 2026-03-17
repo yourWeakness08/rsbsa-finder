@@ -201,7 +201,7 @@ class AssistancesController extends Controller
                 $activityLogger->log(
                     userId: auth()->id(),
                     table: 'Assistances',
-                    message: "User faied to add assistance for `{$name}` because the selected livelihood is not eligible for cash assistance.",
+                    message: "User faied to add assistance for `{$name}` since the selected livelihood is not eligible for cash assistance.",
                     action: 'create',
                     status: $state ? 'success' : 'error'
                 );
@@ -220,7 +220,7 @@ class AssistancesController extends Controller
                 $activityLogger->log(
                     userId: auth()->id(),
                     table: 'Assistances',
-                    message: "User faied to add assistance for `{$name}` because the selected livelihood is not eligible for any assistances.",
+                    message: "Assistance could not be added for `{$name}` since the selected livelihood is not eligible for assistance.",
                     action: 'create',
                     status: $state ? 'success' : 'error'
                 );
@@ -232,6 +232,30 @@ class AssistancesController extends Controller
                     'applied_assistance' => $checkAssistance,
                     'is_farm_worker' => 1
                 ]);
+            }
+
+            if ($request->livelihood == 'fisherfolks') {
+                $isExist = $this->checkHasExistingAssistance($request->farmer);
+
+                if (!$isExist && $isExist == false) {
+                    $name = $this->getFullname($request->farmer);
+                    $activityLogger->log(
+                        userId: auth()->id(),
+                        table: 'Assistances',
+                        message: "User faied to add assistance for `{$name}` due to the one-year assistance restriction.",
+                        action: 'create',
+                        status: $state ? 'success' : 'error'
+                    );
+
+                    $checkAssistance = strtoupper($checkAssistance);
+                    return redirect()->back()->with('response', [
+                        'state' => $state,
+                        'message' => "`{$checkAssistance}` assistance already granted. Request denied due to the one-year assistance restriction.",
+                        'livelihood' => $request->livelihood,
+                        'applied_assistance' => $checkAssistance,
+                        'is_fisherfolks' => 1
+                    ]);
+                }
             }
             
             $created = Assistances::create([
@@ -837,5 +861,21 @@ class AssistancesController extends Controller
         $totalHectares = $getFarmParcelTotalHectares($id);
 
         return $totalHectares;
+    }
+
+    public function checkHasExistingAssistance($id){
+        $state = false;
+
+        $assistance = Assistances::where('farmer_id', $id)
+            ->where('is_archived', 0)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($assistance) {
+            $lastcreateddate = date('Y-m-d', strtotime('+1 year', strtotime($assistance->created_at)));
+            $state = date('Y-m-d') >= $lastcreateddate ? true : false;
+        }
+
+        return $state;
     }
 }

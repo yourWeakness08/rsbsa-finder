@@ -237,6 +237,15 @@
                             })
                         }
 
+                        if (typeof response.is_fisherfolks != 'undefined' && response.is_fisherfolks == 1) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Create Assistance',
+                                text: response.message,
+                                target: document.getElementById('newAssistance')
+                            })
+                        }
+
                         setTimeout(() => { recentlyFailed.value = false; }, 1500);
                     }
                 }
