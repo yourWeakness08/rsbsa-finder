@@ -984,8 +984,8 @@
         editFarmParcelDialog.value = true;
         mergeTypes.value = [];
 
-        farmParcelForm.farm_parcel_no = farmer.farm_parcel_no;
-        farmParcelForm.is_arb = farmer.is_arb;
+        farmParcelForm.farm_parcel_no = farmer.farm_parcel_no == 0 ? 1 : farmer.farm_parcel_no;
+        farmParcelForm.is_arb = farmer.is_arb == 0 ? null : farmer.is_arb;
 
         // Initialize farm_parcel with default values to prevent errors when mapping and adding default information if farmer has no farm parcels
         farmParcelForm.farm_parcel = [{
@@ -2429,7 +2429,7 @@
                                             <h3 class="font-bold text-md">FARM PARCELS</h3>
                                         </div>
                                         <div class="w-6/12 text-right">
-                                            <PrimaryButton class="bg-yellow-500 hover:bg-yellow-700 text-white" @click="setFarmParcel(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                            <PrimaryButton v-if="farmer.main_livelihood.includes('farmer') || farmer.main_livelihood.includes('fisherfolks')" class="bg-yellow-500 hover:bg-yellow-700 text-white" @click="setFarmParcel(farmer)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
                                                 <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                     <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                     <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>

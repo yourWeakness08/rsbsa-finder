@@ -2,7 +2,7 @@
     import useValidationHelpers from '@/Composables/useValidationHelpers';
     import { ref, reactive, computed, getCurrentInstance, watch, onMounted, nextTick, onBeforeUpdate } from 'vue';
     import useVuelidate from '@vuelidate/core';
-    import { required, email, minLength, requiredIf, numeric, helpers } from '@vuelidate/validators';
+    import { required, email, minLength, requiredIf, numeric, helpers, minValue  } from '@vuelidate/validators';
     import AppLayout from '@/Layouts/AppLayout.vue';
     import DialogModal from '@/Components/DialogModal.vue';
 
@@ -246,6 +246,12 @@
         }
     }
 
+    const farmParcelRequired = () => {
+        const livelihoods = form.main_livelihood || [];
+        if (livelihoods.length === 0) return false;
+        return livelihoods.includes('farmer') || livelihoods.includes('fisherfolks');
+    };
+
     const farmInfo = {
         main_livelihood: { required, minLength: minLength(1) },
         farmer: { 
@@ -286,30 +292,85 @@
         },
         farming_gross_income: { required },
         non_farming_gross_income: { required },
-        farm_parcel_no: { required, min: 1 },
-        is_arb: { required },
+        farm_parcel_no: { required, min: minValue(1) },
+        is_arb: { required : requiredIf(farmParcelRequired) },
         farm_parcel: {
+            // required: requiredIf(farmParcelRequired),
+            // $each: helpers.forEach({
+            //     municipality: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     brgy: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     total_farm_area: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     document: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     owner_doc_no: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     is_whithin_ancentral_domain: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     is_agrarian_reform_beneficiary: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     ownership_type: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     is_other: {
+            //         required: requiredIf(() => farmParcelRequired() && ownerOthers())
+            //     },
+            //     farmer_in_rotation_name: {
+            //         required: requiredIf(farmParcelRequired)
+            //     },
+            //     farm_parcel_info: {
+            //         $each: helpers.forEach({
+            //             commodity: {
+            //                 required: requiredIf(farmParcelRequired)
+            //             },
+            //             size: {
+            //                 required: requiredIf(farmParcelRequired)
+            //             },
+            //             head_no: {
+            //                 required: requiredIf(farmParcelRequired)
+            //             },
+            //             farm_type: {
+            //                 required: requiredIf(farmParcelRequired)
+            //             },
+            //             is_organic_practitioner: {
+            //                 required: requiredIf(farmParcelRequired)
+            //             },
+            //             remarks: {}
+            //         })
+            //     }
+            // })
+            // required: requiredIf(requiresFarmParcel),
+            required: requiredIf(farmParcelRequired),
             $each: helpers.forEach({
-                municipality: { 'required' : required },
-                brgy: { required },
-                total_farm_area: { required },
-                document: { required },
-                owner_doc_no: { required },
-                is_whithin_ancentral_domain: { required },
-                is_agrarian_reform_beneficiary: { required },
-                ownership_type: { required },
+                municipality: { required: requiredIf(farmParcelRequired) },
+                brgy: { required: requiredIf(farmParcelRequired) },
+                total_farm_area: { required: requiredIf(farmParcelRequired) },
+                document: { required: requiredIf(farmParcelRequired) },
+                owner_doc_no: { required: requiredIf(farmParcelRequired) },
+                is_whithin_ancentral_domain: { required: requiredIf(farmParcelRequired) },
+                is_agrarian_reform_beneficiary: { required: requiredIf(farmParcelRequired) },
+                ownership_type: { required: requiredIf(farmParcelRequired) },
                 land_owner_name: {},
                 is_other: {
-                    required: requiredIf(ownerOthers)
+                    required: requiredIf(farmParcelRequired) && requiredIf(ownerOthers)
                 },
-                farmer_in_rotation_name: { required },
+                farmer_in_rotation_name: { required: requiredIf(farmParcelRequired) },
                 farm_parcel_info: {
                     $each: helpers.forEach({
-                        commodity: { required },
-                        size: { required },
-                        head_no: { required },
-                        farm_type: { required },
-                        is_organic_practitioner: { required },
+                        commodity: { required: requiredIf(farmParcelRequired) },
+                        size: { required: requiredIf(farmParcelRequired) },
+                        head_no: { required: requiredIf(farmParcelRequired) },
+                        farm_type: { required: requiredIf(farmParcelRequired) },
+                        is_organic_practitioner: { required: requiredIf(farmParcelRequired) },
                         remarks: {}
                     })
                 }
@@ -1808,7 +1869,7 @@
                                                             </div>
                                                             <div class="w-5/12 md:order-1 lg:order-2 xl:order-2 2xl:order-2">
                                                                 <div class="flex flex-wrap gap-x-2 justify-end">
-                                                                    <button button="button" @click="addFarmParcel" class="bg-green-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-green-600 flex items-center">
+                                                                    <button button="button" @click="addFarmParcel" class="bg-green-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-green-600 flex items-center" v-if="form.main_livelihood.includes('farmer') || form.main_livelihood.includes('fisherfolks')">
                                                                         <span class="text-sm leading-none">Add Farm Parcel</span>
                                                                     </button>
                                                                     <button button="button" v-if="index != 0" @click="removeFarmParcel(index)" class="bg-red-500 text-white px-3 py-2 rounded-sm text-sm hover:bg-red-600 flex items-center">
@@ -2599,9 +2660,9 @@
                                         </div>
                                     </div>
 
-                                    <hr class="my-6 border-t border-gray-500" />
+                                    <hr class="my-6 border-t border-gray-500" v-if="form.main_livelihood.includes('farmer') || form.main_livelihood.includes('fisherfolks')" />
 
-                                    <div class="mb-6">
+                                    <div class="mb-6" v-if="form.main_livelihood.includes('farmer') || form.main_livelihood.includes('fisherfolks')">
                                         <div class="flex flex-wrap items-center justify-between">
                                             <div class="sm:w-full md:w-6/12 lg:w-6/12 xl:w-6/12 2xl:w-5/12">
                                                 <div class="flex flex-wrap items-center">
@@ -2630,7 +2691,7 @@
 
                                     <div class="mb-4">
                                         <div class="overflow-auto w-full">
-                                            <template v-for="(item, index) in form.farm_parcel" :key="index">
+                                            <template v-if="form.main_livelihood.includes('farmer') || form.main_livelihood.includes('fisherfolks')" v-for="(item, index) in form.farm_parcel" :key="index">
                                                 <div :class="form.farm_parcel.length > 0 ? 'mb-4' : 'mb-0'">
                                                     <div class="p-6 lg:p-8 bg-white border shadow-3xl rounded-lg border-gray-300">
                                                         <div class="flex flex-wrap justify-between items-center mb-4">
@@ -2743,7 +2804,7 @@
                                                             <tbody>
                                                                 <tr v-for="(v, i) in item.farm_parcel_info" :key="i" style="vertical-align: top;">
                                                                     <td class="p-3 border border-gray-400">
-                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ farmCommodity(v.commodity) }}</p>
+                                                                        <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.commodity ? farmCommodity(v.commodity) : '&nbsp' }}</p>
                                                                     </td>
                                                                     <td class="p-3 border border-gray-400">
                                                                         <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ v.size }}</p>
