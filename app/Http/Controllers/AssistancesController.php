@@ -641,7 +641,7 @@ class AssistancesController extends Controller
             if ($assistances->livelihood == 'fisherfolks') {
                 $calculateHectares = $this->calculateHectares($id);
 
-                if (floatval($calculateHectares) <= 0) {
+                if (floatval($calculateHectares) < 0.50) {
                     $name = $this->getFullname($id);
                     $activityLogger->log(
                         userId: auth()->id(),
