@@ -72,6 +72,8 @@
 
     let mergeTypes = ref([]);
     const activeTab = ref('Farmer Information');
+    const cityOptions = ref([]);
+    const barangayOptions = ref([]);
 
     const back = () => {
         const url = route('farmers.index');
@@ -985,12 +987,12 @@
         mergeTypes.value = [];
 
         farmParcelForm.farm_parcel_no = farmer.farm_parcel_no == 0 ? 1 : farmer.farm_parcel_no;
-        farmParcelForm.is_arb = farmer.is_arb == 0 ? null : farmer.is_arb;
+        farmParcelForm.is_arb = farmer.is_arb == 0 ? 0 : farmer.is_arb;
 
         // Initialize farm_parcel with default values to prevent errors when mapping and adding default information if farmer has no farm parcels
         farmParcelForm.farm_parcel = [{
             id: 0,
-            city: null,
+            city: 'Hinigaran',
             brgy: null,
             total_farm_area: null,
             document: null,
@@ -1020,6 +1022,8 @@
     
             farmParcelForm.farm_parcel = rawParcels.map(parcel => ({
                 ...parcel,
+                city: 'Hinigaran',
+                brgy: capitalizeWords(parcel.brgy),
                 farm_parcel_informations:
                     parcel.farm_parcel_informations && parcel.farm_parcel_informations.length > 0 ? 
                     parcel.farm_parcel_informations.map(info => ({
@@ -1038,6 +1042,19 @@
                         }
                     ]
                 }))
+            
+            const brgy = barangays.all()
+                .filter(
+                    item => item.citymun.toLowerCase().includes(form.city.toLocaleLowerCase())
+                ).map( item => {
+                    return {
+                        id: item.name,
+                        text: item.name.toUpperCase(),
+                        citymun: item.citymun
+                    }
+                });
+
+            barangayOptions.value = brgy;
         }
 
         if (farmer.main_livelihood.includes('farmer')) {
@@ -1086,8 +1103,6 @@
                 ].sort((a, b) => a.text.localeCompare(b.text));
             }
         }
-
-        console.log(farmParcelForm.farm_parcel);
 
         await nextTick()
 
@@ -1289,7 +1304,7 @@
         farm_parcel: [
             {
                 id: 0,
-                city: null,
+                city: 'Hinigaran',
                 brgy: null,
                 total_farm_area: null,
                 document: null,
@@ -1390,7 +1405,7 @@
     const addFarmParcel = () => {
         farmParcelForm.farm_parcel.push({
             id: 0,
-            city: null,
+            city: 'Hinigaran',
             brgy: null,
             total_farm_area: null,
             document: null,
@@ -1712,9 +1727,6 @@
             processing.value = false;
         }
     }
-
-    const cityOptions = ref([]);
-    const barangayOptions = ref([]);
 
     //gets all city / municipal in negros
     cityOptions.value = municipalities
@@ -3914,7 +3926,7 @@
                                                 <div class="w-[40%]">
                                                     <InputLabel for="farm_municipal" value="Municipality" :required="true" />
                                                     <TextInput type="text" v-model="item.city" class="mt-1 block w-full uppercase" autocomplete="off"
-
+                                                        disabled="true"
                                                         :class="{
                                                             'border-gray-300': item.city == null,
                                                             'border-red-500' : item.city != null && parcel$.farm_parcel.$each.$response.$errors[index].city.length == 1,
@@ -3925,11 +3937,18 @@
                                                 </div>
                                                 <div class="w-[40%]">
                                                     <InputLabel for="farm_brgy" value="Barangay" :required="true" />
-                                                    <TextInput type="text" v-model="item.brgy" class="mt-1 block w-full uppercase" autocomplete="off" :class="{
+                                                    <!-- <TextInput type="text" v-model="item.brgy" class="mt-1 block w-full uppercase" autocomplete="off" :class="{
                                                             'border-gray-300': item.brgy == null,
                                                             'border-red-500' : item.brgy != null && parcel$.farm_parcel.$each.$response.$errors[index].brgy.length == 1,
                                                             'border-green-500' : item.brgy && parcel$.farm_parcel.$each.$response.$errors[index].brgy.length == 0
                                                         }"
+                                                    /> -->
+                                                    <Select2
+                                                        :key="item.city"
+                                                        class="h-10 uppercase mt-1"
+                                                        v-model="item.brgy"
+                                                        :options="barangayOptions"
+                                                        :settings="{ placeholder: 'Select Barangay', width: '100%', dropdownParent: $('#editFarmParcel') }"
                                                     />
                                                     <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].brgy" :key="error">Barangay is Required</span>
                                                 </div>

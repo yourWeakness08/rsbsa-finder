@@ -124,7 +124,7 @@
         is_arb: '',
         farm_parcel: [
             {
-                municipality: null,
+                municipality: 'Hinigaran',
                 brgy: null,
                 total_farm_area: null,
                 document: null,
@@ -698,7 +698,7 @@
 
     const addFarmParcel = () => {
         form.farm_parcel.push({
-            municipality: null,
+            municipality: 'Hinigaran',
             brgy: null,
             total_farm_area: null,
             document: null,
@@ -1897,7 +1897,7 @@
                                                                     <div class="w-[40%]">
                                                                         <InputLabel for="farm_municipal" value="Municipality" :required="true" />
                                                                         <TextInput type="text" v-model="item.municipality" class="mt-1 block w-full uppercase" autocomplete="off"
-
+                                                                            disabled="true"
                                                                             :class="{
                                                                                 'border-gray-300': item.municipality == null,
                                                                                 'border-red-500' : item.municipality != NULL && v$.farm_parcel.$each.$response.$errors[index].municipality.length == 1,
@@ -1908,11 +1908,18 @@
                                                                     </div>
                                                                     <div class="w-[40%]">
                                                                         <InputLabel for="farm_brgy" value="Barangay" :required="true" />
-                                                                        <TextInput type="text" v-model="item.brgy" class="mt-1 block w-full uppercase" autocomplete="off" :class="{
+                                                                        <!-- <TextInput type="text" v-model="item.brgy" class="mt-1 block w-full uppercase" autocomplete="off" :class="{
                                                                                 'border-gray-300': item.brgy == null,
                                                                                 'border-red-500' : item.brgy != NULL && v$.farm_parcel.$each.$response.$errors[index].brgy.length == 1,
                                                                                 'border-green-500' : item.brgy && v$.farm_parcel.$each.$response.$errors[index].brgy.length == 0
                                                                             }"
+                                                                        /> -->
+                                                                        <Select2
+                                                                            :key="item.municipality"
+                                                                            class="h-10 uppercase mt-1"
+                                                                            v-model="item.brgy"
+                                                                            :options="barangayOptions"
+                                                                            :settings="{ placeholder: 'Select Barangay', width: '100%' }"
                                                                         />
                                                                         <span class="text-red-500 text-sm" v-for="error in v$.farm_parcel.$each.$response.$errors[index].brgy" :key="error">Barangay is Required</span>
                                                                     </div>

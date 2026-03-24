@@ -44,6 +44,9 @@
     const pageValue = ref(null);
     const searchValue = ref(null);
     const debouncedSearch = ref('');
+    const user = ref([]);
+    const page = usePage()
+    user.value = page.props.auth.user;
 
     const pages = ref([ 10, 25, 50, 100, 200, 'All']);
 
@@ -268,7 +271,7 @@
                                                         </g>
                                                     </svg>
                                                 </Link>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 px-3 text-white" @click="archiveFarmer(farmer.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 px-3 text-white" @click="archiveFarmer(farmer.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;" v-if="user.role == 1">
                                                     <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -318,7 +321,7 @@
                                                         </g>
                                                     </svg>
                                                 </Link>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveFarmer(farmer.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveFarmer(farmer.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;" v-if="user.role == 1">
                                                     <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
