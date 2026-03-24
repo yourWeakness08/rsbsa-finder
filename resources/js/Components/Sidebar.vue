@@ -204,7 +204,7 @@
             </div>
           </div>
   
-          <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'users'" :href="route('users.index')" :active="route().current('users.index')" style="border-bottom: 0 !important">
+          <NavLink class="flex items-center gap-3 w-full px-6 pt-3 py-3 duration-200 border-r-4" :key="'users'" :href="route('users.index')" :active="route().current('users.index')" style="border-bottom: 0 !important" v-if="user.role == 1">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
               <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>

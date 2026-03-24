@@ -26,6 +26,10 @@
 
     const { proxy } = getCurrentInstance()
 
+    const user = ref([]);
+    const _page = usePage()
+    user.value = _page.props.auth.user;
+
     const props = defineProps({
         assistance: {
             type: Object,
@@ -303,7 +307,7 @@
                                                         </g>
                                                     </svg>
                                                 </PrimaryButton>
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(assistance.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(assistance.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;" v-if="user.role == 1">
                                                     <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -346,7 +350,7 @@
                                                     </svg>
                                                 </PrimaryButton>
 
-                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(assistance.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;">
+                                                <PrimaryButton class="bg-red-500 hover:bg-red-700 text-white" @click="archiveAssistance(assistance.id)" style="padding-left: 0.75rem !important; padding-right: 0.75rem !important;" v-if="user.role == 1">
                                                     <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
