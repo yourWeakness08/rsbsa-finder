@@ -233,7 +233,7 @@
     const handleOwnership = (index, event) => {
         const selectedValue = event.id;
 
-        if (selectedValue == 'Tenant' || selectedValue == 'Lesse') {
+        if (selectedValue == 'Tenant' || selectedValue == 'Lessee') {
             ownerType.value = true;
         } else {
             ownerType.value = false;
@@ -671,7 +671,7 @@
     const ownership_type = ref([
         { id: 'Registered Owner', text: 'Registered Owner' },
         { id: 'Tenant', text: 'Tenant' },
-        { id: 'Lesse', text: 'Lesse' },
+        { id: 'Lessee', text: 'Lessee' },
         { id: 'Others', text: 'Others' },
     ]);
 
@@ -1997,7 +1997,7 @@
                                                                 </div>
                                                                 <span class="text-red-500 text-sm" v-for="error in v$.farm_parcel.$each.$response.$errors[index].ownership_type" :key="error">Type of Ownership is Required</span>
                                                             </div>
-                                                            <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
+                                                            <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lessee'">
                                                                 <InputLabel for="Name of Land Owner" value="Name of Land Owner" :required="true" />
                                                                 <input type="text" class="mt-1 block w-full uppercase" v-model="item.land_owner_name" autocomplete="off" required="true" :class="{
                                                                         'border-gray-300': item.land_owner_name == null,
@@ -2772,7 +2772,7 @@
                                                                 <InputLabel for="ownership_type" value="Type of Ownership" :required="true" />
                                                                 <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.ownership_type ? item.ownership_type : '&nbsp;' }}</p>
                                                             </div>
-                                                            <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
+                                                            <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lessee'">
                                                                 <InputLabel for="Name of Land Owner" value="Name of Land Owner" :required="true" />
                                                                 <p class="border rounded block p-2 uppercase mt-1 w-full uppercase">{{ item.land_owner_name ? item.land_owner_name : '&nbsp;' }}</p>
                                                             </div>

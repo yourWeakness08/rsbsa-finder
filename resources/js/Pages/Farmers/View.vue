@@ -1042,7 +1042,8 @@
                         }
                     ]
                 }))
-            
+
+            }
             const brgy = barangays.all()
                 .filter(
                     item => item.citymun.toLowerCase().includes(form.city.toLocaleLowerCase())
@@ -1055,7 +1056,6 @@
                 });
 
             barangayOptions.value = brgy;
-        }
 
         if (farmer.main_livelihood.includes('farmer')) {
             $.each(farmer.main_livelihood_info.farmer, function(index, item) {
@@ -1460,7 +1460,7 @@
     const ownership_type = ref([
         { id: 'Registered Owner', text: 'Registered Owner' },
         { id: 'Tenant', text: 'Tenant' },
-        { id: 'Lesse', text: 'Lesse' },
+        { id: 'Lessee', text: 'Lessee' },
         { id: 'Others', text: 'Others' },
     ]);
 
@@ -4026,7 +4026,7 @@
                                             </div>
                                             <span class="text-red-500 text-sm" v-for="error in parcel$.farm_parcel.$each.$response.$errors[index].ownership_type" :key="error">Type of Ownership is Required</span>
                                         </div>
-                                        <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lesse'">
+                                        <div class="w-4/12" v-if="item.ownership_type == 'Tenant' || item.ownership_type == 'Lessee'">
                                             <InputLabel for="Name of Land Owner" value="Name of Land Owner" :required="true" />
                                             <input type="text" class="mt-1 block w-full uppercase" v-model="item.landowner_name" autocomplete="off" required="true" :class="{
                                                     'border-gray-300': item.landowner_name == null,

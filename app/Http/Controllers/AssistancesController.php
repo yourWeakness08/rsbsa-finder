@@ -237,20 +237,34 @@ class AssistancesController extends Controller
             if ($request->livelihood == 'fisherfolks') {
                 $isExist = $this->checkHasExistingAssistance($request->farmer);
 
-                if (!$isExist && $isExist == false) {
+                if ($isExist['state'] && $isExist['state'] == true) {
                     $name = $this->getFullname($request->farmer);
+                    
+                    if (isset($isExist['assistance_status']) && strtolower($isExist['assistance_status']) == 'pending') {
+                        $message = "User attempted to add assistance for `{$name}` but there is an existing pending assistance. Request denied due to the one-year assistance restriction.";
+                    } else {
+                        $message = "User attempted to add assistance for `{$name}` but there is an existing approved assistance. Request denied due to the one-year assistance restriction.";
+                    }
+
                     $activityLogger->log(
                         userId: auth()->id(),
                         table: 'Assistances',
-                        message: "User faied to add assistance for `{$name}` due to the one-year assistance restriction.",
+                        message: $message,
                         action: 'create',
                         status: $state ? 'success' : 'error'
                     );
 
                     $checkAssistance = strtoupper($checkAssistance);
+
+                    if (isset($isExist['assistance_status']) && strtolower($isExist['assistance_status']) == 'pending') {
+                        $message = "`{$checkAssistance}` assistance already has a pending application. Please proccess the existing application first.";
+                    } else {
+                        $message = "`{$checkAssistance}` assistance already granted. Request denied due to the one-year assistance restriction.";
+                    }
+
                     return redirect()->back()->with('response', [
                         'state' => $state,
-                        'message' => "`{$checkAssistance}` assistance already granted. Request denied due to the one-year assistance restriction.",
+                        'message' => $message,
                         'livelihood' => $request->livelihood,
                         'applied_assistance' => $checkAssistance,
                         'is_fisherfolks' => 1
@@ -571,7 +585,7 @@ class AssistancesController extends Controller
                 ->orderByDesc('id')
                 ->first();
 
-            if ($lastRecord && preg_match('/RSS-\d{2}-(\d+)/', $lastRecord->reference_no, $matches)) {
+            if ($lastRecord && preg_match('/RRS-\d{2}-(\d+)/', $lastRecord->reference_no, $matches)) {
                 $nextNumber = (int)$matches[1] + 1;
             } else {
                 $nextNumber = 1;
@@ -579,7 +593,7 @@ class AssistancesController extends Controller
 
             $sequence = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
-            return "RSS-$year-$sequence";
+            return "RRS-$year-$sequence";
         });
     }
 
@@ -727,7 +741,7 @@ class AssistancesController extends Controller
 
         return redirect()->back()->with([
             'response' => [
-                'state' => $state
+                'state' => $state ? 1 : 0
             ]
         ]);
     }
@@ -865,17 +879,23 @@ class AssistancesController extends Controller
 
     public function checkHasExistingAssistance($id){
         $state = false;
+        $assistance_status = null;
 
         $assistance = Assistances::where('farmer_id', $id)
+            ->whereIn('status', ['Pending', 'Approved'])
             ->where('is_archived', 0)
             ->orderBy('id', 'desc')
             ->first();
 
         if ($assistance) {
             $lastcreateddate = date('Y-m-d', strtotime('+1 year', strtotime($assistance->created_at)));
-            $state = date('Y-m-d') >= $lastcreateddate ? true : false;
+            $state = date('Y-m-d') <= $lastcreateddate ? true : false;
+            $assistance_status = strtolower($assistance->status);
         }
 
-        return $state;
+        return array(
+            'state' => $state,
+            'assistance_status' => $assistance_status ?? null
+        );
     }
 }

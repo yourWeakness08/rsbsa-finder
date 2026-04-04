@@ -139,14 +139,15 @@ class FarmersController extends Controller
             $id = 0;
     
             DB::transaction(function () use ($request, $user_id, $contact, $activityLogger, &$state, &$id) {
-                $checkRecords = DB::table('farmer_information')
-                    ->where('firstname', trim(strtolower($request->firstname)))
-                    ->where('middlename', $request->middlename ? trim(strtolower($request->middlename)) : null)
-                    ->where('lastname', trim(strtolower($request->lastname)))
-                    ->where('suffix', $request->suffix ? trim(strtolower($request->suffix)) : null)
-                    ->where('gender', trim(strtolower($request->gender)))
-                    ->where(DB::raw('DATE(date_of_birth)'), date('Y-m-d', strtotime($request->birth)))
-                    ->first();
+                // $checkRecords = DB::table('farmer_information')
+                //     ->where('firstname', trim(strtolower($request->firstname)))
+                //     ->where('middlename', $request->middlename ? trim(strtolower($request->middlename)) : null)
+                //     ->where('lastname', trim(strtolower($request->lastname)))
+                //     ->where('suffix', $request->suffix ? trim(strtolower($request->suffix)) : null)
+                //     ->where('gender', trim(strtolower($request->gender)))
+                //     ->where(DB::raw('DATE(date_of_birth)'), date('Y-m-d', strtotime($request->birth)))
+                //     ->first();
+                $checkRecords = false;
         
                 if ($checkRecords) {
                     $state = false;
@@ -230,7 +231,7 @@ class FarmersController extends Controller
                             'main_livelihood' => serialize($request->main_livelihood), 
                             'farming_gross' => $request->farming_gross_income, 
                             'no_farming_gross' => $request->non_farming_gross_income, 
-                            'farm_parcel_no' => in_array('farmer', $request->main_livelihood) || in_array('fisherfolks', $request->mian_livelihood) ? $request->farm_parcel_no : 0, 
+                            'farm_parcel_no' => in_array('farmer', $request->main_livelihood) || in_array('fisherfolks', $request->main_livelihood) ? $request->farm_parcel_no : 0, 
                             'is_arb' => $request->is_arb ? $request->is_arb : 0, 
                             'uuid'  => Str::random(12)
                         ]);

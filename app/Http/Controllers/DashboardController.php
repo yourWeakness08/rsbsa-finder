@@ -65,7 +65,11 @@ class DashboardController extends Controller{
     }
 
     public function livelihoodTotals() {
-        $profiles = FarmProfile::select('main_livelihood')->get();
+        $profiles = FarmProfile::select('main_livelihood')
+            ->leftJoin('farmer_information as info', 'info.id ', '=', 'farm_profile.farmer_id')
+            ->where('info.is_archived', 0)
+            ->from('farm_profile as farm_profile')
+            ->get();
 
         $totals = [
             'farmer' => 0,
@@ -124,6 +128,7 @@ class DashboardController extends Controller{
         |--------------------------------------------------------------------------
         */
         $statusData = Assistances::selectRaw("LOWER(status) as status, COUNT(*) as total")
+            ->where('is_archived', 0)
             ->groupBy('status')
             ->pluck('total', 'status');
 
@@ -155,6 +160,7 @@ class DashboardController extends Controller{
         */
         $monthlyQuery = Assistances::query()
             ->selectRaw("MONTH(created_at) as m, COUNT(*) as total")
+            ->where('is_archived', 0)
             ->whereYear('created_at', $year);
 
         if ($statusFilter && strtolower($statusFilter) !== 'all') {
@@ -186,8 +192,10 @@ class DashboardController extends Controller{
             'agri_youth' => 0,
         ];
 
-        FarmProfile::select('main_livelihood')
-            ->whereNotNull('main_livelihood')
+        FarmProfile::select('farm_profile.main_livelihood')
+            ->leftJoin('farmer_information as info', 'info.id', '=', 'farm_profile.farmer_id')
+            ->where("info.is_archived", 0)
+            ->whereNotNull('farm_profile.main_livelihood')
             ->chunk(500, function ($profiles) use (&$livelihoodTotals) {
                 foreach ($profiles as $profile) {
                     $arr = @unserialize($profile->main_livelihood);
@@ -206,25 +214,111 @@ class DashboardController extends Controller{
         | Farmers By Barangay (Based on Farmer Info)
         |--------------------------------------------------------------------------
         */
-        $brgyQuery = DB::table('farmer_information as fi')
-            ->selectRaw("TRIM(UPPER(fi.brgy)) as brgy, COUNT(DISTINCT fi.id) as total")
+        // $brgyQuery = DB::table('farmer_information as fi')
+        //     ->selectRaw("TRIM(UPPER(fi.brgy)) as brgy, COUNT(DISTINCT fi.id) as total")
+        //     ->where('fi.is_archived', 0)
+        //     ->whereNotNull('fi.brgy')
+        //     ->where('fi.brgy', '!=', '');
+
+        // if ($city) {
+        //     $brgyQuery->whereRaw("TRIM(UPPER(fi.city)) = ?", [trim(strtoupper($city))]);
+        // }
+
+        // $brgyRows = $brgyQuery
+        //     ->groupBy('brgy')
+        //     ->orderByDesc('total')
+        //     ->get();
+
+        // $brgyData = [
+        //     'labels' => $brgyRows->pluck('brgy')->values(),
+        //     'data'   => $brgyRows->pluck('total')->map(fn($v) => (int)$v)->values(),
+        // ];
+
+        $rows = DB::table('farmer_information as fi')
+            ->leftJoin('assistances as ad', function ($join) {
+                $join->on('ad.farmer_id', '=', 'fi.id')
+                    ->where('ad.status', 'Approved'); // if status is here
+            })
+            ->leftJoin('assistance as a', 'a.id', '=', 'ad.assistance_id') // 👈 type comes from here
+            ->selectRaw("
+                TRIM(UPPER(fi.brgy)) as brgy,
+                a.name as assistance_type,
+                SUM(ad.amount) as total_amount
+            ")
             ->where('fi.is_archived', 0)
             ->whereNotNull('fi.brgy')
             ->where('fi.brgy', '!=', '');
 
         if ($city) {
-            $brgyQuery->whereRaw("TRIM(UPPER(fi.city)) = ?", [trim(strtoupper($city))]);
+            $rows->whereRaw("TRIM(UPPER(fi.city)) = ?", [trim(strtoupper($city))]);
         }
 
-        $brgyRows = $brgyQuery
-            ->groupBy('brgy')
-            ->orderByDesc('total')
+        $rows = $rows
+            ->groupBy('brgy', 'assistance_type')
+            ->orderBy('brgy')
             ->get();
+        
+        $totals = DB::table('farmer_information as fi')
+            ->selectRaw("
+                TRIM(UPPER(fi.brgy)) as brgy,
+                COUNT(DISTINCT fi.id) as total_registered
+            ")
+            ->where('fi.is_archived', 0)
+            ->whereNotNull('fi.brgy')
+            ->where('fi.brgy', '!=', '');
+
+        if ($city) {
+            $totals->whereRaw("TRIM(UPPER(fi.city)) = ?", [trim(strtoupper($city))]);
+        }
+
+        $totals = $totals->groupBy('brgy')->pluck('total_registered', 'brgy');
+
+        $grouped = [];
+
+        // 🔹 Step 1: group everything by brgy
+        foreach ($rows as $row) {
+            $brgy = $row->brgy;
+
+            if (!isset($grouped[$brgy])) {
+                $grouped[$brgy] = [
+                    'total_registered' => (int) ($totals[$brgy] ?? 0),
+                    'assistances' => []
+                ];
+            }
+
+            if ($row->assistance_type && $row->total_amount > 0) {
+                $type = strtolower(trim($row->assistance_type));
+
+                $grouped[$brgy]['assistances'][$type] =
+                    (float) ($grouped[$brgy]['assistances'][$type] ?? 0)
+                    + (float) $row->total_amount;
+            }
+        }
 
         $brgyData = [
-            'labels' => $brgyRows->pluck('brgy')->values(),
-            'data'   => $brgyRows->pluck('total')->map(fn($v) => (int)$v)->values(),
+            'labels' => [],
+            'data' => [],
+            'assistances' => []
         ];
+
+        foreach ($grouped as $brgy => $item) {
+            $brgyData['labels'][] = $brgy;
+            $brgyData['data'][] = $item['total_registered'];
+
+            // format assistances here (optional)
+            $formattedAssistances = [];
+
+            foreach ($item['assistances'] as $type => $amount) {
+                $temp = $amount;
+                if (str_contains($type, 'cash')) { $temp = '₱'.number_format($amount, 2); }
+                if (str_contains($type, 'fertilizer')) { $temp = $amount.' kg'; }
+                if (str_contains($type, 'seed')) { $temp = $amount.' bag(s)'; }
+
+                $formattedAssistances[$type] = $temp;
+            }
+
+            $brgyData['assistances'][] = $formattedAssistances;
+        }
 
         /*
         |--------------------------------------------------------------------------

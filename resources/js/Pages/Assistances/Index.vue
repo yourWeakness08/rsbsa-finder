@@ -374,10 +374,11 @@
                     onSuccess: (page) => {
                         const response = page.props.flash?.response;
 
-                        if (response.state == 'true') {
+                        if (response.state == 1) {
                             _viewAssistance.value.status = action.nextStatus
     
-                            const newList = page?.props?.assistances;
+                            let newList = page?.props?.assistances;
+                            newList = newList.data ? newList.data : newList;
     
                             Swal.fire({
                                 target: document.getElementById('viewAssistance'),
@@ -388,7 +389,7 @@
                                 showConfirmButton: true
                             })
     
-                            const updated = newList.data.find(item =>
+                            const updated = newList.find(item =>
                                 item.id == _viewAssistance.value.id
                             )
     

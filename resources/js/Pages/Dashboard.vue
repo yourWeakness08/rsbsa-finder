@@ -81,6 +81,7 @@
     const year = ref(currentYear)
     const charByMonthKey = ref(0)
     const chartRef = ref(null)
+    let assistancesPerBrgy = []
 
     const chartByMonthData = ref({
         responsive: true,
@@ -221,8 +222,10 @@
         animateCount('agri_youth', totals.value.agri_youth)
 
         // Brgy Chart
+        
         farmersByBrgyData.value.labels = data.farmers_by_brgy.labels
         farmersByBrgyData.value.datasets[0].data = data.farmers_by_brgy.data
+        assistancesPerBrgy = data.farmers_by_brgy.assistances
         chartByBrgyKey.value++
 })
 
@@ -294,21 +297,137 @@
         plugins: {
             legend: { position: 'bottom' },
             title: { display: true, text: 'Registered by Barangay' },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const index = context.dataIndex
+                        const value = context.raw
+
+                        let lines = []
+                        lines.push('Registered: ' + value)
+
+                        const assistances = assistancesPerBrgy[index] || {}
+
+                        Object.keys(assistances).forEach(type => {
+                            let label = type.replace(/_/g, ' ').toUpperCase()
+                            let val = assistances[type]
+
+                            lines.push(label + ': ' + val)
+                        })
+
+                        return lines
+                    }
+                }
+            }
         },
         scales: {
             y: {
-            beginAtZero: true,
-            ticks: { precision: 0 },
+                beginAtZero: true,
+                ticks: { precision: 0 },
             },
             x: {
-            ticks: {
-                autoSkip: false,
-                maxRotation: 60,
-                minRotation: 60,
-            },
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 60,
+                    minRotation: 60,
+                },
             },
         },
     })
+    // const farmersByBrgyData = ref({
+    //     labels: [],
+    //     datasets: []
+    // })
+
+    // const farmersByBrgyOptions = ref({
+    //     responsive: true,
+    //     maintainAspectRatio: false,
+    //     plugins: {
+    //         legend: { position: 'bottom' },
+    //         title: { display: true, text: 'Registered by Barangay' },
+    //     },
+    //     scales: {
+    //         x: {
+    //             stacked: true,
+    //             ticks: {
+    //                 autoSkip: false,
+    //                 maxRotation: 60,
+    //                 minRotation: 60,
+    //             },
+    //         },
+    //         y: {
+    //             stacked: true,
+    //             beginAtZero: true,
+    //         }
+    //     }
+    // })
+    // const farmersByBrgyOptions = ref({
+    //     responsive: true,
+    //     maintainAspectRatio: false,
+    //     plugins: {
+    //         legend: { position: 'bottom' },
+    //         title: { display: true, text: 'Registered vs Assistance by Barangay' },
+    //     },
+    //     scales: {
+    //         y: {
+    //             beginAtZero: true,
+    //         },
+    //         x: {
+    //             ticks: {
+    //                 autoSkip: false,
+    //                 maxRotation: 60,
+    //                 minRotation: 60,
+    //             },
+    //         },
+    //     }
+    // })
+
+    function buildChart(data) {
+        const labels = data.map(d => d.brgy)
+
+        // ✅ collect all unique assistance types
+        const assistanceTypes = new Set()
+        data.forEach(d => {
+            Object.keys(d.assistance || {}).forEach(type => {
+                assistanceTypes.add(type)
+            })
+        })
+
+        // 🎨 simple color generator
+        const colors = [
+            '#3b82f6', '#10b981', '#f59e0b',
+            '#ef4444', '#8b5cf6', '#14b8a6'
+        ]
+
+        let colorIndex = 0
+
+        // ✅ Registered dataset
+        const datasets = [
+            {
+                label: 'Registered',
+                data: data.map(d => d.total_registered),
+                backgroundColor: '#3b82f6',
+                borderColor: '#1d4ed8',
+                borderWidth: 1,
+            }
+        ]
+
+        // ✅ Dynamic assistance datasets
+        assistanceTypes.forEach(type => {
+            datasets.push({
+                label: type.replace(/_/g, ' ').toUpperCase(),
+                data: data.map(d => d.assistance?.[type] || 0),
+                backgroundColor: colors[colorIndex % colors.length],
+                borderWidth: 1,
+            })
+            colorIndex++
+        })
+
+        farmersByBrgyData.value = {
+            labels,
+            datasets
+        }
+    }
 
     const loadFarmersByBrgy = async () => {
         const res = await axios.get('/dashboard/chart/farmers-by-brgy') 
