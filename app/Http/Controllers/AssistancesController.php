@@ -883,6 +883,7 @@ class AssistancesController extends Controller
 
         $assistance = Assistances::where('farmer_id', $id)
             ->whereIn('status', ['Pending', 'Approved'])
+            ->where('livelihood', 'fisherfolks')
             ->where('is_archived', 0)
             ->orderBy('id', 'desc')
             ->first();
