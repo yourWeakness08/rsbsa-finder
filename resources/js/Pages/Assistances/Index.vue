@@ -146,6 +146,7 @@
         form.reset();
         v$.value.$reset();
         livelihood.value = null;
+        $("select").val(null).trigger('change');
         availableAssistance.value = null;
 
         createDialog.value = false;

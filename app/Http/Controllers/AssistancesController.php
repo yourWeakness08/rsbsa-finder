@@ -646,7 +646,7 @@ class AssistancesController extends Controller
             $assistances->approved_at = $_date;
 
             if ($assistances->livelihood == 'farmer') {
-                $calculatedAmount = $this->calculateAssistance($assistances->farmer_id);
+                $calculatedAmount = $this->calculateAssistance($assistances->id);
 
                 $assistances->amount = $calculatedAmount['metric']['amount'] ?? 0;
                 $assistances->remarks = $calculatedAmount['metric']['purpose'] ?? 'no purpose specified';
@@ -789,7 +789,6 @@ class AssistancesController extends Controller
 
     private function seedMetric($hectares) {
         $hectares = (float) $hectares;
-
         if ($hectares < 0.10) {
             return [
                 'amount' => 0,
@@ -886,9 +885,9 @@ class AssistancesController extends Controller
             ->where('livelihood', 'fisherfolks')
             ->where('is_archived', 0)
             ->orderBy('id', 'desc')
-            ->first();
+            ->get();
 
-        if ($assistance) {
+        if (count($assistance) > 0) {
             $lastcreateddate = date('Y-m-d', strtotime('+1 year', strtotime($assistance->created_at)));
             $state = date('Y-m-d') <= $lastcreateddate ? true : false;
             $assistance_status = strtolower($assistance->status);

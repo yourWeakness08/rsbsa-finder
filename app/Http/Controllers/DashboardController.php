@@ -234,27 +234,42 @@ class DashboardController extends Controller{
         //     'data'   => $brgyRows->pluck('total')->map(fn($v) => (int)$v)->values(),
         // ];
 
-        $rows = DB::table('farmer_information as fi')
-            ->leftJoin('assistances as ad', function ($join) {
-                $join->on('ad.farmer_id', '=', 'fi.id')
-                    ->where('ad.status', 'Approved'); // if status is here
-            })
-            ->leftJoin('assistance as a', 'a.id', '=', 'ad.assistance_id') // 👈 type comes from here
+        // $rows = DB::table('farmer_information as fi')
+        //     ->leftJoin('assistances as ad', function ($join) {
+        //         $join->on('ad.farmer_id', '=', 'fi.id')
+        //             ->where('ad.status', 'Approved'); // if status is here
+        //     })
+        //     ->leftJoin('assistance as a', 'a.id', '=', 'ad.assistance_id') 
+        //     ->selectRaw("
+        //         TRIM(UPPER(fi.brgy)) as brgy,
+        //         a.name as assistance_type,
+        //         SUM(ad.amount) as total_amount
+        //     ")
+        //     ->where('fi.is_archived', 0)
+        //     ->whereNotNull('fi.brgy')
+        //     ->where('fi.brgy', '!=', '');
+
+        // if ($city) {
+        //     $rows->whereRaw("TRIM(UPPER(fi.city)) = ?", [trim(strtoupper($city))]);
+        // }
+
+        // $rows = $rows
+        //     ->groupBy('brgy', 'assistance_type')
+        //     ->orderBy('brgy')
+        //     ->get();
+
+        $rows = DB::table('farmer_information')
             ->selectRaw("
-                TRIM(UPPER(fi.brgy)) as brgy,
-                a.name as assistance_type,
-                SUM(ad.amount) as total_amount
+                id,
+                TRIM(UPPER(brgy)) as brgy
             ")
-            ->where('fi.is_archived', 0)
-            ->whereNotNull('fi.brgy')
-            ->where('fi.brgy', '!=', '');
-
-        if ($city) {
-            $rows->whereRaw("TRIM(UPPER(fi.city)) = ?", [trim(strtoupper($city))]);
-        }
-
-        $rows = $rows
-            ->groupBy('brgy', 'assistance_type')
+            ->where('is_archived', 0)
+            ->whereNotNull('brgy')
+            ->where('brgy', '!=', '')
+            ->when($city, function ($query) use ($city) {
+                $query->whereRaw("TRIM(UPPER(city)) = ?", [trim(strtoupper($city))]);
+            })
+            ->groupBy('id', 'brgy')
             ->orderBy('brgy')
             ->get();
         
@@ -285,13 +300,28 @@ class DashboardController extends Controller{
                 ];
             }
 
-            if ($row->assistance_type && $row->total_amount > 0) {
-                $type = strtolower(trim($row->assistance_type));
+            $assistance = Assistances::where('farmer_id', $row->id)
+                ->leftJoin('assistance as a', 'a.id', '=', 'assistances.assistance_id')
+                ->where('assistances.status', 'Approved')
+                ->select('a.name', 'assistances.amount')
+                ->get();
 
-                $grouped[$brgy]['assistances'][$type] =
-                    (float) ($grouped[$brgy]['assistances'][$type] ?? 0)
-                    + (float) $row->total_amount;
+            if (count($assistance) > 0) {
+                foreach ($assistance as $assist) {
+                    $type = strtolower(trim($assist->name));
+                    $grouped[$brgy]['assistances'][$type] =
+                        (float) ($grouped[$brgy]['assistances'][$type] ?? 0)
+                        + (float) $assist->amount;
+                }
             }
+            
+            // if ($row->assistance_type && $row->total_amount > 0) {
+            //     $type = strtolower(trim($row->assistance_type));
+
+            //     $grouped[$brgy]['assistances'][$type] =
+            //         (float) ($grouped[$brgy]['assistances'][$type] ?? 0)
+            //         + (float) $row->total_amount;
+            // }
         }
 
         $brgyData = [
@@ -319,11 +349,6 @@ class DashboardController extends Controller{
             $brgyData['assistances'][] = $formattedAssistances;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Final Response
-        |--------------------------------------------------------------------------
-        */
         return response()->json([
             'assistance_status' => $statuses,
             'assistance_percentage' => $percentages,
