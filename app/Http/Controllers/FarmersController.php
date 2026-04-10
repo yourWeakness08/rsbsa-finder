@@ -177,7 +177,7 @@ class FarmersController extends Controller
         
                     if ($created) {
                         $id = $created->id;
-        
+                        
                         $file = $request->file('image');
                         $filename = $file->getClientOriginalName();
         
@@ -443,15 +443,15 @@ class FarmersController extends Controller
                         ]);
         
                         if ($request->main_livelihood && in_array('farmer', $request->main_livelihood)) {
-                            $assistanceSeed = Assistance::where('name', 'like', '%seed%')->where('is_archived', 0)->first();
+                            $assistanceSeed = Assistance::where('name', 'like', '%inbred seed%')->where('is_archived', 0)->first();
                             $assistanceFertilizer = Assistance::where('name', 'like', '%fertilizer%')->where('is_archived', 0)->first();
                             
                             if ($assistanceSeed) {
-                                $this->assistanceService->create($farmer->id, $assistanceSeed->id, 'seeds');
+                                $this->assistanceService->create($id, $assistanceSeed->id, 'seeds');
                             }
             
                             if ($assistanceFertilizer) {
-                                $this->assistanceService->create($farmer->id, $assistanceFertilizer->id, 'fertilizer');
+                                $this->assistanceService->create($id, $assistanceFertilizer->id, 'fertilizer');
                             }
                         }
         
@@ -473,8 +473,7 @@ class FarmersController extends Controller
                 ->with([
                     'response' => [
                         'state' => $state,
-                    ],
-                    'id' => $id
+                    ]
                 ]);
         }  catch (\Throwable $e) {
             $activityLogger->log(

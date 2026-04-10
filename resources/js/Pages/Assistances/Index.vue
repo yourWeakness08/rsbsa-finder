@@ -145,6 +145,8 @@
     const closeModal = () => {
         form.reset();
         v$.value.$reset();
+        livelihood.value = null;
+        availableAssistance.value = null;
 
         createDialog.value = false;
     }

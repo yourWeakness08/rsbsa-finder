@@ -91,6 +91,7 @@ class ReportController extends Controller{
 
     public function registered(Request $request) {
         $paginate = $request->paginate ? intval($request->paginate): 10;
+        $is_dashboard = isset($request->is_dashboard) && $request->is_dashboard ? intval($request->is_dashboard) : 0;
 
         $registered = FarmerInformation::from('farmer_information as a')
             ->select(DB::raw("
@@ -128,10 +129,12 @@ class ReportController extends Controller{
             ->when($request->brgy, function($q) use ($request){
                 $q->where('a.brgy','like','%'.$request->brgy.'%');
             })
-            ->whereBetween(DB::raw('DATE(a.created_at)'),[
-                date('Y-m-d',strtotime($request->from)),
-                date('Y-m-d',strtotime($request->to))
-            ])
+            ->when($is_dashboard == 0, function($q) use ($request){
+                $q->whereBetween(DB::raw('DATE(a.created_at)'),[
+                    date('Y-m-d', strtotime($request->from)),
+                    date('Y-m-d', strtotime($request->to))
+                ]);
+            })
             ->where('a.is_archived',0)
             ->orderByRaw("
                 CASE
@@ -182,10 +185,16 @@ class ReportController extends Controller{
             ->when($request->brgy, function($q) use ($request){
                 $q->where('a.brgy','like','%'.$request->brgy.'%');
             })
-            ->whereBetween(DB::raw('DATE(a.created_at)'),[
-                date('Y-m-d',strtotime($request->from)),
-                date('Y-m-d',strtotime($request->to))
-            ])
+            ->when($is_dashboard == 0, function($q) use ($request){
+                $q->whereBetween(DB::raw('DATE(a.created_at)'),[
+                    date('Y-m-d', strtotime($request->from)),
+                    date('Y-m-d', strtotime($request->to))
+                ]);
+            })
+            // ->whereBetween(DB::raw('DATE(a.created_at)'),[
+            //     date('Y-m-d',strtotime($request->from)),
+            //     date('Y-m-d',strtotime($request->to))
+            // ])
             ->where('a.is_archived',0)
             ->orderByRaw("
                 CASE

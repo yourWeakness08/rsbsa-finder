@@ -53,7 +53,7 @@
 
             <div class="flex items-center justify-between mt-4">
                 <div class="col-md-6">
-                    <Link :href="route('login')" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Back to Login</Link>
+                    <Link :href="route('login')" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-700 focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Back to Login</Link>
                 </div>
                 <div class="col-md-6">
                     <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
