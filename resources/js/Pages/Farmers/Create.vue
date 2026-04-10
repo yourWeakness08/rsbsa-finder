@@ -418,6 +418,7 @@
     }
 
     const goToNext = (event) => {
+        step.value++
         v$.value.$touch();
         if (step.value < stepLabels.length - 1) {
             if (!v$.value.$invalid) {
@@ -1926,7 +1927,7 @@
                                                                     <div class="w-2/12">
                                                                         <InputLabel for="total_farm_area" value="Total Farm Area" :required="true" />
                                                                             <div class="mt-1 flex rounded-md shadow-sm">
-                                                                                <TextInput type="number" v-model="item.total_farm_area" min="0" class="flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off" style="height: 41px" :class="{
+                                                                                <TextInput type="number" v-model="item.total_farm_area" min="0" step="0.01" class="flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off" style="height: 41px" :class="{
                                                                                     'border-gray-300': item.total_farm_area == null,
                                                                                     'border-red-500' : item.total_farm_area != NULL && v$.farm_parcel.$each.$response.$errors[index].total_farm_area.length == 1,
                                                                                     'border-green-500' : item.total_farm_area && v$.farm_parcel.$each.$response.$errors[index].total_farm_area.length == 0
@@ -2059,7 +2060,7 @@
                                                                         </template>
                                                                     </td>
                                                                     <td class="p-3 border border-gray-400">
-                                                                        <TextInput type="number" class="block w-full uppercase" v-model="v.size" min="0" />
+                                                                        <TextInput type="number" class="block w-full uppercase" v-model="v.size" min="0" step="0.01" />
                                                                         <template v-for="error in v$.farm_parcel.$each.$response.$errors[index].farm_parcel_info" :key="error">
                                                                             <span class="text-red-500 text-sm" v-if="error.$response.$errors[i].size.length == 1">
                                                                                 Value is required

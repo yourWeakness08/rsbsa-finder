@@ -646,17 +646,17 @@ class AssistancesController extends Controller
             $assistances->approved_at = $_date;
 
             if ($assistances->livelihood == 'farmer') {
-                $calculatedAmount = $this->calculateAssistance($id);
+                $calculatedAmount = $this->calculateAssistance($assistances->farmer_id);
 
                 $assistances->amount = $calculatedAmount['metric']['amount'] ?? 0;
                 $assistances->remarks = $calculatedAmount['metric']['purpose'] ?? 'no purpose specified';
             }
 
             if ($assistances->livelihood == 'fisherfolks') {
-                $calculateHectares = $this->calculateHectares($id);
+                $calculateHectares = $this->calculateHectares($assistances->farmer_id);
 
                 if (floatval($calculateHectares) < 0.50) {
-                    $name = $this->getFullname($id);
+                    $name = $this->getFullname($assistances->farmer_id);
                     $activityLogger->log(
                         userId: auth()->id(),
                         table: 'Assistance',

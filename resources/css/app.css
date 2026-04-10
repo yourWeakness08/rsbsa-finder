@@ -57,3 +57,35 @@ span.select2-selection__placeholder { font-size: 1rem; }
 .nprogress-busy {
     z-index: 999999 !important;
 }
+
+#nprogress .bar {
+    background: #000000 !important;
+    height: 3px;
+}
+
+#nprogress .peg {
+    box-shadow: 0 0 10px #000000, 0 0 5px #000000 !important;
+}
+
+#nprogress .spinner-icon {
+    border-top-color: #000000 !important;
+    border-left-color: #000000 !important;
+}
+
+.sidebar {
+    background: linear-gradient(270deg, #1F5A4E 30%, #17463D 100%);
+    color: #ffffff;
+
+}
+
+.sidebar-item {
+    color: rgba(255, 255, 255, 0.7);
+    padding: 12px 20px;
+    transition: 0.3s;
+}
+
+.sidebar-item.active, .sidebar-item:hover {
+    /* background: linear-gradient(90deg, #2E7D6B 0%, #3FAF85 100%); */
+    background: linear-gradient(90deg, #264D44 0%, #3FAF85 100%);
+    color: #ffffff;
+}

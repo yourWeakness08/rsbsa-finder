@@ -1,6 +1,6 @@
 <script setup>
     import { ref } from 'vue';
-    import { Head, Link, router } from '@inertiajs/vue3';
+    import { Head, Link, router, usePage } from '@inertiajs/vue3';
     import ApplicationMark from '@/Components/ApplicationMark.vue';
     import Banner from '@/Components/Banner.vue';
     import Dropdown from '@/Components/Dropdown.vue';
@@ -29,6 +29,12 @@
         }
 
         return _path;
+    }
+
+    if (usePage().url != '/') {
+        document.body.classList.remove('test');
+    } else {
+        document.body.classList.add('test');
     }
 </script>
 

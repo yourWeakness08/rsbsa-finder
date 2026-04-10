@@ -274,8 +274,7 @@ class DashboardController extends Controller{
         $totals = $totals->groupBy('brgy')->pluck('total_registered', 'brgy');
 
         $grouped = [];
-
-        // 🔹 Step 1: group everything by brgy
+        
         foreach ($rows as $row) {
             $brgy = $row->brgy;
 

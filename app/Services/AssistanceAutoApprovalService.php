@@ -36,7 +36,7 @@ class AssistanceAutoApprovalService
                 $assistance->assistance_id = $assistanceId;
                 $assistance->livelihood = 'farmer';
                 $assistance->reference_no = $this->generateReference();
-                $assistance->status = 'Approved';
+                $assistance->status = 'Pending';
     
                 $assistance->approved_by = Auth::id();
                 $assistance->approved_at = now();
@@ -69,7 +69,7 @@ class AssistanceAutoApprovalService
                 ->orderByDesc('id')
                 ->first();
 
-            if ($lastRecord && preg_match('/RSS-\d{2}-(\d+)/', $lastRecord->reference_no, $matches)) {
+            if ($lastRecord && preg_match('/RRS-\d{2}-(\d+)/', $lastRecord->reference_no, $matches)) {
                 $nextNumber = (int)$matches[1] + 1;
             } else {
                 $nextNumber = 1;

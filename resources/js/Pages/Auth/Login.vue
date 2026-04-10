@@ -8,6 +8,10 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
+import { usePage } from '@inertiajs/vue3' // or react adapter
+
+const page = usePage()
+
 defineProps({
     canResetPassword: Boolean,
     status: String,
@@ -27,7 +31,19 @@ const submit = () => {
         onFinish: () => form.reset('password'),
     });
 };
+
+if (page.url == '/') {
+    document.body.classList.add('test');
+} else {
+    document.body.classList.remove('test');
+}
 </script>
+
+<style>
+    .test .min-h-screen {
+        background: linear-gradient(180deg, #1F5A4E 30%, #17463D 100%) !important;
+    }
+</style>
 
 <template>
     <Head title="Log in" />
@@ -35,7 +51,7 @@ const submit = () => {
     <AuthenticationCard>
         <template class="flex justify-center" #logo>
             <AuthenticationCardLogo :href="'/login'" />
-            <h4 class="font-semibold uppercase mt-3 text-center">Hinigaran RRS Farmers and Fisherfolks <br> Information System</h4>
+            <h4 class="font-semibold uppercase mt-3 text-white text-center">Hinigaran RRS Farmers and Fisherfolks <br> Information System</h4>
         </template>
 
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
@@ -67,7 +83,7 @@ const submit = () => {
                     <Link :href="route('register')" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500" hidden>Register</Link>
                 </div>
                 <div class="col-md-6">
-                    <Link v-if="canResetPassword" :href="route('password.request')" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <Link v-if="canResetPassword" :href="route('password.request')" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" hidden>
                         Forgot your password?
                     </Link>
     

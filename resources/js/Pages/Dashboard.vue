@@ -182,15 +182,6 @@
     }
 
     onMounted(async () => {
-        // total()
-        // await wait(700)
-        // await loadPie();
-        // await wait(700)
-
-        // await loadChart()
-        // await wait(700)
-        // await loadFarmersByBrgy()
-
         const res = await axios.get(route('dashboard.data'), {
             params: {
                 status: status.value,
@@ -333,6 +324,21 @@
                 },
             },
         },
+        onClick: (event, elements, chart) => {
+            if (!elements.length) return
+
+            const index = elements[0].index
+            const brgy = chart.data.labels[index].toLowerCase()
+
+            // redirect (adjust depending on your routing)
+            router.visit(route('reports.registered'), {
+                method: 'post',
+                data: { city: 'Hinigaran', brgy, is_dashboard: '1' }
+            })
+        },
+        onHover: (event, elements) => {
+            event.native.target.style.cursor = elements.length ? 'pointer' : 'default'
+        }
     })
     // const farmersByBrgyData = ref({
     //     labels: [],
@@ -480,25 +486,40 @@
             </div>
 
             <div class="flex gap-x-4 mb-4">
-                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center">
-                    <div class="p-4">
-                        <h3 class="mb-3 font-semibold">Total Farmer</h3>
-                        <div class="text-3xl font-bold">{{ animatedTotals.farmer }}</div>
+                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center border-b-teal-500 border-b-8">
+                    <div class="flex h-full items-center">
+                        <div class="w-1/2">
+                            <img src="/images/farmer.png" class="h-26 w-30 mx-auto" alt="icon" v-once loading="eager">
+                        </div>
+                        <div class="w-1/2">
+                            <h3 class="mb-3 font-semibold">Total Farmer</h3>
+                            <div class="text-3xl font-bold">{{ animatedTotals.farmer }}</div>
+                        </div>
                     </div>
                 </div>
-                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center">
-                    <div class="p-4">
-                        <h3 class="mb-3 font-semibold">Total Farm Worker / Laborer</h3>
-                        <div class="text-3xl font-bold">{{ animatedTotals.farm_worker }}</div>
+                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center border-b-sky-500 border-b-8">
+                    <div class="flex h-full items-center">
+                        <div class="w-1/2">
+                            <img src="/images/farmworkers.png" class="h-26 w-30 mx-auto" alt="icon" v-once loading="eager">
+                        </div>
+                        <div class="w-1/2">
+                            <h3 class="mb-3 font-semibold">Total Farm Worker / Laborer</h3>
+                            <div class="text-3xl font-bold">{{ animatedTotals.farm_worker }}</div>
+                        </div>
                     </div>
                 </div>
-                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center">
-                    <div class="p-4">
-                        <h3 class="mb-3 font-semibold">Total Fisherfolks</h3>
-                        <div class="text-3xl font-bold">{{ animatedTotals.fisherfolks }}</div>
+                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center border-b-blue-500 border-b-8">
+                    <div class="flex h-full items-center">
+                        <div class="w-1/2">
+                            <img src="/images/fisherfolks.png" class="h-32 w-30 mx-auto" alt="icon" v-once loading="eager">
+                        </div>
+                        <div class="w-1/2">
+                            <h3 class="mb-3 font-semibold">Total Fisherfolks</h3>
+                            <div class="text-3xl font-bold">{{ animatedTotals.fisherfolks }}</div>
+                        </div>
                     </div>
                 </div>
-                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center" hidden>
+                <div class="w-1/4 rounded-lg bg-white shadow px-4 py-2 text-center border-b-indigo-500 border-b-4" hidden>
                     <div class="p-4">
                         <h3 class="mb-3 font-semibold">Total Agri Youth</h3>
                         <div class="text-3xl font-bold">{{ animatedTotals.agri_youth }}</div>
