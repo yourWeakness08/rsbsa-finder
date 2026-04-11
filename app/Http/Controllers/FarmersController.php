@@ -57,6 +57,7 @@ class FarmersController extends Controller
                     ->orWhere('a.middlename', 'like', '%'.$request->search.'%');
                 }
             })
+            ->orderBy('a.id', 'desc')
         ->paginate($paginate);
         $farmer->appends(['paginate' => $paginate]);
 
@@ -78,6 +79,7 @@ class FarmersController extends Controller
                     ->orWhere('a.middlename', 'like', '%'.$request->search.'%');
                 }
             })
+            ->orderBy('a.id', 'desc')
             ->get();
             $farmer->all();
         }
@@ -1237,12 +1239,12 @@ class FarmersController extends Controller
         return $query ? true : false;
     }
 
-    public function upload(Request $request, $id, FarmerInformation $farmerInformation) {
+    public function uploadv1(Request $request, $id, FarmerInformation $farmerInformation) {
         $file = $request->file('attachment');
         $resultset = array();
 
         if($file){
-            $tempFileName = $file->getClientOriginalName();
+            $tempFileName = time() . '_' . $file->getClientOriginalName();
             $tempMimeType = $file->getMimeType();
 
             if($tempMimeType == "text/csv" || $tempMimeType == "text/plain"){
@@ -1270,7 +1272,8 @@ class FarmersController extends Controller
                             while ($data = fgetcsv($handle)) {
                                 $value = $data[0];
                                 $numericOnly = str_replace('-', '', $value);
-                                if(is_array($data) && is_numeric(($numericOnly)) && preg_match('/^\d{2}-\d{2}-\d{2}-\d{3}-\d{6}$/', $value)){
+
+                                if(is_array($data) && $numericOnly && preg_match('/^\d{2}-\d{2}-\d{2}-\d{3}-\d{6}$/', $value)){
                                     if($data[0]){
                                         $nData = array_map('trim', $data);
                                         $ref_no = trim($data[0]);
@@ -1290,15 +1293,15 @@ class FarmersController extends Controller
                                                     'lot_block_no' => trim(strtolower($data[6])),
                                                     'street' => trim(strtolower($data[7])),
                                                     'brgy' => trim(strtolower($data[8])),
-                                                    'city' => trim(strtolower($data[9])),
-                                                    'province' => trim(strtolower($data[10])),
-                                                    'region' => trim(strtolower($data[11])),
-                                                    'mobile_no' => '0'.$data[12],
-                                                    'date_of_birth' => date('Y-m-d', strtotime($data[13])),
-                                                    'place_of_birth' => trim(strtolower($data[14])),
-                                                    'religion' => $data[15] ? trim(strtolower($data[15])) : null,
-                                                    'civil_status' => trim(strtolower($data[16])),
-                                                    'spouse_name_if_married' => $data[17] ? trim(strtolower($data[17])) : null, 
+                                                    'city' => 'Hinigaran',
+                                                    'province' => 'Negros Occidental',
+                                                    'region' => 'Region vi',
+                                                    'mobile_no' => '0'.$data[9],
+                                                    'date_of_birth' => date('Y-m-d', strtotime($data[10])),
+                                                    'place_of_birth' => trim(strtolower($data[11])),
+                                                    'religion' => $data[15] ? trim(strtolower($data[12])) : null,
+                                                    'civil_status' => trim(strtolower($data[13])),
+                                                    'spouse_name_if_married' => $data[17] ? trim(strtolower($data[14])) : null, 
                                                     'created_by'=>$id,
                                                     'uuid'=> Str::random(12)
                                                 ]);
@@ -1332,6 +1335,144 @@ class FarmersController extends Controller
             return response()->json($resultset);
         }
     }
+
+    public function upload(Request $request, $id, FarmerInformation $farmerInformation)
+        {
+            $resultset = [];
+
+            if (!$request->hasFile('attachment')) {
+                return response()->json([
+                    "response" => false,
+                    "message" => "No file uploaded!"
+                ]);
+            }
+
+            $file = $request->file('attachment');
+
+            // Validate MIME
+            $mime = $file->getMimeType();
+            if (!in_array($mime, ['text/csv', 'text/plain', 'application/vnd.ms-excel'])) {
+                return response()->json([
+                    "response" => false,
+                    "message" => "Invalid file type!"
+                ]);
+            }
+
+            $destinationPath = public_path('uploads/temp');
+
+            // Ensure directory exists
+            if (!file_exists($destinationPath)) {
+                File::makeDirectory($destinationPath, 0777, true, true);
+            }
+
+            // Use unique filename to avoid overwrite issues
+            $fileName = time() . '_' . $file->getClientOriginalName();
+
+            // ✅ FIX: move using absolute path
+            $file->move($destinationPath, $fileName);
+
+            $filePath = $destinationPath . '/' . $fileName;
+
+            if (!file_exists($filePath)) {
+                return response()->json([
+                    "response" => false,
+                    "message" => "File upload failed!"
+                ]);
+            }
+
+            $ctrRow = 0;
+            $noRefNumber = 0;
+            $duplicateCount = 0;
+
+            if (($handle = fopen($filePath, "r")) !== false) {
+
+                $rowIndex = 0;
+
+                while (($data = fgetcsv($handle, 1000, ",")) !== false) {
+
+                    if ($rowIndex === 0) {
+                        $rowIndex++;
+                        continue;
+                    }
+
+                    $rowIndex++;
+
+                    if (!is_array($data) || empty($data[0])) {
+                        continue;
+                    }
+
+                    $ref_no = trim($data[0]);
+
+                    // Validate format
+                    if (!preg_match('/^\d{2}-\d{2}-\d{2}-\d{3}-\d{6}$/', $ref_no)) {
+                        $noRefNumber++;
+                        continue;
+                    }
+
+                    // Check if exists
+                    $exists = DB::table('farmer_information')
+                        ->where('ref_no', $ref_no)
+                        ->exists();
+
+                    if ($exists) {
+                        $duplicateCount++;
+                        continue;
+                    }
+
+                    // Safe access helper
+                    $get = fn($i) => isset($data[$i]) ? trim(strtolower($data[$i])) : null;
+
+                    $created = FarmerInformation::create([
+                        'ref_no' => $ref_no,
+                        'firstname' => $get(1),
+                        'lastname' => $get(2),
+                        'middlename' => $get(3),
+                        'suffix' => $get(4),
+                        'gender' => $get(5),
+                        'lot_block_no' => $get(6),
+                        'street' => $get(7),
+                        'brgy' => $get(8),
+                        'city' => 'Hinigaran',
+                        'province' => 'Negros Occidental',
+                        'region' => 'Region 6',
+                        'mobile_no' => isset($data[9]) ? '0' . preg_replace('/\D/', '', $data[9]) : null,
+                        'date_of_birth' => isset($data[10]) ? date('Y-m-d', strtotime($data[10])) : null,
+                        'place_of_birth' => $get(11),
+                        'religion' => $get(12),
+                        'civil_status' => $get(13),
+                        'spouse_name_if_married' => $get(14),
+                        'created_by' => $id,
+                        'uuid' => Str::random(12)
+                    ]);
+
+                    if ($created) {
+                        $ctrRow++;
+                    }
+                }
+
+                fclose($handle);
+            }
+
+            // Cleanup
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            $resultset = [
+                "response" => true,
+                "no_id_number_count" => $noRefNumber,
+                "uploaded" => $ctrRow
+            ];
+
+            return redirect()->back()->with([
+                'response' => [
+                    'state' => true,
+                    'uploaded' => $ctrRow,
+                    'no_id_number_count' => $noRefNumber,
+                    'duplicate_ref_no_count' => $duplicateCount
+                ]
+            ]);
+        }
 
     public function save_attachments(Request $request, $id, FarmerInformation $farmerInformation, ActivityLogger $activityLogger) {
         $state = false;
