@@ -707,14 +707,16 @@ class FarmersController extends Controller
             ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
             ->leftJoin('farmer_information as h', 'h.id', '=', 'assistances.updated_by')
             ->where('assistances.is_archived', 0)
-            ->where('assistances.farmer_id', $farmer->id)
+            ->where('assistances.farmer_id', $id)
             ->orderBy('assistances.created_at', 'desc')
             ->where( function($query) use ($request) {
                 if ($request->search) {
                     $query->where('assistances.livelihood', 'like', '%'.$request->search.'%')
                     ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
-            })->paginate($paginate);
+            })
+            ->distinct()
+            ->paginate($paginate);
         $assistances->appends(['paginate' => $paginate]);
 
         if($request->paginate == 'All'){
@@ -752,13 +754,14 @@ class FarmersController extends Controller
             ->leftJoin('farmer_information as g', 'g.id', '=', 'assistances.disapproved_by')
             ->leftJoin('farmer_information as h', 'h.id', '=', 'assistances.updated_by')
             ->where('assistances.is_archived', 0)
-            ->where('assistances.farmer_id', $farmer->id)
+            ->where('assistances.farmer_id', $id)
             ->where(function($query) use($request){
                 if ($request->search) {
                     $query->where('assistances.livelihood', 'like', '%'.$request->search.'%')
                     ->orWhere('assistances.status', 'like', '%'.$request->search.'%');
                 }
             })
+            ->groupBy('assistances.id')
             ->orderBy('assistances.created_at', 'desc')
             ->get();
             $assistances->all();
