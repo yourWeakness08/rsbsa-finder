@@ -69,7 +69,7 @@
             default: () => ({})
         },
     });
-
+    
     let mergeTypes = ref([]);
     const activeTab = ref('Farmer Information');
     const cityOptions = ref([]);
@@ -2829,7 +2829,7 @@
                                             <tbody>
                                                 <template v-if="history.total > 0">
                                                     <template v-for="(item, index) in history.data" :key="index">
-                                                        <tr class="bg-white border-b" v-for="(item, index) in history.data" :key="item.id">
+                                                        <tr class="bg-white border-b" >
                                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase">
                                                                 {{ item.reference_no }}
                                                             </td>
