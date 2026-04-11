@@ -134,9 +134,28 @@
         form.post(route('farmers.upload', id), {
             errorBag: 'uploadEmployeeData',
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (state) => {
                 form.attachment = null;
                 document.getElementById("attachmentFile").value = '';
+                
+                console.log(state.props.flash);
+                if (state.props.flash.response) {
+
+                    if (state.props.flash.response.duplicate_ref_no_count > 0) {
+                        Swal.fire({
+                            icon: 'warning',
+                            text: `${state.props.flash.response.duplicate_ref_no_count} record(s) were not uploaded due to duplicate reference number.`,
+                            target: document.getElementById('uploadFarmer')
+                        });
+                    } else{
+                        Swal.fire({
+                            icon: state.props.flash.response.uploaded > 0 ? 'success' : 'warning',
+                            text: state.props.flash.response.uploaded > 0 ? `${state.props.flash.response.uploaded} record(s) uploaded successfully!` : 'No records were uploaded. Please check your file and try again.',
+                            target: document.getElementById('uploadFarmer')
+                        });
+                    }
+                }
+
                 setTimeout(()=> { closeModal(); }, 1000);
                 router.reload({ only: ['farmer'] });
             }
@@ -284,7 +303,7 @@
                                         </tr>
                                     </template>
                                     <template v-else-if="filter.paginate == 'All' && farmer.length > 0">
-                                        <tr class="bg-white border-b" v-for="farmer in farmer.data" :key="farmer.id">
+                                        <tr class="bg-white border-b" v-for="farmer in farmer" :key="farmer.id">
                                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap uppercase w-1/12">
                                                 <div class="border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300">
                                                     <img :src="farmer.farmer_image" :alt="farmer.firstname" class="h-16 w-16 rounded-full object-cover ml-auto mr-auto">
