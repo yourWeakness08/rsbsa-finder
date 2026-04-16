@@ -51,7 +51,7 @@ if (page.url == '/') {
     <AuthenticationCard>
         <template class="flex justify-center" #logo>
             <AuthenticationCardLogo :href="'/login'" />
-            <h4 class="font-semibold uppercase mt-3 text-white text-center">Hinigaran RRS Farmers and Fisherfolks <br> Information System</h4>
+            <h4 class="font-semibold uppercase mt-3 text-white text-center">Hinigaran Farmers and Fisherfolks <br> Information System <br> with Decision Support System</h4>
         </template>
 
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600">

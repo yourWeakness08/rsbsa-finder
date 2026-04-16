@@ -72,7 +72,7 @@ const showSpouse = () => {
 
             <div class="flex-1 text-center px-2">
                 <h1 class="text-lg font-bold uppercase">
-                    Hinigaran RRS Farmers and Fisherfolks Information System
+                    Hinigaran farmers and fisherfolks information with decision support system
                 </h1>
             </div>
 
