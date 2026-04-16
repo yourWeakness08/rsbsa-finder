@@ -56,7 +56,7 @@
                         <div class="flex justify-between h-16">
                             <div class="flex">
                                 <div class="shrink-0 flex items-center">
-                                    <h4 class="font-semibold uppercase">Hinigaran RRS Farmers and Fisherfolks Information System</h4>
+                                    <h4 class="font-semibold uppercase">Hinigaran farmers and fisherfolks information with decision support system</h4>
                                 </div>
                             </div>
     

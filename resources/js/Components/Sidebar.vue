@@ -25,7 +25,7 @@
         <div class="w-full">
           <ApplicationMark class="block h-24 w-50 mx-auto" />
         </div>
-        <span class="mx-2 text-2xl w-12/12 font-semibold">RRS</span>
+        <span class="mx-2 text-2xl w-12/12 font-semibold"></span>
       </Link>
 
       <nav class="mt-5">
