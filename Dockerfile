@@ -1,9 +1,20 @@
-FROM --platform=linux/amd64 php:8.1.8
+FROM --platform=linux/amd64 php:8.1.34-bookworm
 
-RUN apt-get update && apt-get install -y \
-    curl zip unzip git gnupg libonig-dev libzip-dev
-
-RUN docker-php-ext-install pdo pdo_mysql mbstring zip
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        zip \
+        unzip \
+        git \
+        gnupg \
+        libonig-dev \
+        libzip-dev \
+    && docker-php-ext-install \
+        pdo \
+        pdo_mysql \
+        mbstring \
+        zip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php \
@@ -12,6 +23,7 @@ RUN curl -sS https://getcomposer.org/installer | php \
 WORKDIR /app
 
 COPY wait-for-it.sh /app/wait-for-it.sh
+
 RUN chmod +x /app/wait-for-it.sh
 
 EXPOSE 8000
